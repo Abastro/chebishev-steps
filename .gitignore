@@ -1,3 +1,10 @@
 dist-newstyle
 
 *.code-workspace
+
+*.aux
+*.fdb_latexmk
+*.fls
+*.log
+*.pdf
+*.synctex.gz

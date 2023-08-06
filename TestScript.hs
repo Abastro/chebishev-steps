@@ -10,6 +10,8 @@ import Data.Semigroup
 inverses :: [Rational]
 inverses = [1 % m | m <- [1 ..]]
 
+-- TODO Finish and prepare s_6
+
 -- >>> take 5 inverses
 -- [1 % 1,1 % 2,1 % 3,1 % 4,1 % 5]
 
