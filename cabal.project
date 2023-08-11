@@ -1,0 +1,8 @@
+packages:
+  n-step-hs/*.cabal
+
+package streamly-core
+  flags: +use-unliftio
+
+package streamly
+  flags: +use-unliftio
