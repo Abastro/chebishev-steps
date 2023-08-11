@@ -5,6 +5,33 @@ import Data.Maybe
 import Data.Ratio
 import Data.Semigroup
 
+inversesOver :: Rational -> [Rational]
+inversesOver val = undefined
+
+safeDiv :: (Eq a, Fractional a) => a -> a -> [a]
+safeDiv n m = [n / m | m /= 0]
+
+s6LHS, s6RHS :: Rational -> Rational -> Rational -> Rational -> Rational -> Rational
+s6LHS (v :: Rational) m1 m2 m3 m4 = (v - m1 - m2) * (v - m3 - m4)
+s6RHS (v :: Rational) m1 m2 m3 m4 = m2 * m3
+
+closest1Step :: Rational -> Arg (Rational, Rational) Rational
+closest1Step v =
+  if 1 % lessK == v
+    then Arg (1 % lessK, 0) 0
+    else minimum @[] $ do
+      k1 <- [1 .. pred $ (lessK + 1) * 2]
+      let Arg k2Inv delta = closestDelta $ abs (v - 1 % k1)
+      pure $ Arg (1 % k1, signum (v - 1 % k1) * k2Inv) delta
+ where
+  -- v is in (1 / (lessK + 1), 1 / lessK].
+  -- k1 should be smaller than (lessK + 1) * 2.
+  lessK = floor (1 / v)
+
+step2a2a3 :: Rational -> [Rational]
+step2a2a3 v = do
+  undefined
+
 -- * Constraint: lambda > 0
 
 inverses :: [Rational]
@@ -14,9 +41,6 @@ inverses = [1 % m | m <- [1 ..]]
 
 -- >>> take 5 inverses
 -- [1 % 1,1 % 2,1 % 3,1 % 4,1 % 5]
-
-safeDiv :: (Eq a, Fractional a) => a -> a -> [a]
-safeDiv n m = [n / m | m /= 0]
 
 s5Poly :: Rational -> Rational -> Rational -> Rational -> Rational
 s5Poly (lam :: Rational) m1 m2 m3 = (lam - m1) * (lam - m3) - lam * m2
@@ -68,7 +92,7 @@ m1Cands :: Rational -> Rational -> [Rational]
 m1Cands lam m2 = case lam `compare` abs m2 of
   GT -> takeWhile (\m1 -> s5Diff lam m1 m2 m1 >= 0) inverses
   LT -> takeWhile (\m1 -> s5Diff lam m1 m2 m1 <= 0) $ map negate inverses
-  EQ -> [1 % k1 | let k2 = numerator $ 1 / lam, k1 <- [1 .. k2-1]] -- known case
+  EQ -> [1 % k1 | let k2 = numerator $ 1 / lam, k1 <- [1 .. k2 - 1]] -- known case
   -- m2 < 0 case not covered
 
 allMs :: Rational -> [(Rational, Rational, Rational)]
