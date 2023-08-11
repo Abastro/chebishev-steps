@@ -12,6 +12,16 @@ import Data.Semigroup (Arg (..))
 --
 -- >>> closestToInv (3/8)
 -- 3
+--
+-- >>> closestToInv (-1/4)
+-- -4
+--
+-- >>> closestToInv (-2/7)
+-- -4
+--
+-- >>> closestToInv (-2)
+-- -1
+--
 closestToInv :: Rational -> Int
 closestToInv r = goal
  where

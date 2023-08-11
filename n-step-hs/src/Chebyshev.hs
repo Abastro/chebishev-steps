@@ -84,6 +84,9 @@ sPolyZeroUB u2 k i = absSum
 -- >>> sPolyNormal 3 (V.fromList [1, 1, 1, 1, 1])
 -- 0 % 1
 
+-- >>> sPolyMinimum (4/5) 4
+-- Arg (1 % 2) [5,1,1]
+
 nsToArg :: Rational -> V.Vector Int -> Arg Rational (V.Vector Int)
 nsToArg u2 ns = Arg (abs $ sPolyNormal u2 ns) ns
 
@@ -106,8 +109,8 @@ sPolyMinimum u2 = computeMinimum
     2 -> Arg 1 (V.singleton 1) -- normalized s2 = 1
     k -> fromJust (evalState minFinding initMin)
      where
-      bndMinArg@(Arg bndMin _) = boundaryMinimum k
-      initMinArg@(Arg initMin _) = initialMinCand u2 bndMinArg
+      bndMinArg@(Arg bndMin bndArg) = boundaryMinimum k
+      initMinArg@(Arg initMin _) = initialMinCand u2 bndArg
       -- Max. of normalized s_k where n_i = 0, i = 1 to k-1.
       sZeroMaxes = sPolyZeroUB u2 k <$> V.enumFromTo 1 (k - 1)
 
@@ -115,7 +118,7 @@ sPolyMinimum u2 = computeMinimum
       boundCond i ni = do
         bound <- gets (boundAt i)
         curMin <- get
-        traceShowM (k, i, bndMin, curMin, initMin)
+        traceShowM (k, i, bndMinArg, curMin, initMinArg)
         pure (abs ni <= bound)
 
       chooseNs :: Stream.SerialT (State Rational) (V.Vector Int)
@@ -136,11 +139,11 @@ sPolyMinimum u2 = computeMinimum
         Arg rv right = computeMinimum (k - i)
     pure $ Arg (lv * rv) (left, right)
 
--- ! Issue here
 -- | Initial minimum candidate derived from the boundary-minimums.
-initialMinCand :: Rational -> Arg Rational (V.Vector Int, V.Vector Int) -> Arg Rational (V.Vector Int)
-initialMinCand u2 (Arg xiConst (left, right)) = nsToArg u2 minNs
+initialMinCand :: Rational -> (V.Vector Int, V.Vector Int) -> Arg Rational (V.Vector Int)
+initialMinCand u2 (left, right) = nsToArg u2 minNs
  where
+  xiConst = sPolyNormal u2 left * sPolyNormal u2 right
   xiSlope = sPolyZeroNormal u2 (left <> V.singleton 0 <> right) (V.length left + 1)
   ni = closestToInv (-xiConst / xiSlope)
   minNs = left <> V.singleton ni <> right
@@ -158,10 +161,10 @@ initialMinCand u2 (Arg xiConst (left, right)) = nsToArg u2 minNs
 -- [3,1,2,2,1,1,1]
 
 -- >>> findMinimalChebyshev (4/5)
--- [1,1,-10,1,1]
+-- [-5,1,1]
 
--- >>> sPolyNormal (4/5) (V.fromList [1, 1, -5])
--- 0 % 1
+-- >>> findMinimalChebyshev (8/3)
+-- [6,1,1,1,1]
 
 findMinimalChebyshev :: Rational -> V.Vector Int
 findMinimalChebyshev u2 = found
