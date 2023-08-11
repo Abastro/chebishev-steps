@@ -12,6 +12,7 @@ import MultilinPoly
 import Streamly.Prelude qualified as Stream
 import Util
 import Data.List
+import Debug.Trace
 
 -- | Continuant as a polynomial.
 --
@@ -63,6 +64,9 @@ sPolyZeroUB u2 k i = absSum
   absSum = sum [1 / abs u2 ^ (exc `div` 2) | monomial <- M.keys monos, let exc = k - 1 - IS.size monomial]
   MultilinPoly monos = substZero i $ continuant k
 
+-- >>> sPolyZeroUB (4/5) 4 <$> [1..3]
+-- [5 % 4,5 % 2,5 % 4]
+
 -- Assumption: u^2 is rational
 
 -- >>> sPolyMinimum (1/2) 3
@@ -83,6 +87,15 @@ sPolyZeroUB u2 k i = absSum
 nsToArg :: Rational -> V.Vector Int -> Arg Rational (V.Vector Int)
 nsToArg u2 ns = Arg (abs $ sPolyNormal u2 ns) ns
 
+alternating :: Monad m => Stream.SerialT m Int
+alternating = do
+  ni <- Stream.enumerateFrom 1
+  sign <- Stream.fromList [1, -1]
+  pure (sign * ni)
+
+-- >>> Stream.toList . Stream.take 8 $ alternating
+-- [1,-1,2,-2,3,-3,4,-4]
+
 -- | Minimum value of normalized chebyshev polynomial, along with the ns for the minimum.
 sPolyMinimum :: Rational -> Int -> Arg Rational (V.Vector Int)
 sPolyMinimum u2 = computeMinimum
@@ -101,14 +114,13 @@ sPolyMinimum u2 = computeMinimum
       boundAt i curMin = floor $ (bndMin - curMin) / (sZeroMaxes V.! pred i)
       boundCond i ni = do
         bound <- gets (boundAt i)
-        pure (ni <= bound)
+        curMin <- get
+        traceShowM (k, i, bndMin, curMin, initMin)
+        pure (abs ni <= bound)
 
       chooseNs :: Stream.SerialT (State Rational) (V.Vector Int)
       chooseNs = for (V.enumFromTo 1 (k - 1)) $ \i -> do
-        Stream.takeWhileM (boundCond i) $ do
-          ni <- Stream.enumerateFrom 1
-          sign <- Stream.fromList [-1, 1]
-          pure (sign * ni)
+        Stream.takeWhileM (boundCond i) alternating
 
       minFinding :: State Rational (Maybe (Arg Rational (V.Vector Int)))
       minFinding = Stream.last $ do
@@ -124,6 +136,7 @@ sPolyMinimum u2 = computeMinimum
         Arg rv right = computeMinimum (k - i)
     pure $ Arg (lv * rv) (left, right)
 
+-- ! Issue here
 -- | Initial minimum candidate derived from the boundary-minimums.
 initialMinCand :: Rational -> Arg Rational (V.Vector Int, V.Vector Int) -> Arg Rational (V.Vector Int)
 initialMinCand u2 (Arg xiConst (left, right)) = nsToArg u2 minNs
@@ -146,6 +159,9 @@ initialMinCand u2 (Arg xiConst (left, right)) = nsToArg u2 minNs
 
 -- >>> findMinimalChebyshev (4/5)
 -- [1,1,-10,1,1]
+
+-- >>> sPolyNormal (4/5) (V.fromList [1, 1, -5])
+-- 0 % 1
 
 findMinimalChebyshev :: Rational -> V.Vector Int
 findMinimalChebyshev u2 = found

@@ -48,3 +48,18 @@ executable n-step-hs
     MemoTrie ^>=0.6.11,
   hs-source-dirs:   app
   default-language: GHC2021
+
+test-suite test-n-step
+  import:           warnings
+  type:             exitcode-stdio-1.0
+  main-is:          Test.hs
+  build-depends:
+    base ^>=4.17.1.0,
+    containers,
+    mtl,
+    vector,
+    QuickCheck ^>=2.14.3,
+    hspec ^>=2.11.4,
+    n-step-hs,
+  hs-source-dirs:   test
+  default-language: GHC2021
