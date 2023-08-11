@@ -26,5 +26,6 @@ executable n-step-hs
     mtl,
     vector,
     streamly ^>=0.8.3,
+    MemoTrie ^>=0.6.11,
   hs-source-dirs:   app
   default-language: GHC2021
