@@ -2,6 +2,7 @@ module Chebyshev where
 
 import Control.Monad.State.Strict
 import Data.IntSet qualified as IS
+import Data.List
 import Data.Map.Strict qualified as M
 import Data.Maybe
 import Data.MemoTrie
@@ -11,7 +12,6 @@ import Data.Vector qualified as V
 import MultilinPoly
 import Streamly.Prelude qualified as Stream
 import Util
-import Data.List
 import Debug.Trace
 
 -- | Continuant as a polynomial.
@@ -58,14 +58,15 @@ sPolyZeroNormal u2 ns i = u2Normalized u2 k vars (\j -> ns V.! pred j) (substZer
 --
 -- >>> sPolyZeroUB (1 / 3) 4 1
 -- 3 % 1
+--
+-- >>> sPolyZeroUB (4/5) 4 <$> [1..3]
+-- [5 % 4,5 % 2,5 % 4]
+--
 sPolyZeroUB :: Rational -> Int -> Int -> Rational
 sPolyZeroUB u2 k i = absSum
  where
   absSum = sum [1 / abs u2 ^ (exc `div` 2) | monomial <- M.keys monos, let exc = k - 1 - IS.size monomial]
   MultilinPoly monos = substZero i $ continuant k
-
--- >>> sPolyZeroUB (4/5) 4 <$> [1..3]
--- [5 % 4,5 % 2,5 % 4]
 
 -- Assumption: u^2 is rational
 
@@ -90,7 +91,7 @@ sPolyZeroUB u2 k i = absSum
 nsToArg :: Rational -> V.Vector Int -> Arg Rational (V.Vector Int)
 nsToArg u2 ns = Arg (abs $ sPolyNormal u2 ns) ns
 
-alternating :: Monad m => Stream.SerialT m Int
+alternating :: (Monad m) => Stream.SerialT m Int
 alternating = do
   ni <- Stream.enumerateFrom 1
   sign <- Stream.fromList [1, -1]
@@ -98,6 +99,9 @@ alternating = do
 
 -- >>> Stream.toList . Stream.take 8 $ alternating
 -- [1,-1,2,-2,3,-3,4,-4]
+
+--  * Pros: It works.
+--  * Cons: Horribly slow.
 
 -- | Minimum value of normalized chebyshev polynomial, along with the ns for the minimum.
 sPolyMinimum :: Rational -> Int -> Arg Rational (V.Vector Int)
@@ -109,16 +113,15 @@ sPolyMinimum u2 = computeMinimum
     2 -> Arg 1 (V.singleton 1) -- normalized s2 = 1
     k -> fromJust (evalState minFinding initMin)
      where
-      bndMinArg@(Arg bndMin bndArg) = boundaryMinimum k
+      Arg bndMin bndArg = boundaryMinimum k
       initMinArg@(Arg initMin _) = initialMinCand u2 bndArg
       -- Max. of normalized s_k where n_i = 0, i = 1 to k-1.
       sZeroMaxes = sPolyZeroUB u2 k <$> V.enumFromTo 1 (k - 1)
 
-      boundAt i curMin = floor $ (bndMin - curMin) / (sZeroMaxes V.! pred i)
+      boundAt i curMin = floor $ (sZeroMaxes V.! pred i) / (bndMin - curMin)
       boundCond i ni = do
         bound <- gets (boundAt i)
-        curMin <- get
-        traceShowM (k, i, bndMinArg, curMin, initMinArg)
+        when (i == 1 && ni == 1) $ traceShowM bound
         pure (abs ni <= bound)
 
       chooseNs :: Stream.SerialT (State Rational) (V.Vector Int)
@@ -155,10 +158,8 @@ initialMinCand u2 (left, right) = nsToArg u2 minNs
 -- [3,2,1]
 
 -- >>> findMinimalChebyshev 3
--- [1,1,1,1,1]
 
 -- >>> findMinimalChebyshev (7/3)
--- [3,1,2,2,1,1,1]
 
 -- >>> findMinimalChebyshev (4/5)
 -- [-5,1,1]
@@ -171,4 +172,3 @@ findMinimalChebyshev u2 = found
  where
   Arg _ found = fromJust $ find (== Arg 0 undefined) $ getMin <$> [1 ..]
   getMin = sPolyMinimum u2
-
