@@ -15,11 +15,30 @@ build-type:         Simple
 common warnings
   ghc-options: -Wall
 
+library
+  import:           warnings
+  exposed-modules:
+    Util
+    MultilinPoly
+    Chebyshev
+  default-extensions:
+    LambdaCase
+  build-depends:
+    base ^>=4.17.1.0,
+    containers,
+    mtl,
+    vector,
+    streamly ^>=0.8.3,
+    MemoTrie ^>=0.6.11,
+  hs-source-dirs:   src
+  default-language: GHC2021
+
 executable n-step-hs
   import:           warnings
   main-is:          Main.hs
   -- other-modules:
-  -- other-extensions:
+  default-extensions:
+    LambdaCase
   build-depends:
     base ^>=4.17.1.0,
     containers,
