@@ -6,6 +6,7 @@ module MultilinPoly (
   multVar,
   substZero,
   evalWith,
+  shiftVar,
 ) where
 
 import Data.Bifunctor (Bifunctor (..))
@@ -44,3 +45,6 @@ substZero var (MultilinPoly poly) =
 
 evalWith :: (Num n) => (IS.IntSet -> n) -> MultilinPoly n -> n
 evalWith evalMono (MultilinPoly poly) = sum $ uncurry (*) . first evalMono <$> M.toList poly
+
+shiftVar :: MultilinPoly n -> MultilinPoly n
+shiftVar (MultilinPoly poly) = MultilinPoly $ M.mapKeys (IS.map (+1)) poly

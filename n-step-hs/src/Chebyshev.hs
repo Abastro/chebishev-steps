@@ -12,7 +12,6 @@ import Data.Vector qualified as V
 import MultilinPoly
 import Streamly.Prelude qualified as Stream
 import Util
-import Debug.Trace
 
 -- | Continuant as a polynomial.
 --
@@ -121,7 +120,7 @@ sPolyMinimum u2 = computeMinimum
       boundAt i curMin = floor $ (sZeroMaxes V.! pred i) / (bndMin - curMin)
       boundCond i ni = do
         bound <- gets (boundAt i)
-        when (i == 1 && ni == 1) $ traceShowM bound
+        -- when (ni == 1) $ traceShowM bound
         pure (abs ni <= bound)
 
       chooseNs :: Stream.SerialT (State Rational) (V.Vector Int)
