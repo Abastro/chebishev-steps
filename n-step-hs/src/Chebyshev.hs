@@ -98,6 +98,9 @@ slopeUBAt u2 k s_L i = (leftBiased + rightBiased) / abs u2
 alternating :: (Monad m, Num a, Stream.Enumerable a) => Stream.SerialT m a
 alternating = (*) <$> Stream.enumerateFrom 1 <*> Stream.fromList [1, -1]
 
+-- TODO Profiling
+-- TODO Try parallelization
+
 -- | Minimum value of normalized chebyshev, along with the ns for the minimum.
 chebyNormalMin :: Rational -> Int -> Arg Rational (V.Vector Integer)
 chebyNormalMin = memo2 $ \u2 -> \case
@@ -115,7 +118,7 @@ chebyNormalMin = memo2 $ \u2 -> \case
     chooseNi ::
       InductiveEval Integer Rational -> Int -> Stream.SerialT (State Rational) (InductiveEval Integer Rational)
     chooseNi s_L i = do
-      bound <- gets (boundAt s_L i)
+      bound <- Stream.fromEffect $ gets (boundAt s_L i)
       ni <- Stream.takeWhile (\n_i -> abs n_i <= bound) alternating
       pure (next ni s_L)
 
@@ -124,7 +127,7 @@ chebyNormalMin = memo2 $ \u2 -> \case
       curMinArg@(Arg curMin _) <- Stream.scanl' min initMinArg $ do
         s_k <- foldM chooseNi (initChebyNormal u2) [1 .. k - 1]
         pure $ Arg (abs $ value s_k) (V.fromList $ inputs s_k)
-      curMinArg <$ put curMin
+      curMinArg <$ Stream.fromEffect (put curMin)
 
 -- | Upper bound of normalized chebyshev.
 chebyNormalUB :: Rational -> Int -> Rational
