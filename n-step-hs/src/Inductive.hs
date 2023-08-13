@@ -6,8 +6,10 @@ module Inductive (
   previous,
   value,
   input,
+  inputs,
 ) where
-import qualified Data.Vector as V
+
+import Data.List
 
 data InductiveResult a v
   = Initial !v
@@ -34,8 +36,8 @@ next inp prev =
     }
 
 -- Consecutive calls to 'next'
-nexts :: V.Vector a -> InductiveEval a v -> InductiveEval a v
-nexts inps prev = V.foldl' (flip next) prev inps
+nexts :: [a] -> InductiveEval a v -> InductiveEval a v
+nexts inps prev = foldl (flip next) prev inps
 
 previous :: InductiveEval a v -> Maybe (a, InductiveEval a v)
 previous cur = case cur.evaluated of
@@ -51,3 +53,8 @@ input :: InductiveEval a v -> Maybe a
 input eval = case eval.evaluated of
   Initial _ -> Nothing
   Next inp _ _ -> Just inp
+
+-- |
+-- > inputs (nexts inps (inductive ind v0)) == inps
+inputs :: InductiveEval a v -> [a]
+inputs = unfoldr previous

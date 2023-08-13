@@ -19,12 +19,12 @@ import Data.Maybe
 import Data.MemoTrie
 import Data.Ratio
 import Data.Semigroup (Arg (..))
-import Data.Traversable
 import Data.Vector qualified as V
 import Inductive
 import MultilinPoly
 import Streamly.Prelude qualified as Stream
 import Util
+import Debug.Trace
 
 instance (HasTrie a, Integral a) => HasTrie (Ratio a) where
   data Ratio a :->: b = RatioTrie (a :->: (a :->: b))
@@ -64,7 +64,7 @@ continuant = memo $ \case
 -- >>> chebyNormal 1 (V.fromList [1, 2, 2])
 -- 1 % 4
 chebyNormal :: Rational -> V.Vector Integer -> Rational
-chebyNormal u2 n_ = value $ nexts n_ (initChebyNormal u2)
+chebyNormal u2 n_ = value $ nexts (V.toList n_) (initChebyNormal u2)
 
 -- | Constant term in the normalized chebyshev polynomial.
 constTerm :: Rational -> V.Vector Integer -> V.Vector Integer -> Rational
@@ -74,8 +74,8 @@ constTerm u2 n_L n_R = chebyNormal u2 n_L * chebyNormal u2 n_R
 slopeTerm :: Rational -> V.Vector Integer -> V.Vector Integer -> Rational
 slopeTerm u2 n_L n_R = (value s_L * s_R_1_part + s_L_1_part * value s_R) / u2
  where
-  s_L = nexts n_L (initChebyNormal u2)
-  s_R = nexts (V.reverse n_R) (initChebyNormal u2) -- Reversed to remove "initial" input
+  s_L = nexts (V.toList n_L) (initChebyNormal u2)
+  s_R = nexts (V.toList $ V.reverse n_R) (initChebyNormal u2) -- Reversed to remove "initial" input
   s_L_1_part = case previous s_L of
     Nothing -> 0
     Just (n_i_1, s_n_L_1) -> value s_n_L_1 / fromIntegral n_i_1
@@ -140,18 +140,21 @@ sPolyMinimum = memo2 $ \u2 -> \case
     boundAt i curMin = floor $ (slopeMaxs V.! pred i) / (constMins V.! pred i - curMin)
     boundCond i ni = do
       bound <- gets (boundAt i)
-      -- curMin <- get
-      -- when (ni == 1) $ traceShowM (curMin, i, bound)
+      curMin <- get
+      when (ni == 1) $ traceShowM (curMin, i, bound)
       pure (abs ni <= bound)
 
-    chooseNs :: Stream.SerialT (State Rational) (V.Vector Integer)
-    chooseNs = for (V.enumFromTo 1 (k - 1)) $ \i -> do
-      Stream.takeWhileM (boundCond i) alternating
+    chooseNi ::
+      InductiveEval Integer Rational -> Int -> Stream.SerialT (State Rational) (InductiveEval Integer Rational)
+    chooseNi prev i = do
+      ni <- Stream.takeWhileM (boundCond i) alternating
+      pure (next ni prev)
 
     minFinding :: State Rational (Maybe (Arg Rational (V.Vector Integer)))
     minFinding = Stream.last $ do
       curMinArg@(Arg curMin _) <- Stream.scanl' min initMinArg $ do
-        nsToArg u2 <$> chooseNs
+        s_k <- foldM chooseNi (initChebyNormal u2) [1 .. k - 1]
+        pure $ Arg (abs $ value s_k) (V.fromList $ inputs s_k)
       curMinArg <$ put curMin
 
 -- | minimum of |s_i| |s_{k-i}| for fixed i.
