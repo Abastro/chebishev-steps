@@ -142,36 +142,40 @@ boundaryMinAt u2 k i = Arg (lv * rv) (left, right)
 
 -- | Initial minimum candidate derived from the boundary minimum.
 initialMinCand :: Rational -> (V.Vector Integer, V.Vector Integer) -> Arg Rational (V.Vector Integer)
-initialMinCand u2 (n_L, n_R) = Arg (abs $ chebyNormal u2 minNs) minNs
+initialMinCand u2 (n_L, n_R) = Arg (abs minCand) minN_
  where
   iConst = constTerm u2 n_L n_R
   iSlope = slopeTerm u2 n_L n_R
   n_i = closestToInv (iConst / iSlope)
-  minNs = n_L <> V.singleton n_i <> n_R
 
--- >>> findMinimalChebyshev (1/2)
--- [2,1]
+  minN_ = n_L <> V.singleton n_i <> n_R
+  minCand = iConst - iSlope / fromIntegral n_i
 
--- >>> findMinimalChebyshev (2/3)
--- [3,2,1]
+-- >>> findMinimalChebyshev (1/2) 8
+-- Just [2,1]
 
--- >>> findMinimalChebyshev 3
--- [1,1,1,1,1]
+-- >>> findMinimalChebyshev (2/3) 8
+-- Just [3,2,1]
+
+-- >>> findMinimalChebyshev 3 8
+-- Just [1,1,1,1,1]
 
 -- >>> chebyNormalMin (10/3) 8
 -- Arg (1 % 400) [2,1,1,1,1,1,1]
 
--- >>> findMinimalChebyshev (7/3)
--- [3,1,1,1,3]
+-- >>> findMinimalChebyshev (7/3) 8
+-- Just [3,1,1,1,3]
 
--- >>> findMinimalChebyshev (4/5)
--- [-5,1,1]
+-- >>> findMinimalChebyshev (4/5) 8
+-- Just [-5,1,1]
 
--- >>> findMinimalChebyshev (8/3)
--- [6,1,1,1,1]
+-- >>> findMinimalChebyshev (8/3) 8
+-- Just [6,1,1,1,1]
 
-findMinimalChebyshev :: Rational -> V.Vector Integer
-findMinimalChebyshev u2 = found
+findMinimalChebyshev :: Rational -> Int -> Maybe (V.Vector Integer)
+findMinimalChebyshev u2 cutoff = case mayFound of
+  Nothing -> Nothing
+  Just (Arg _ n_) -> Just n_
  where
-  Arg _ found = fromJust $ find (== Arg 0 undefined) $ getMin <$> [1 ..]
+  mayFound = find (== Arg 0 undefined) $ getMin <$> [1 .. cutoff]
   getMin = chebyNormalMin u2

@@ -51,8 +51,11 @@ executable n-step-hs
     vector,
     streamly ^>=0.8.3,
     MemoTrie ^>=0.6.11,
+    async,
+    n-step-hs,
   hs-source-dirs:   app
   default-language: GHC2021
+  ghc-options:      -O2 -threaded -rtsopts "-with-rtsopts=-N"
 
 test-suite test-n-step
   import:           warnings
