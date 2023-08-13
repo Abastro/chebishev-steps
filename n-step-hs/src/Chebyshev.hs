@@ -1,7 +1,15 @@
 {-# LANGUAGE TypeFamilies #-}
 {-# OPTIONS_GHC -Wno-orphans #-}
 
-module Chebyshev where
+module Chebyshev (
+  chebyNormal,
+  constTerm,
+  slopeTerm,
+  slopeTermUB,
+  sPolyMinimum,
+  boundaryMinAt,
+  findMinimalChebyshev,
+) where
 
 import Control.Monad.State.Strict
 import Data.IntSet qualified as IS
@@ -48,15 +56,6 @@ continuant = memo $ \case
   2 -> single (IS.singleton 1)
   k -> multVar (k - 1) (continuant (k - 1)) <> scale (-1) (continuant (k - 2))
 
--- | Compute "normalized" value with u2 involved.
-u2Normalized :: Rational -> Int -> IS.IntSet -> (Var -> Integer) -> MultilinPoly Int -> Rational
-u2Normalized u2 k allVars subst = evalWith evalMonomial . fmap fromIntegral
- where
-  evalMonomial monomial =
-    product [1 / fromIntegral (subst i) | i <- IS.toList (allVars `IS.difference` monomial)]
-      / u2
-      ^ ((k - 1 - IS.size monomial) `div` 2)
-
 -- | Normalized chebyshev polynomial.
 --
 -- >>> chebyNormal (1/3) (V.fromList [1, 2, 3])
@@ -65,24 +64,34 @@ u2Normalized u2 k allVars subst = evalWith evalMonomial . fmap fromIntegral
 -- >>> chebyNormal 1 (V.fromList [1, 2, 2])
 -- 1 % 4
 chebyNormal :: Rational -> V.Vector Integer -> Rational
-chebyNormal u2 ns = value $ V.foldl' (flip next) (initChebyNormal u2) ns
+chebyNormal u2 n_ = value $ nexts n_ (initChebyNormal u2)
 
--- | Slope term in the normalized chebyshev polynomial.
-slopeTerm :: Rational -> V.Vector Integer -> Int -> Rational
-slopeTerm u2 ns i = u2Normalized u2 k vars (\j -> ns V.! pred j) (substZero i $ continuant k)
+-- | Constant term in the normalized chebyshev polynomial.
+constTerm :: Rational -> V.Vector Integer -> V.Vector Integer -> Rational
+constTerm u2 n_L n_R = chebyNormal u2 n_L * chebyNormal u2 n_R
+
+-- | (Negative) slope term in the normalized chebyshev polynomial.
+slopeTerm :: Rational -> V.Vector Integer -> V.Vector Integer -> Rational
+slopeTerm u2 n_L n_R = (value s_L * s_R_1_part + s_L_1_part * value s_R) / u2
  where
-  k = V.length ns + 1
-  vars = IS.delete i $ IS.fromList [1 .. k - 1]
+  s_L = nexts n_L (initChebyNormal u2)
+  s_R = nexts (V.reverse n_R) (initChebyNormal u2) -- Reversed to remove "initial" input
+  s_L_1_part = case previous s_L of
+    Nothing -> 0
+    Just (n_i_1, s_n_L_1) -> value s_n_L_1 / fromIntegral n_i_1
+  s_R_1_part = case previous s_R of
+    Nothing -> 0
+    Just (n_i1, s_n_R_1) -> value s_n_R_1 / fromIntegral n_i1
 
--- | An upper bound of "normalized" chebyshev polynomial when n_i = 0.
+-- | An upper bound of the slope term of chebyshev polynomial.
 --
--- >>> sPolyZeroUB (1/3) 4 1
+-- >>> slopeTermUB (1/3) 4 1
 -- 3 % 1
 --
--- >>> sPolyZeroUB (4/5) 4 <$> [1..3]
+-- >>> slopeTermUB (4/5) 4 <$> [1..3]
 -- [5 % 4,5 % 2,5 % 4]
-sPolyZeroUB :: Rational -> Int -> Int -> Rational
-sPolyZeroUB u2 k i = absSum
+slopeTermUB :: Rational -> Int -> Int -> Rational
+slopeTermUB u2 k i = absSum
  where
   absSum = sum [1 / abs u2 ^ (exc `div` 2) | monomial <- M.keys monos, let exc = k - 1 - IS.size monomial]
   MultilinPoly monos = substZero i $ continuant k
@@ -123,7 +132,7 @@ sPolyMinimum = memo2 $ \u2 -> \case
     constArgMins = boundaryMinAt u2 k <$> V.enumFromTo 1 (k - 1)
     constMins = (\(Arg r _) -> r) <$> constArgMins
     -- Max. of normalized s_k where n_i = 0, i = 1 to k-1.
-    slopeMaxs = sPolyZeroUB u2 k <$> V.enumFromTo 1 (k - 1)
+    slopeMaxs = slopeTermUB u2 k <$> V.enumFromTo 1 (k - 1)
 
     Arg _ bndArg = minimum constArgMins
     initMinArg@(Arg initMin _) = initialMinCand u2 bndArg
@@ -157,8 +166,8 @@ initialMinCand :: Rational -> (V.Vector Integer, V.Vector Integer) -> Arg Ration
 initialMinCand u2 (left, right) = nsToArg u2 minNs
  where
   xiConst = chebyNormal u2 left * chebyNormal u2 right
-  xiSlope = slopeTerm u2 (left <> V.singleton 0 <> right) (V.length left + 1)
-  ni = closestToInv (-xiConst / xiSlope)
+  xiSlope = slopeTerm u2 left right
+  ni = closestToInv (xiConst / xiSlope)
   minNs = left <> V.singleton ni <> right
 
 -- >>> findMinimalChebyshev (1/2)

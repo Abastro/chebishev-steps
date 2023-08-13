@@ -2,10 +2,12 @@ module Inductive (
   InductiveEval,
   inductive,
   next,
+  nexts,
   previous,
   value,
   input,
 ) where
+import qualified Data.Vector as V
 
 data InductiveResult a v
   = Initial !v
@@ -30,6 +32,10 @@ next inp prev =
   prev
     { evaluated = Next inp (prev.induction inp prev) prev.evaluated
     }
+
+-- Consecutive calls to 'next'
+nexts :: V.Vector a -> InductiveEval a v -> InductiveEval a v
+nexts inps prev = V.foldl' (flip next) prev inps
 
 previous :: InductiveEval a v -> Maybe (a, InductiveEval a v)
 previous cur = case cur.evaluated of
