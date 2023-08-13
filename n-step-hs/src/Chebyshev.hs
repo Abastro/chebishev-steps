@@ -6,7 +6,7 @@ module Chebyshev (
   constTerm,
   slopeTerm,
   slopeTermUB,
-  sPolyMinimum,
+  chebyNormalMinimum,
   boundaryMinAt,
   findMinimalChebyshev,
 ) where
@@ -66,11 +66,11 @@ continuant = memo $ \case
 chebyNormal :: Rational -> V.Vector Integer -> Rational
 chebyNormal u2 n_ = value $ nexts (V.toList n_) (initChebyNormal u2)
 
--- | Constant term in the normalized chebyshev polynomial.
+-- | Constant term in the normalized chebyshev.
 constTerm :: Rational -> V.Vector Integer -> V.Vector Integer -> Rational
 constTerm u2 n_L n_R = chebyNormal u2 n_L * chebyNormal u2 n_R
 
--- | (Negative) slope term in the normalized chebyshev polynomial.
+-- | (Negative) slope term in the normalized chebyshev.
 slopeTerm :: Rational -> V.Vector Integer -> V.Vector Integer -> Rational
 slopeTerm u2 n_L n_R = (value s_L * s_R_1_part + s_L_1_part * value s_R) / u2
  where
@@ -83,7 +83,7 @@ slopeTerm u2 n_L n_R = (value s_L * s_R_1_part + s_L_1_part * value s_R) / u2
     Nothing -> 0
     Just (n_i1, s_n_R_1) -> value s_n_R_1 / fromIntegral n_i1
 
--- | An upper bound of the slope term of chebyshev polynomial.
+-- | An upper bound of the slope term of normalized chebyshev.
 --
 -- >>> slopeTermUB (1/3) 4 1
 -- 3 % 1
@@ -98,20 +98,17 @@ slopeTermUB u2 k i = absSum
 
 -- Assumption: u^2 is rational
 
--- >>> sPolyMinimum (1/2) 3
+-- >>> chebyNormalMinimum (1/2) 3
 -- Arg (0 % 1) [2,1]
 
--- >>> sPolyMinimum (2/3) 3
+-- >>> chebyNormalMinimum (2/3) 3
 -- Arg (1 % 4) [2,1]
 
--- >>> sPolyMinimum (2/3) 4
+-- >>> chebyNormalMinimum (2/3) 4
 -- Arg (0 % 1) [3,2,1]
 
--- >>> sPolyMinimum (4/5) 4
+-- >>> chebyNormalMinimum (4/5) 4
 -- Arg (0 % 1) [-5,1,1]
-
-nsToArg :: Rational -> V.Vector Integer -> Arg Rational (V.Vector Integer)
-nsToArg u2 ns = Arg (abs $ chebyNormal u2 ns) ns
 
 alternating :: (Monad m, Num a, Stream.Enumerable a) => Stream.SerialT m a
 alternating = do
@@ -122,33 +119,48 @@ alternating = do
 --  * Pros: It works.
 --  * Cons: Horribly slow.
 
--- | Minimum value of normalized chebyshev polynomial, along with the ns for the minimum.
-sPolyMinimum :: Rational -> Int -> Arg Rational (V.Vector Integer)
-sPolyMinimum = memo2 $ \u2 -> \case
+-- | Minimum value of normalized chebyshev, along with the ns for the minimum.
+chebyNormalMinimum :: Rational -> Int -> Arg Rational (V.Vector Integer)
+chebyNormalMinimum = memo2 $ \u2 -> \case
   1 -> Arg 1 V.empty -- normalized s1 = 1
   2 -> Arg 1 (V.singleton 1) -- normalized s2 = 1
   k -> fromJust (evalState minFinding initMin)
    where
     constArgMins = boundaryMinAt u2 k <$> V.enumFromTo 1 (k - 1)
     constMins = (\(Arg r _) -> r) <$> constArgMins
-    -- Max. of normalized s_k where n_i = 0, i = 1 to k-1.
-    slopeMaxs = slopeTermUB u2 k <$> V.enumFromTo 1 (k - 1)
+    -- slopeMaxs = slopeTermUB u2 k <$> V.enumFromTo 1 (k - 1)
 
     Arg _ bndArg = minimum constArgMins
     initMinArg@(Arg initMin _) = initialMinCand u2 bndArg
 
-    boundAt i curMin = floor $ (slopeMaxs V.! pred i) / (constMins V.! pred i - curMin)
-    boundCond i ni = do
-      bound <- gets (boundAt i)
+    -- boundAt i curMin = floor $ (slopeMaxs V.! pred i) / (constMins V.! pred i - curMin)
+    -- boundCond i ni = do
+    --   bound <- gets (boundAt i)
+    --   curMin <- get
+    --   when (ni == 1) $ traceShowM (curMin, i, bound)
+    --   pure (abs ni <= bound)
+
+    slopeMaxOf :: InductiveEval Integer Rational -> Int -> Rational
+    slopeMaxOf s_L i =
+      let s_L_1_part = case previous s_L of
+            Nothing -> 0
+            Just (n_i_1, s_L_1) -> value s_L_1 / fromIntegral n_i_1
+          leftBiased = abs (value s_L) * chebyNormalUB u2 (k - i - 1)
+          rightBiased = abs s_L_1_part * chebyNormalUB u2 (k - i)
+       in (leftBiased + rightBiased) / abs u2
+
+    boundUp :: InductiveEval Integer Rational -> Int -> Integer -> State Rational Bool
+    boundUp s_L i n_i = do
       curMin <- get
-      when (ni == 1) $ traceShowM (curMin, i, bound)
-      pure (abs ni <= bound)
+      let bound = floor $ slopeMaxOf s_L i / (constMins V.! pred i - curMin)
+      when (n_i == 1) $ traceShowM (i, inputs s_L, curMin, bound)
+      pure (abs n_i <= bound)
 
     chooseNi ::
       InductiveEval Integer Rational -> Int -> Stream.SerialT (State Rational) (InductiveEval Integer Rational)
-    chooseNi prev i = do
-      ni <- Stream.takeWhileM (boundCond i) alternating
-      pure (next ni prev)
+    chooseNi s_L i = do
+      ni <- Stream.takeWhileM (boundUp s_L i) alternating
+      pure (next ni s_L)
 
     minFinding :: State Rational (Maybe (Arg Rational (V.Vector Integer)))
     minFinding = Stream.last $ do
@@ -157,18 +169,25 @@ sPolyMinimum = memo2 $ \u2 -> \case
         pure $ Arg (abs $ value s_k) (V.fromList $ inputs s_k)
       curMinArg <$ put curMin
 
+-- | Upper bound of normalized chebyshev.
+chebyNormalUB :: Rational -> Int -> Rational
+chebyNormalUB = memo2 $ \u2 -> \case
+  0 -> 0
+  1 -> 1
+  k -> chebyNormalUB u2 (k - 1) + chebyNormalUB u2 (k - 2) / abs u2
+
 -- | minimum of |s_i| |s_{k-i}| for fixed i.
 boundaryMinAt :: Rational -> Int -> Int -> Arg Rational (V.Vector Integer, V.Vector Integer)
 boundaryMinAt u2 k i = Arg (lv * rv) (left, right)
  where
-  Arg lv left = sPolyMinimum u2 i
-  Arg rv right = sPolyMinimum u2 (k - i)
+  Arg lv left = chebyNormalMinimum u2 i
+  Arg rv right = chebyNormalMinimum u2 (k - i)
 
 -- | Initial minimum candidate derived from the boundary minimum.
 initialMinCand :: Rational -> (V.Vector Integer, V.Vector Integer) -> Arg Rational (V.Vector Integer)
-initialMinCand u2 (left, right) = nsToArg u2 minNs
+initialMinCand u2 (left, right) = Arg (abs $ chebyNormal u2 minNs) minNs
  where
-  xiConst = chebyNormal u2 left * chebyNormal u2 right
+  xiConst = constTerm u2 left right
   xiSlope = slopeTerm u2 left right
   ni = closestToInv (xiConst / xiSlope)
   minNs = left <> V.singleton ni <> right
@@ -193,4 +212,4 @@ findMinimalChebyshev :: Rational -> V.Vector Integer
 findMinimalChebyshev u2 = found
  where
   Arg _ found = fromJust $ find (== Arg 0 undefined) $ getMin <$> [1 ..]
-  getMin = sPolyMinimum u2
+  getMin = chebyNormalMinimum u2
