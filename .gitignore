@@ -4,6 +4,9 @@ dist-newstyle
 *.freeze
 
 benchmark.*
+*.hp
+*.ps
+*.prof
 
 *.code-workspace
 

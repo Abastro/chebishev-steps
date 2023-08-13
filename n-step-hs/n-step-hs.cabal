@@ -15,8 +15,12 @@ build-type:         Simple
 common warnings
   ghc-options: -Wall
 
+common profiling
+  ghc-options: -fprof-auto
+
 library
   import:           warnings
+  import:           profiling
   exposed-modules:
     Util
     MultilinPoly
@@ -38,6 +42,7 @@ library
 
 executable n-step-hs
   import:           warnings
+  import:           profiling
   main-is:          Main.hs
   -- other-modules:
   default-extensions:

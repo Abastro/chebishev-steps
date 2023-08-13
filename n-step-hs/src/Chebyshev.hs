@@ -95,8 +95,9 @@ slopeUBAt u2 k s_L i = (leftBiased + rightBiased) / abs u2
 -- >>> chebyNormalMin (4/5) 4
 -- Arg (0 % 1) [-5,1,1]
 
-alternating :: (Monad m, Num a, Stream.Enumerable a) => Stream.SerialT m a
-alternating = (*) <$> Stream.enumerateFrom 1 <*> Stream.fromList [1, -1]
+-- Bottleneck 1 (?)
+alternatingTo :: (Monad m, Num a, Stream.Enumerable a) => a -> Stream.SerialT m a
+alternatingTo bnd = (*) <$> Stream.enumerateFromTo 1 bnd <*> Stream.fromList [1, -1]
 
 -- TODO Profiling
 -- TODO Try parallelization
@@ -112,6 +113,7 @@ chebyNormalMin = memo2 $ \u2 -> \case
     Arg _ bndArg = minimum constArgMins
     initMinArg@(Arg initMin _) = initialMinCand u2 bndArg
 
+    -- Bottleneck 2
     boundAt :: InductiveEval Integer Rational -> Int -> Rational -> Integer
     boundAt s_L i curMin = floor $ slopeUBAt u2 k s_L i / (constMinAt u2 k s_L i - curMin)
 
@@ -119,8 +121,8 @@ chebyNormalMin = memo2 $ \u2 -> \case
       InductiveEval Integer Rational -> Int -> Stream.SerialT (State Rational) (InductiveEval Integer Rational)
     chooseNi s_L i = do
       bound <- Stream.fromEffect $ gets (boundAt s_L i)
-      ni <- Stream.takeWhile (\n_i -> abs n_i <= bound) alternating
-      pure (next ni s_L)
+      n_i <- alternatingTo bound
+      pure (next n_i s_L)
 
     minFinding :: State Rational (Maybe (Arg Rational (V.Vector Integer)))
     minFinding = Stream.last $ do
