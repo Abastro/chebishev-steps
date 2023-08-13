@@ -24,7 +24,6 @@ import Inductive
 import MultilinPoly
 import Streamly.Prelude qualified as Stream
 import Util
-import Debug.Trace
 
 instance (HasTrie a, Integral a) => HasTrie (Ratio a) where
   data Ratio a :->: b = RatioTrie (a :->: (a :->: b))
@@ -127,21 +126,16 @@ chebyNormalMinimum = memo2 $ \u2 -> \case
   k -> fromJust (evalState minFinding initMin)
    where
     constArgMins = boundaryMinAt u2 k <$> V.enumFromTo 1 (k - 1)
-    constMins = (\(Arg r _) -> r) <$> constArgMins
-    -- slopeMaxs = slopeTermUB u2 k <$> V.enumFromTo 1 (k - 1)
-
     Arg _ bndArg = minimum constArgMins
     initMinArg@(Arg initMin _) = initialMinCand u2 bndArg
 
-    -- boundAt i curMin = floor $ (slopeMaxs V.! pred i) / (constMins V.! pred i - curMin)
-    -- boundCond i ni = do
-    --   bound <- gets (boundAt i)
-    --   curMin <- get
-    --   when (ni == 1) $ traceShowM (curMin, i, bound)
-    --   pure (abs ni <= bound)
+    constMinAt :: InductiveEval Integer Rational -> Int -> Rational
+    constMinAt s_L i = value s_L * s_R_min
+     where
+      Arg s_R_min _ = chebyNormalMinimum u2 (k - i)
 
-    slopeMaxOf :: InductiveEval Integer Rational -> Int -> Rational
-    slopeMaxOf s_L i =
+    slopeMaxAt :: InductiveEval Integer Rational -> Int -> Rational
+    slopeMaxAt s_L i =
       let s_L_1_part = case previous s_L of
             Nothing -> 0
             Just (n_i_1, s_L_1) -> value s_L_1 / fromIntegral n_i_1
@@ -149,17 +143,13 @@ chebyNormalMinimum = memo2 $ \u2 -> \case
           rightBiased = abs s_L_1_part * chebyNormalUB u2 (k - i)
        in (leftBiased + rightBiased) / abs u2
 
-    boundUp :: InductiveEval Integer Rational -> Int -> Integer -> State Rational Bool
-    boundUp s_L i n_i = do
-      curMin <- get
-      let bound = floor $ slopeMaxOf s_L i / (constMins V.! pred i - curMin)
-      when (n_i == 1) $ traceShowM (i, inputs s_L, curMin, bound)
-      pure (abs n_i <= bound)
+    boundAt s_L i curMin = floor $ slopeMaxAt s_L i / (constMinAt s_L i - curMin)
 
     chooseNi ::
       InductiveEval Integer Rational -> Int -> Stream.SerialT (State Rational) (InductiveEval Integer Rational)
     chooseNi s_L i = do
-      ni <- Stream.takeWhileM (boundUp s_L i) alternating
+      bound <- gets (boundAt s_L i)
+      ni <- Stream.takeWhile (\n_i -> abs n_i <= bound) alternating
       pure (next ni s_L)
 
     minFinding :: State Rational (Maybe (Arg Rational (V.Vector Integer)))
