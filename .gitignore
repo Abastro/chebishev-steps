@@ -1,4 +1,9 @@
 dist-newstyle
+*.local
+*.local~
+*.freeze
+
+bench.html
 
 *.code-workspace
 
@@ -8,3 +13,4 @@ dist-newstyle
 *.log
 *.pdf
 *.synctex.gz
+

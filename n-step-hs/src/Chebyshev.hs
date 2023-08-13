@@ -1,3 +1,6 @@
+{-# LANGUAGE TypeFamilies #-}
+{-# OPTIONS_GHC -Wno-orphans #-}
+
 module Chebyshev where
 
 import Control.Monad.State.Strict
@@ -6,12 +9,22 @@ import Data.List
 import Data.Map.Strict qualified as M
 import Data.Maybe
 import Data.MemoTrie
+import Data.Ratio
 import Data.Semigroup (Arg (..))
 import Data.Traversable
 import Data.Vector qualified as V
 import MultilinPoly
 import Streamly.Prelude qualified as Stream
 import Util
+
+instance (HasTrie a, Integral a) => HasTrie (Ratio a) where
+  data Ratio a :->: b = RatioTrie (a :->: (a :->: b))
+  trie :: (HasTrie a, Integral a) => (Ratio a -> b) -> Ratio a :->: b
+  trie f = RatioTrie $ trie $ \x -> trie $ \y -> f (x % y)
+  untrie :: (HasTrie a, Integral a) => (Ratio a :->: b) -> Ratio a -> b
+  untrie (RatioTrie t) n = untrie (untrie t (numerator n)) (denominator n)
+  enumerate :: (HasTrie a, Integral a) => (Ratio a :->: b) -> [(Ratio a, b)]
+  enumerate (RatioTrie tt) = [(x % y, z) | (x, t) <- enumerate tt, (y, z) <- enumerate t]
 
 -- | Continuant as a polynomial.
 --
@@ -32,11 +45,14 @@ u2Normalized u2 k allVars subst = evalWith evalMonomial . fmap fromIntegral
  where
   evalMonomial monomial =
     product [1 / fromIntegral (subst i) | i <- IS.toList (allVars `IS.difference` monomial)]
-      / u2 ^ ((k - 1 - IS.size monomial) `div` 2)
+      / u2
+      ^ ((k - 1 - IS.size monomial) `div` 2)
+
+-- Issue: sPolyNormal is O(F_k) now.
 
 -- | Normalized chebyshev polynomial.
 --
--- >>> sPolyNormal (1 / 3) (V.fromList [1, 2, 3])
+-- >>> sPolyNormal (1/3) (V.fromList [1, 2, 3])
 -- (-1) % 1
 --
 -- >>> sPolyNormal 1 (V.fromList [1, 2, 2])
@@ -55,12 +71,11 @@ sPolyZeroNormal u2 ns i = u2Normalized u2 k vars (\j -> ns V.! pred j) (substZer
 
 -- | An upper bound of "normalized" chebyshev polynomial when n_i = 0.
 --
--- >>> sPolyZeroUB (1 / 3) 4 1
+-- >>> sPolyZeroUB (1/3) 4 1
 -- 3 % 1
 --
 -- >>> sPolyZeroUB (4/5) 4 <$> [1..3]
 -- [5 % 4,5 % 2,5 % 4]
---
 sPolyZeroUB :: Rational -> Int -> Int -> Rational
 sPolyZeroUB u2 k i = absSum
  where
@@ -78,14 +93,8 @@ sPolyZeroUB u2 k i = absSum
 -- >>> sPolyMinimum (2/3) 4
 -- Arg (0 % 1) [3,2,1]
 
--- >>> sPolyMinimum 3 6
--- Arg (0 % 1) [1,1,1,1,1]
-
--- >>> sPolyNormal 3 (V.fromList [1, 1, 1, 1, 1])
--- 0 % 1
-
 -- >>> sPolyMinimum (4/5) 4
--- Arg (1 % 2) [5,1,1]
+-- Arg (0 % 1) [-5,1,1]
 
 nsToArg :: Rational -> V.Vector Int -> Arg Rational (V.Vector Int)
 nsToArg u2 ns = Arg (abs $ sPolyNormal u2 ns) ns
@@ -96,52 +105,49 @@ alternating = do
   sign <- Stream.fromList [1, -1]
   pure (sign * ni)
 
--- >>> Stream.toList . Stream.take 8 $ alternating
--- [1,-1,2,-2,3,-3,4,-4]
-
 --  * Pros: It works.
 --  * Cons: Horribly slow.
 
 -- | Minimum value of normalized chebyshev polynomial, along with the ns for the minimum.
 sPolyMinimum :: Rational -> Int -> Arg Rational (V.Vector Int)
-sPolyMinimum u2 = computeMinimum
+sPolyMinimum = memo2 $ \u2 -> \case
+  1 -> Arg 1 V.empty -- normalized s1 = 1
+  2 -> Arg 1 (V.singleton 1) -- normalized s2 = 1
+  k -> fromJust (evalState minFinding initMin)
+   where
+    constArgMins = boundaryMinAt u2 k <$> V.enumFromTo 1 (k - 1)
+    constMins = (\(Arg r _) -> r) <$> constArgMins
+    -- Max. of normalized s_k where n_i = 0, i = 1 to k-1.
+    slopeMaxs = sPolyZeroUB u2 k <$> V.enumFromTo 1 (k - 1)
+
+    Arg _ bndArg = minimum constArgMins
+    initMinArg@(Arg initMin _) = initialMinCand u2 bndArg
+
+    boundAt i curMin = floor $ (slopeMaxs V.! pred i) / (constMins V.! pred i - curMin)
+    boundCond i ni = do
+      bound <- gets (boundAt i)
+      -- curMin <- get
+      -- when (ni == 1) $ traceShowM (curMin, i, bound)
+      pure (abs ni <= bound)
+
+    chooseNs :: Stream.SerialT (State Rational) (V.Vector Int)
+    chooseNs = for (V.enumFromTo 1 (k - 1)) $ \i -> do
+      Stream.takeWhileM (boundCond i) alternating
+
+    minFinding :: State Rational (Maybe (Arg Rational (V.Vector Int)))
+    minFinding = Stream.last $ do
+      curMinArg@(Arg curMin _) <- Stream.scanl' min initMinArg $ do
+        nsToArg u2 <$> chooseNs
+      curMinArg <$ put curMin
+
+-- | minimum of |s_i| |s_{k-i}| for fixed i.
+boundaryMinAt :: Rational -> Int -> Int -> Arg Rational (V.Vector Int, V.Vector Int)
+boundaryMinAt u2 k i = Arg (lv * rv) (left, right)
  where
-  computeMinimum :: Int -> Arg Rational (V.Vector Int)
-  computeMinimum = memo $ \case
-    1 -> Arg 1 V.empty -- normalized s1 = 1
-    2 -> Arg 1 (V.singleton 1) -- normalized s2 = 1
-    k -> fromJust (evalState minFinding initMin)
-     where
-      Arg bndMin bndArg = boundaryMinimum k
-      initMinArg@(Arg initMin _) = initialMinCand u2 bndArg
-      -- Max. of normalized s_k where n_i = 0, i = 1 to k-1.
-      sZeroMaxes = sPolyZeroUB u2 k <$> V.enumFromTo 1 (k - 1)
+  Arg lv left = sPolyMinimum u2 i
+  Arg rv right = sPolyMinimum u2 (k - i)
 
-      boundAt i curMin = floor $ (sZeroMaxes V.! pred i) / (bndMin - curMin)
-      boundCond i ni = do
-        bound <- gets (boundAt i)
-        -- when (ni == 1) $ traceShowM bound
-        pure (abs ni <= bound)
-
-      chooseNs :: Stream.SerialT (State Rational) (V.Vector Int)
-      chooseNs = for (V.enumFromTo 1 (k - 1)) $ \i -> do
-        Stream.takeWhileM (boundCond i) alternating
-
-      minFinding :: State Rational (Maybe (Arg Rational (V.Vector Int)))
-      minFinding = Stream.last $ do
-        curMinArg@(Arg curMin _) <- Stream.scanl' min initMinArg $ do
-          nsToArg u2 <$> chooseNs
-        curMinArg <$ put curMin
-
-  -- min_i |s_i| |s_{k-i}|, with the args
-  boundaryMinimum :: Int -> Arg Rational (V.Vector Int, V.Vector Int)
-  boundaryMinimum k = minimum $ do
-    i <- [1 .. k `div` 2]
-    let Arg lv left = computeMinimum i
-        Arg rv right = computeMinimum (k - i)
-    pure $ Arg (lv * rv) (left, right)
-
--- | Initial minimum candidate derived from the boundary-minimums.
+-- | Initial minimum candidate derived from the boundary minimum.
 initialMinCand :: Rational -> (V.Vector Int, V.Vector Int) -> Arg Rational (V.Vector Int)
 initialMinCand u2 (left, right) = nsToArg u2 minNs
  where

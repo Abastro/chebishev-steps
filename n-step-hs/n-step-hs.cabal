@@ -63,3 +63,17 @@ test-suite test-n-step
     n-step-hs,
   hs-source-dirs:   test
   default-language: GHC2021
+
+benchmark bench-n-step
+  import:           warnings
+  type:             exitcode-stdio-1.0
+  main-is:          Bench.hs
+  build-depends:
+    base ^>=4.17.1.0,
+    containers,
+    mtl,
+    vector,
+    criterion ^>=1.6.3.0,
+    n-step-hs,
+  hs-source-dirs:   bench
+  default-language: GHC2021
