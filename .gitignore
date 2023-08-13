@@ -3,7 +3,7 @@ dist-newstyle
 *.local~
 *.freeze
 
-bench.html
+benchmark.*
 
 *.code-workspace
 

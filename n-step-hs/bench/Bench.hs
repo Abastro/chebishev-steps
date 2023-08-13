@@ -8,10 +8,13 @@ main :: IO ()
 main =
   defaultMain
     [ bgroup
-        "sPolyNormal"
-        [ bench "1/3, [1,2,3]" $ whnf (uncurry sPolyNormal) (1 / 3, V.fromList [1, 2, 3]),
-          bench "2/7, [7,3,1,2]" $ whnf (uncurry sPolyNormal) (2 / 7, V.fromList [7, 3, 1, 2]),
-          bench "2/7, [7,3,1,2,3,4]" $ whnf (uncurry sPolyNormal) (2 / 7, V.fromList [7, 3, 1, 2, 3, 4]),
-          bench "2/7, [7,3,1,2,3,4,5,6]" $ whnf (uncurry sPolyNormal) (2 / 7, V.fromList [7, 3, 1, 2, 3, 4, 5, 6])
+        "chebyNormal"
+        [ bgroup
+            "1/3"
+            [ bench "[1..3]" $ whnf (chebyNormal (1 / 3)) (V.fromList [1 .. 3])
+            ],
+          bgroup "2/7"
+            $ let cheby = chebyNormal (2 / 7)
+               in [bench (show vec) $ whnf cheby vec | k <- [2 .. 8], let vec = V.enumFromN 1 k]
         ]
     ]

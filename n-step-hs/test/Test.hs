@@ -18,13 +18,13 @@ instance (Arbitrary a) => Arbitrary (SmallSized a) where
 main :: IO ()
 main = hspec $ do
   describe "Chebyshev" $ do
-    prop "sPolyNormal has inductive relationships with sPoly" $
+    prop "chebyNormal is constTerm added to slopeTerm over n_i" $
       \(NonZero u2) (SmallSized leftNZ) (NonZero ni) (SmallSized rightNZ) -> do
         let lefts = getNonZero <$> leftNZ
             rights = getNonZero <$> rightNZ
         let combined = V.fromList lefts <> V.singleton ni <> V.fromList rights
-            sk = sPolyNormal u2 combined
-            si = sPolyNormal u2 (V.fromList lefts)
-            sk_i = sPolyNormal u2 (V.fromList rights)
-            sk0 = sPolyZeroNormal u2 combined (1 + length lefts)
+            sk = chebyNormal u2 combined
+            si = chebyNormal u2 (V.fromList lefts)
+            sk_i = chebyNormal u2 (V.fromList rights)
+            sk0 = slopeTerm u2 combined (1 + length lefts)
         si * sk_i + sk0 / fromIntegral ni `shouldBe` sk

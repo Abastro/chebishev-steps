@@ -20,9 +20,12 @@ library
   exposed-modules:
     Util
     MultilinPoly
+    Inductive
     Chebyshev
   default-extensions:
     LambdaCase
+    OverloadedRecordDot
+    NoFieldSelectors
   build-depends:
     base ^>=4.17.1.0,
     containers,
@@ -39,6 +42,8 @@ executable n-step-hs
   -- other-modules:
   default-extensions:
     LambdaCase
+    OverloadedRecordDot
+    NoFieldSelectors
   build-depends:
     base ^>=4.17.1.0,
     containers,

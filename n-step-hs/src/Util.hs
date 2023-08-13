@@ -21,8 +21,7 @@ import Data.Semigroup (Arg (..))
 --
 -- >>> closestToInv (-2)
 -- -1
---
-closestToInv :: Rational -> Int
+closestToInv :: (Integral n) => Rational -> n
 closestToInv r = goal
  where
   Arg _ goal = minimum $ do
