@@ -5,23 +5,19 @@ module Chebyshev (
   chebyNormal,
   constTerm,
   slopeTerm,
-  slopeTermUB,
-  chebyNormalMinimum,
+  chebyNormalMin,
   boundaryMinAt,
   findMinimalChebyshev,
 ) where
 
 import Control.Monad.State.Strict
-import Data.IntSet qualified as IS
 import Data.List
-import Data.Map.Strict qualified as M
 import Data.Maybe
 import Data.MemoTrie
 import Data.Ratio
 import Data.Semigroup (Arg (..))
 import Data.Vector qualified as V
 import Inductive
-import MultilinPoly
 import Streamly.Prelude qualified as Stream
 import Util
 
@@ -41,19 +37,6 @@ initChebyNormal u2 = inductive induction 1
   induction n_k s_k = case previous s_k of
     Nothing -> value s_k -- s_0 = 0
     Just (n_k_1, s_k_1) -> value s_k - value s_k_1 / (u2 * fromIntegral (n_k * n_k_1))
-
--- | Continuant as a polynomial.
---
--- >>> continuant 3
--- MultilinPoly (fromList [(fromList [],-1),(fromList [1,2],1)])
---
--- >>> continuant 4
--- MultilinPoly (fromList [(fromList [1],-1),(fromList [1,2,3],1),(fromList [3],-1)])
-continuant :: Int -> MultilinPoly Int
-continuant = memo $ \case
-  1 -> single IS.empty
-  2 -> single (IS.singleton 1)
-  k -> multVar (k - 1) (continuant (k - 1)) <> scale (-1) (continuant (k - 2))
 
 -- | Normalized chebyshev polynomial.
 --
@@ -82,45 +65,42 @@ slopeTerm u2 n_L n_R = (value s_L * s_R_1_part + s_L_1_part * value s_R) / u2
     Nothing -> 0
     Just (n_i1, s_n_R_1) -> value s_n_R_1 / fromIntegral n_i1
 
--- | An upper bound of the slope term of normalized chebyshev.
---
--- >>> slopeTermUB (1/3) 4 1
--- 3 % 1
---
--- >>> slopeTermUB (4/5) 4 <$> [1..3]
--- [5 % 4,5 % 2,5 % 4]
-slopeTermUB :: Rational -> Int -> Int -> Rational
-slopeTermUB u2 k i = absSum
+-- | Minimum of constant term where left portion is decided.
+constMinAt :: Rational -> Int -> InductiveEval a Rational -> Int -> Rational
+constMinAt u2 k s_L i = value s_L * s_R_min
  where
-  absSum = sum [1 / abs u2 ^ (exc `div` 2) | monomial <- M.keys monos, let exc = k - 1 - IS.size monomial]
-  MultilinPoly monos = substZero i $ continuant k
+  Arg s_R_min _ = chebyNormalMin u2 (k - i)
+
+-- | Upper bound of slope term where left portion is decided.
+slopeUBAt :: Rational -> Int -> InductiveEval Integer Rational -> Int -> Rational
+slopeUBAt u2 k s_L i = (leftBiased + rightBiased) / abs u2
+ where
+  s_L_1_part = case previous s_L of
+    Nothing -> 0
+    Just (n_i_1, s_L_1) -> value s_L_1 / fromIntegral n_i_1
+  leftBiased = abs (value s_L) * chebyNormalUB u2 (k - i - 1)
+  rightBiased = abs s_L_1_part * chebyNormalUB u2 (k - i)
 
 -- Assumption: u^2 is rational
 
--- >>> chebyNormalMinimum (1/2) 3
+-- >>> chebyNormalMin (1/2) 3
 -- Arg (0 % 1) [2,1]
 
--- >>> chebyNormalMinimum (2/3) 3
+-- >>> chebyNormalMin (2/3) 3
 -- Arg (1 % 4) [2,1]
 
--- >>> chebyNormalMinimum (2/3) 4
+-- >>> chebyNormalMin (2/3) 4
 -- Arg (0 % 1) [3,2,1]
 
--- >>> chebyNormalMinimum (4/5) 4
+-- >>> chebyNormalMin (4/5) 4
 -- Arg (0 % 1) [-5,1,1]
 
 alternating :: (Monad m, Num a, Stream.Enumerable a) => Stream.SerialT m a
-alternating = do
-  ni <- Stream.enumerateFrom 1
-  sign <- Stream.fromList [1, -1]
-  pure (sign * ni)
-
---  * Pros: It works.
---  * Cons: Horribly slow.
+alternating = (*) <$> Stream.enumerateFrom 1 <*> Stream.fromList [1, -1]
 
 -- | Minimum value of normalized chebyshev, along with the ns for the minimum.
-chebyNormalMinimum :: Rational -> Int -> Arg Rational (V.Vector Integer)
-chebyNormalMinimum = memo2 $ \u2 -> \case
+chebyNormalMin :: Rational -> Int -> Arg Rational (V.Vector Integer)
+chebyNormalMin = memo2 $ \u2 -> \case
   1 -> Arg 1 V.empty -- normalized s1 = 1
   2 -> Arg 1 (V.singleton 1) -- normalized s2 = 1
   k -> fromJust (evalState minFinding initMin)
@@ -129,21 +109,8 @@ chebyNormalMinimum = memo2 $ \u2 -> \case
     Arg _ bndArg = minimum constArgMins
     initMinArg@(Arg initMin _) = initialMinCand u2 bndArg
 
-    constMinAt :: InductiveEval Integer Rational -> Int -> Rational
-    constMinAt s_L i = value s_L * s_R_min
-     where
-      Arg s_R_min _ = chebyNormalMinimum u2 (k - i)
-
-    slopeMaxAt :: InductiveEval Integer Rational -> Int -> Rational
-    slopeMaxAt s_L i =
-      let s_L_1_part = case previous s_L of
-            Nothing -> 0
-            Just (n_i_1, s_L_1) -> value s_L_1 / fromIntegral n_i_1
-          leftBiased = abs (value s_L) * chebyNormalUB u2 (k - i - 1)
-          rightBiased = abs s_L_1_part * chebyNormalUB u2 (k - i)
-       in (leftBiased + rightBiased) / abs u2
-
-    boundAt s_L i curMin = floor $ slopeMaxAt s_L i / (constMinAt s_L i - curMin)
+    boundAt :: InductiveEval Integer Rational -> Int -> Rational -> Integer
+    boundAt s_L i curMin = floor $ slopeUBAt u2 k s_L i / (constMinAt u2 k s_L i - curMin)
 
     chooseNi ::
       InductiveEval Integer Rational -> Int -> Stream.SerialT (State Rational) (InductiveEval Integer Rational)
@@ -170,17 +137,17 @@ chebyNormalUB = memo2 $ \u2 -> \case
 boundaryMinAt :: Rational -> Int -> Int -> Arg Rational (V.Vector Integer, V.Vector Integer)
 boundaryMinAt u2 k i = Arg (lv * rv) (left, right)
  where
-  Arg lv left = chebyNormalMinimum u2 i
-  Arg rv right = chebyNormalMinimum u2 (k - i)
+  Arg lv left = chebyNormalMin u2 i
+  Arg rv right = chebyNormalMin u2 (k - i)
 
 -- | Initial minimum candidate derived from the boundary minimum.
 initialMinCand :: Rational -> (V.Vector Integer, V.Vector Integer) -> Arg Rational (V.Vector Integer)
-initialMinCand u2 (left, right) = Arg (abs $ chebyNormal u2 minNs) minNs
+initialMinCand u2 (n_L, n_R) = Arg (abs $ chebyNormal u2 minNs) minNs
  where
-  xiConst = constTerm u2 left right
-  xiSlope = slopeTerm u2 left right
-  ni = closestToInv (xiConst / xiSlope)
-  minNs = left <> V.singleton ni <> right
+  iConst = constTerm u2 n_L n_R
+  iSlope = slopeTerm u2 n_L n_R
+  n_i = closestToInv (iConst / iSlope)
+  minNs = n_L <> V.singleton n_i <> n_R
 
 -- >>> findMinimalChebyshev (1/2)
 -- [2,1]
@@ -189,8 +156,13 @@ initialMinCand u2 (left, right) = Arg (abs $ chebyNormal u2 minNs) minNs
 -- [3,2,1]
 
 -- >>> findMinimalChebyshev 3
+-- [1,1,1,1,1]
+
+-- >>> chebyNormalMin (10/3) 8
+-- Arg (1 % 400) [2,1,1,1,1,1,1]
 
 -- >>> findMinimalChebyshev (7/3)
+-- [3,1,1,1,3]
 
 -- >>> findMinimalChebyshev (4/5)
 -- [-5,1,1]
@@ -202,4 +174,4 @@ findMinimalChebyshev :: Rational -> V.Vector Integer
 findMinimalChebyshev u2 = found
  where
   Arg _ found = fromJust $ find (== Arg 0 undefined) $ getMin <$> [1 ..]
-  getMin = chebyNormalMinimum u2
+  getMin = chebyNormalMin u2

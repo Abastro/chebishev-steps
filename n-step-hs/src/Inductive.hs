@@ -16,7 +16,7 @@ data InductiveResult a v
   | Next !a !v (InductiveResult a v)
   deriving (Show)
 
--- | Datatype for an inductive evaluation.
+-- | Datatype for an inductive evaluation of [a] -> v.
 data InductiveEval a v = InductiveEval
   { induction :: a -> InductiveEval a v -> v,
     evaluated :: InductiveResult a v
