@@ -1,16 +1,16 @@
 module Main (main) where
 
 import Chebyshev (chebyNormal)
-import Criterion.Main
 import Data.Vector qualified as V
 import Streamly.Prelude qualified as Stream
 import Data.Functor.Identity
+import Test.Tasty.Bench
 
-alternatingTo :: (Monad m, Num a, Stream.Enumerable a) => a -> Stream.SerialT m a
-alternatingTo bnd = (*) <$> Stream.enumerateFromTo 1 bnd <*> Stream.fromList [1, -1]
+alternatingTo1 :: (Monad m, Num a, Stream.Enumerable a) => a -> Stream.SerialT m a
+alternatingTo1 bnd = (*) <$> Stream.enumerateFromTo 1 bnd <*> Stream.fromList [1, -1]
 
-alternatingTo_ :: (Monad m, Num a, Eq a, Stream.Enumerable a) => a -> Stream.SerialT m a
-alternatingTo_ bnd = Stream.filter (/= 0) $ Stream.enumerateFromTo (-bnd) bnd
+alternatingTo2 :: (Monad m, Num a, Eq a, Stream.Enumerable a) => a -> Stream.SerialT m a
+alternatingTo2 bnd = Stream.filter (/= 0) $ Stream.enumerateFromTo (-bnd) bnd
 
 main :: IO ()
 main =
@@ -27,7 +27,7 @@ main =
         ],
       bgroup "alternatingTo"
         [
-          bench "alternatingTo 10" $ whnf (runIdentity . Stream.sum . alternatingTo) (10 :: Integer),
-          bench "alternatingTo_ 10" $ whnf (runIdentity . Stream.sum . alternatingTo_) (10 :: Integer)
+          bench "alternatingTo1 10" $ whnf (runIdentity . Stream.sum . alternatingTo1) (10 :: Integer),
+          bench "alternatingTo2 10" $ whnf (runIdentity . Stream.sum . alternatingTo2) (10 :: Integer)
         ]
     ]

@@ -87,8 +87,8 @@ benchmark bench-n-step
     containers,
     mtl,
     vector,
-    criterion ^>=1.6.3.0,
-    streamly,
+    streamly ^>=0.8.3,
+    tasty-bench ^>=0.3.4,
     n-step-hs,
   hs-source-dirs:   bench
   default-language: GHC2021
