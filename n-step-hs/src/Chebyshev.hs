@@ -100,7 +100,6 @@ slopeUBAt u2 k s_L i = (leftBiased + rightBiased) / abs u2
 alternatingTo :: (Monad m, Num a, Stream.Enumerable a) => a -> Stream.SerialT m a
 alternatingTo bnd = (*) <$> Stream.enumerateFromTo 1 bnd <*> Stream.fromList [1, -1]
 
--- ! Wrong result on 9/5; Fundamental problem?
 -- TODO Profiling
 -- TODO Try parallelization
 

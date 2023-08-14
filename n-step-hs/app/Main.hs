@@ -1,6 +1,7 @@
 module Main (main) where
 
 import Chebyshev
+import Control.Monad
 import Data.Ratio
 import Streamly.Prelude qualified as Stream
 import System.Environment
@@ -23,5 +24,8 @@ main =
         Just denom <- readMaybe @Integer arg2 -> do
           Stream.drain $ Stream.fromAsync $ do
             nom <- Stream.enumerateFromTo 1 (pred $ denom * 4)
-            Stream.fromEffect $ computeAndPrint cutoff (nom % denom)
+            let u2 = nom % denom
+            when (denominator u2 == denom)
+              $ Stream.fromEffect
+              $ computeAndPrint cutoff (nom % denom)
     _ -> putStrLn "pass the cutoff and denominator to check for."
