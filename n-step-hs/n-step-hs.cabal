@@ -87,6 +87,7 @@ benchmark bench-n-step
     mtl,
     vector,
     criterion ^>=1.6.3.0,
+    streamly,
     n-step-hs,
   hs-source-dirs:   bench
   default-language: GHC2021

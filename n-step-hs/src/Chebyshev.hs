@@ -97,11 +97,10 @@ slopeUBAt u2 k s_L i = (leftBiased + rightBiased) / abs u2
 -- Arg (0 % 1) [-5,1,1]
 
 -- Bottleneck 1 (?)
-alternatingTo :: (Monad m, Num a, Stream.Enumerable a) => a -> Stream.SerialT m a
-alternatingTo bnd = (*) <$> Stream.enumerateFromTo 1 bnd <*> Stream.fromList [1, -1]
+alternatingTo :: (Monad m, Eq a, Num a, Stream.Enumerable a) => a -> Stream.SerialT m a
+alternatingTo bnd = Stream.filter (/= 0) $ Stream.enumerateFromTo (-bnd) bnd
 
--- TODO Profiling
--- TODO Try parallelization
+-- TODO As step goes up, the bound goes up too much. Need revise the algorithm.
 
 -- | Minimum value of normalized chebyshev, along with the ns for the minimum.
 chebyNormalMin :: Rational -> Int -> Arg Rational (V.Vector Integer)
