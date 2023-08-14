@@ -56,7 +56,7 @@ executable n-step-hs
     vector,
     streamly ^>=0.8.3,
     MemoTrie ^>=0.6.11,
-    async,
+    optparse-applicative ^>=0.18.1.0,
     n-step-hs,
   hs-source-dirs:   app
   default-language: GHC2021
