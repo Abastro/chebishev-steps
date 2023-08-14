@@ -72,7 +72,6 @@ test-suite test-n-step
     mtl,
     vector,
     QuickCheck ^>=2.14.3,
-    hspec ^>=2.11.4,
     tasty ^>=1.4.3,
     tasty-quickcheck ^>=0.10.2,
     n-step-hs,
