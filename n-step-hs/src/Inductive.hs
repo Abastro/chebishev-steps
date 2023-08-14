@@ -57,4 +57,4 @@ input eval = case eval.evaluated of
 -- |
 -- > inputs (nexts inps (inductive ind v0)) == inps
 inputs :: InductiveEval a v -> [a]
-inputs = unfoldr previous
+inputs = reverse . unfoldr previous

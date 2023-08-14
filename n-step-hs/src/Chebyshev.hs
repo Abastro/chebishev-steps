@@ -2,6 +2,7 @@
 {-# OPTIONS_GHC -Wno-orphans #-}
 
 module Chebyshev (
+  initChebyNormal,
   chebyNormal,
   constTerm,
   slopeTerm,
@@ -67,7 +68,7 @@ slopeTerm u2 n_L n_R = (value s_L * s_R_1_part + s_L_1_part * value s_R) / u2
 
 -- | Minimum of constant term where left portion is decided.
 constMinAt :: Rational -> Int -> InductiveEval a Rational -> Int -> Rational
-constMinAt u2 k s_L i = value s_L * s_R_min
+constMinAt u2 k s_L i = abs (value s_L) * s_R_min
  where
   Arg s_R_min _ = chebyNormalMin u2 (k - i)
 
@@ -99,6 +100,7 @@ slopeUBAt u2 k s_L i = (leftBiased + rightBiased) / abs u2
 alternatingTo :: (Monad m, Num a, Stream.Enumerable a) => a -> Stream.SerialT m a
 alternatingTo bnd = (*) <$> Stream.enumerateFromTo 1 bnd <*> Stream.fromList [1, -1]
 
+-- ! Wrong result on 9/5; Fundamental problem?
 -- TODO Profiling
 -- TODO Try parallelization
 
