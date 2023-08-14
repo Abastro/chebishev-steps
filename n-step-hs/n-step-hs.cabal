@@ -25,7 +25,10 @@ library
     Util
     MultilinPoly
     Inductive
-    Chebyshev
+
+    Chebyshev.Base
+    Chebyshev.Linear
+    Chebyshev.Fraction
   default-extensions:
     LambdaCase
     OverloadedRecordDot

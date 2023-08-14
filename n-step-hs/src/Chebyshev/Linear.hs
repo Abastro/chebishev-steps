@@ -1,9 +1,8 @@
 {-# LANGUAGE TypeFamilies #-}
 {-# OPTIONS_GHC -Wno-orphans #-}
 
-module Chebyshev (
-  initChebyNormal,
-  chebyNormal,
+-- | Properties of minimal chebyshev polynomial in terms of linearity in each coefficient.
+module Chebyshev.Linear (
   constTerm,
   slopeTerm,
   chebyNormalMin,
@@ -11,6 +10,7 @@ module Chebyshev (
   findMinimalChebyshev,
 ) where
 
+import Chebyshev.Base
 import Control.Monad.State.Strict
 import Data.List
 import Data.Maybe
@@ -30,24 +30,6 @@ instance (HasTrie a, Integral a) => HasTrie (Ratio a) where
   untrie (RatioTrie t) n = untrie (untrie t (numerator n)) (denominator n)
   enumerate :: (HasTrie a, Integral a) => (Ratio a :->: b) -> [(Ratio a, b)]
   enumerate (RatioTrie tt) = [(x % y, z) | (x, t) <- enumerate tt, (y, z) <- enumerate t]
-
--- | InductiveEval for normalized chebyshev; Starts at s_1.
-initChebyNormal :: (Integral a, Fractional v) => v -> InductiveEval a v
-initChebyNormal u2 = inductive induction 1
- where
-  induction n_k s_k = case previous s_k of
-    Nothing -> value s_k -- s_0 = 0
-    Just (n_k_1, s_k_1) -> value s_k - value s_k_1 / (u2 * fromIntegral (n_k * n_k_1))
-
--- | Normalized chebyshev polynomial.
---
--- >>> chebyNormal (1/3) (V.fromList [1, 2, 3])
--- (-1) % 1
---
--- >>> chebyNormal 1 (V.fromList [1, 2, 2])
--- 1 % 4
-chebyNormal :: Rational -> V.Vector Integer -> Rational
-chebyNormal u2 n_ = value $ nexts (V.toList n_) (initChebyNormal u2)
 
 -- | Constant term in the normalized chebyshev.
 constTerm :: Rational -> V.Vector Integer -> V.Vector Integer -> Rational

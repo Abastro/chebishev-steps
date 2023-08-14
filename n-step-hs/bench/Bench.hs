@@ -1,9 +1,9 @@
 module Main (main) where
 
-import Chebyshev (chebyNormal)
+import Chebyshev.Base
+import Data.Functor.Identity
 import Data.Vector qualified as V
 import Streamly.Prelude qualified as Stream
-import Data.Functor.Identity
 import Test.Tasty.Bench
 
 alternatingTo1 :: (Monad m, Num a, Stream.Enumerable a) => a -> Stream.SerialT m a
@@ -25,9 +25,9 @@ main =
             $ let cheby = chebyNormal (2 / 7)
                in [bench (show vec) $ whnf cheby vec | k <- [2 .. 8], let vec = V.enumFromN 1 k]
         ],
-      bgroup "alternatingTo"
-        [
-          bench "alternatingTo1 10" $ whnf (runIdentity . Stream.sum . alternatingTo1) (10 :: Integer),
+      bgroup
+        "alternatingTo"
+        [ bench "alternatingTo1 10" $ whnf (runIdentity . Stream.sum . alternatingTo1) (10 :: Integer),
           bench "alternatingTo2 10" $ whnf (runIdentity . Stream.sum . alternatingTo2) (10 :: Integer)
         ]
     ]
