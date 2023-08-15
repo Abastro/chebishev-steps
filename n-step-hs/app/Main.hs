@@ -1,20 +1,32 @@
 module Main (main) where
 
-import Chebyshev
+import Chebyshev.Fraction qualified as Fraction
+import Chebyshev.Fraction qualified as Linear
 import Control.Monad
 import Data.Ratio
 import Options.Applicative
 import Streamly.Prelude qualified as Stream
 import Text.Printf
 
-computeAndPrint :: Int -> Rational -> IO ()
-computeAndPrint cutoff u2 = case findMinimalChebyshev u2 cutoff of
+data Method = Linear | Fraction deriving (Show)
+
+computeAndPrint :: Method -> Word -> Rational -> IO ()
+computeAndPrint method cutoff u2 = case findChebyshev u2 cutoff of
   Just n_ -> printf "%s: root for %s\n" (show u2) (show n_)
   Nothing -> printf "%s: not a root under s_%d\n" (show u2) cutoff
+ where
+  findChebyshev = case method of
+    Linear -> Linear.findChebyshev
+    Fraction -> Fraction.findChebyshev
+
+data Opts = Opts
+  { command :: !Command,
+    method :: !Method
+  }
 
 data Command
   = ComputeFor !Rational
-  | ExhaustDenominator !Int !Integer !(Maybe FilePath)
+  | ExhaustDenominator !Word !Integer !(Maybe FilePath)
 
 parseCommands :: Parser Command
 parseCommands =
@@ -27,24 +39,28 @@ parseCommands =
           $ info
             ( ExhaustDenominator
                 <$> argument auto (metavar "STEPS")
-                <*> argument auto (metavar "u^2")
+                <*> argument auto (metavar "DENOMINATOR")
                 <*> optional (strOption (long "output" <> short 'o' <> metavar "FILE"))
             )
           $ progDesc "exhaustively compute for given denominator"
       ]
 
-opts :: ParserInfo Command
-opts = info (parseCommands <**> helper) fullDesc
+parseOptions :: ParserInfo Opts
+parseOptions = info ((Opts <$> parseCommands <*> methodFlag) <**> helper) fullDesc
+ where
+  methodFlag = flag Fraction Linear (long "linear" <> help "evaluate in linear method")
 
 -- TODO Output
 main :: IO ()
 main = do
-  execParser opts >>= \case
-    ComputeFor u2 -> computeAndPrint 100 u2
+  opts <- execParser parseOptions
+  printf "Method: %s\n" (show opts.method)
+  case opts.command of
+    ComputeFor u2 -> computeAndPrint opts.method 100 u2
     ExhaustDenominator cutoff denom _ -> do
       Stream.drain $ Stream.fromAsync $ do
         nom <- Stream.enumerateFromTo 1 (pred $ denom * 4)
         let u2 = nom % denom
         when (denominator u2 == denom)
           $ Stream.fromEffect
-          $ computeAndPrint cutoff (nom % denom)
+          $ computeAndPrint opts.method cutoff (nom % denom)

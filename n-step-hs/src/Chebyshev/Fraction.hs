@@ -100,6 +100,12 @@ chebyFractionMax u2 = computeMax
         Stream.fromEffect (put curMax)
         pure curMaxArg
 
+-- ! Slow for some numbers.
+-- ! 5: 16/5
+-- ! 6: 17/6
+-- ! 7: 5/7, 18/7
+-- ! 8: 23/8, 25/8, 31/8
+
 -- >>> findChebyshev (7/3) 8
 -- Just [-3,-1,-1,-1,-3]
 
