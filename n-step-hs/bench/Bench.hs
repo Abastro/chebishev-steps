@@ -1,6 +1,8 @@
 module Main (main) where
 
 import Chebyshev.Base
+import Chebyshev.Fraction qualified as Fraction
+import Chebyshev.Linear qualified as Linear
 import Data.Functor.Identity
 import Data.Vector qualified as V
 import Streamly.Prelude qualified as Stream
@@ -29,5 +31,12 @@ main =
         "alternatingTo"
         [ bench "alternatingTo1 10" $ whnf (runIdentity . Stream.sum . alternatingTo1) (10 :: Integer),
           bench "alternatingTo2 10" $ whnf (runIdentity . Stream.sum . alternatingTo2) (10 :: Integer)
+        ],
+      bgroup
+        "findChebyshev linear vs fraction"
+        [ bench "Linear.findChebyshev 9/5" $ nf (`Linear.findChebyshev` 100) (9 / 5),
+          bench "Fraction.findChebyshev 9/5" $ nf (`Fraction.findChebyshev` 100) (9 / 5),
+          bench "Linear.findChebyshev 8/5" $ nf (`Linear.findChebyshev` 100) (8 / 5),
+          bench "Fraction.findChebyshev 8/5" $ nf (`Fraction.findChebyshev` 100) (8 / 5)
         ]
     ]

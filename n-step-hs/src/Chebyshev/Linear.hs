@@ -6,7 +6,6 @@ module Chebyshev.Linear (
   constTerm,
   slopeTerm,
   chebyNormalMin,
-  boundaryMinAt,
   findChebyshev,
 ) where
 
@@ -48,22 +47,6 @@ slopeTerm u2 n_L n_R = (value s_L * s_R_1_part + s_L_1_part * value s_R) / u2
     Nothing -> 0
     Just (n_i1, s_n_R_1) -> value s_n_R_1 / fromIntegral n_i1
 
--- | Minimum of constant term where left portion is decided.
-constMinAt :: Rational -> Int -> InductiveEval a Rational -> Int -> Rational
-constMinAt u2 k s_L i = abs (value s_L) * s_R_min
- where
-  Arg s_R_min _ = chebyNormalMin u2 (k - i)
-
--- | Upper bound of slope term where left portion is decided.
-slopeUBAt :: Rational -> Int -> InductiveEval Integer Rational -> Int -> Rational
-slopeUBAt u2 k s_L i = (leftBiased + rightBiased) / abs u2
- where
-  s_L_1_part = case previous s_L of
-    Nothing -> 0
-    Just (n_i_1, s_L_1) -> value s_L_1 / fromIntegral n_i_1
-  leftBiased = abs (value s_L) * chebyNormalUB u2 (k - i - 1)
-  rightBiased = abs s_L_1_part * chebyNormalUB u2 (k - i)
-
 -- Assumption: u^2 is rational
 
 -- >>> chebyNormalMin (1/2) 3
@@ -82,50 +65,66 @@ slopeUBAt u2 k s_L i = (leftBiased + rightBiased) / abs u2
 alternatingTo :: (Monad m, Eq a, Num a, Stream.Enumerable a) => a -> Stream.SerialT m a
 alternatingTo bnd = Stream.filter (/= 0) $ Stream.enumerateFromTo (-bnd) bnd
 
--- TODO As step goes up, the bound goes up too much. Need revise the algorithm.
-
 -- | Minimum value of normalized chebyshev, along with the ns for the minimum.
 chebyNormalMin :: Rational -> Int -> Arg Rational (V.Vector Integer)
-chebyNormalMin = memo2 $ \u2 -> \case
-  1 -> Arg 1 V.empty -- normalized s1 = 1
-  2 -> Arg 1 (V.singleton 1) -- normalized s2 = 1
-  k -> fromJust (evalState minFinding initMin)
-   where
-    constArgMins = boundaryMinAt u2 k <$> V.enumFromTo 1 (k - 1)
-    Arg _ bndArg = minimum constArgMins
-    initMinArg@(Arg initMin _) = initialMinCand u2 bndArg
-
-    -- Bottleneck 2
-    boundAt :: InductiveEval Integer Rational -> Int -> Rational -> Integer
-    boundAt s_L i curMin = floor $ slopeUBAt u2 k s_L i / (constMinAt u2 k s_L i - curMin)
-
-    chooseNi ::
-      InductiveEval Integer Rational -> Int -> Stream.SerialT (State Rational) (InductiveEval Integer Rational)
-    chooseNi s_L i = do
-      bound <- Stream.fromEffect $ gets (boundAt s_L i)
-      n_i <- alternatingTo bound
-      pure (next n_i s_L)
-
-    minFinding :: State Rational (Maybe (Arg Rational (V.Vector Integer)))
-    minFinding = Stream.last $ do
-      curMinArg@(Arg curMin _) <- Stream.scanl' min initMinArg $ do
-        s_k <- foldM chooseNi (initChebyNormal u2) [1 .. k - 1]
-        pure $ Arg (abs $ value s_k) (V.fromList $ inputs s_k)
-      curMinArg <$ Stream.fromEffect (put curMin)
-
--- | Upper bound of normalized chebyshev.
-chebyNormalUB :: Rational -> Int -> Rational
-chebyNormalUB = memo2 $ \u2 -> \case
-  0 -> 0
-  1 -> 1
-  k -> chebyNormalUB u2 (k - 1) + chebyNormalUB u2 (k - 2) / abs u2
-
--- | minimum of |s_i| |s_{k-i}| for fixed i.
-boundaryMinAt :: Rational -> Int -> Int -> Arg Rational (V.Vector Integer, V.Vector Integer)
-boundaryMinAt u2 k i = Arg (lv * rv) (left, right)
+chebyNormalMin u2 = computeMin
  where
-  Arg lv left = chebyNormalMin u2 i
-  Arg rv right = chebyNormalMin u2 (k - i)
+  computeMin = memo $ \case
+    1 -> Arg 1 V.empty -- normalized s1 = 1
+    2 -> Arg 1 (V.singleton 1) -- normalized s2 = 1
+    k -> fromJust (evalState minFinding initMin)
+     where
+      constArgMins = boundaryMinAt k <$> V.enumFromTo 1 (k - 1)
+      Arg _ bndArg = minimum constArgMins
+      initMinArg@(Arg initMin _) = initialMinCand u2 bndArg
+
+      -- Bottleneck 2
+      boundAt :: InductiveEval Integer Rational -> Int -> Rational -> Integer
+      boundAt s_L i curMin = floor $ slopeUBAt k s_L i / (constMinAt k s_L i - curMin)
+
+      chooseNi ::
+        InductiveEval Integer Rational -> Int -> Stream.SerialT (State Rational) (InductiveEval Integer Rational)
+      chooseNi s_L i = do
+        bound <- Stream.fromEffect $ gets (boundAt s_L i)
+        n_i <- alternatingTo bound
+        pure (next n_i s_L)
+
+      minFinding :: State Rational (Maybe (Arg Rational (V.Vector Integer)))
+      minFinding = Stream.last $ do
+        curMinArg@(Arg curMin _) <- Stream.scanl' min initMinArg $ do
+          s_k <- foldM chooseNi (initChebyNormal u2) [1 .. k - 1]
+          pure $ Arg (abs $ value s_k) (V.fromList $ inputs s_k)
+        curMinArg <$ Stream.fromEffect (put curMin)
+
+  -- Minimum of constant term where left portion is decided.
+  constMinAt :: Int -> InductiveEval a Rational -> Int -> Rational
+  constMinAt k s_L i = abs (value s_L) * s_R_min
+   where
+    Arg s_R_min _ = computeMin (k - i)
+
+  -- Upper bound of slope term where left portion is decided.
+  slopeUBAt :: Int -> InductiveEval Integer Rational -> Int -> Rational
+  slopeUBAt k s_L i = (leftBiased + rightBiased) / abs u2
+   where
+    s_L_1_part = case previous s_L of
+      Nothing -> 0
+      Just (n_i_1, s_L_1) -> value s_L_1 / fromIntegral n_i_1
+    leftBiased = abs (value s_L) * chebyNormalUB (k - i - 1)
+    rightBiased = abs s_L_1_part * chebyNormalUB (k - i)
+
+  -- Upper bound of normalized chebyshev.
+  chebyNormalUB :: Int -> Rational
+  chebyNormalUB = memo $ \case
+    0 -> 0
+    1 -> 1
+    k -> chebyNormalUB (k - 1) + chebyNormalUB (k - 2) / abs u2
+
+  -- Minimum of |s_i| |s_{k-i}| for fixed i.
+  boundaryMinAt :: Int -> Int -> Arg Rational (V.Vector Integer, V.Vector Integer)
+  boundaryMinAt k i = Arg (lv * rv) (left, right)
+   where
+    Arg lv left = computeMin i
+    Arg rv right = computeMin (k - i)
 
 -- | Initial minimum candidate derived from the boundary minimum.
 initialMinCand :: Rational -> (V.Vector Integer, V.Vector Integer) -> Arg Rational (V.Vector Integer)
@@ -159,10 +158,10 @@ initialMinCand u2 (n_L, n_R) = Arg (abs minCand) minN_
 -- >>> findChebyshev (8/3) 8
 -- Just [6,1,1,1,1]
 
-findChebyshev :: Rational -> Int -> Maybe (V.Vector Integer)
+findChebyshev :: Rational -> Word -> Maybe (V.Vector Integer)
 findChebyshev u2 cutoff = case mayFound of
   Nothing -> Nothing
   Just (Arg _ n_) -> Just n_
  where
-  mayFound = find (== Arg 0 undefined) $ getMin <$> [1 .. cutoff]
+  mayFound = find (== Arg 0 undefined) $ getMin <$> [3 .. fromIntegral cutoff]
   getMin = chebyNormalMin u2

@@ -1,7 +1,7 @@
 module Main (main) where
 
 import Chebyshev.Fraction qualified as Fraction
-import Chebyshev.Fraction qualified as Linear
+import Chebyshev.Linear qualified as Linear
 import Control.Monad
 import Data.Ratio
 import Options.Applicative
