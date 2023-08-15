@@ -11,7 +11,6 @@ module Chebyshev.Linear (
 
 import Chebyshev.Base
 import Control.Monad.State.Strict
-import Data.List
 import Data.Maybe
 import Data.MemoTrie
 import Data.Ratio
@@ -20,6 +19,7 @@ import Data.Vector qualified as V
 import Inductive
 import Streamly.Prelude qualified as Stream
 import Util
+import Data.Monoid (First(..))
 
 instance (HasTrie a, Integral a) => HasTrie (Ratio a) where
   data Ratio a :->: b = RatioTrie (a :->: (a :->: b))
@@ -159,9 +159,9 @@ initialMinCand u2 (n_L, n_R) = Arg (abs minCand) minN_
 -- Just [6,1,1,1,1]
 
 findChebyshev :: Rational -> Word -> Maybe (V.Vector Integer)
-findChebyshev u2 cutoff = case mayFound of
-  Nothing -> Nothing
-  Just (Arg _ n_) -> Just n_
+findChebyshev u2 cutoff = getFirst $ foldMap (First . argForZero) [3 .. fromIntegral cutoff]
  where
-  mayFound = find (== Arg 0 undefined) $ getMin <$> [3 .. fromIntegral cutoff]
   getMin = chebyNormalMin u2
+  argForZero k = case getMin k of
+    Arg 0 arg -> Just arg
+    _ -> Nothing
