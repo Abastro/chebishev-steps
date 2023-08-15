@@ -117,6 +117,7 @@ findChebyshev :: Rational -> Word -> Maybe (V.Vector Integer)
 findChebyshev u2 cutoff = getFirst $ foldMap (First . argForInfinite) [2 .. cutoff]
  where
   getMax = chebyFractionMax u2
-  argForInfinite k = case getMax k of
+  -- 'chebyFractionMax u2 k' is infinite when 'chebyNormal u2 (k+1)' is 0.
+  argForInfinite k = case getMax (pred k) of
     Arg m arg | Data.ExtendedReal.isInfinite m -> Just arg
     _ -> Nothing
