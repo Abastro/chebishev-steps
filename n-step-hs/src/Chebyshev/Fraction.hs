@@ -16,6 +16,7 @@ import Data.Monoid (First (..))
 import Data.Semigroup (Arg (..))
 import Data.Vector qualified as V
 import Inductive
+import Streamly.Data.Fold qualified as Fold
 import Streamly.Prelude qualified as Stream
 import Util
 
@@ -48,9 +49,12 @@ chebyFractionMax u2 = computeMax
     Arg v _ -> v
 
   -- Initial max candidate.
-  maxCandidate :: Word -> Extended Rational
-  maxCandidate k = abs . chebyFraction $ nexts (n_1 : V.toList argmax_R) (initChebyNormal u2)
+  maxCandidate :: Word -> Arg (Extended Rational) (V.Vector Integer)
+  maxCandidate k = Arg maxCand n_
    where
+    n_ = V.cons n_1 argmax_R
+    maxCand = abs . chebyFraction $ nexts (V.toList n_) (initChebyNormal u2)
+
     Arg _ argmax_R = computeMax (k - 1)
     s_R_rev = nexts (V.toList $ V.reverse argmax_R) (initChebyNormal u2)
     g_R = knownFinite $ chebyPartSlope u2 s_R_rev
@@ -70,13 +74,17 @@ chebyFractionMax u2 = computeMax
     lowerOnK = knownFinite $ 1 / (1 + 1 / curMax)
     upperOnK = knownFinite $ 1 / (1 - 1 / curMax)
 
+  -- TODO Bound for n_1 is often horrible; Remedy that part.
   computeMax :: Word -> Arg (Extended Rational) (V.Vector Integer)
   computeMax = memo $ \case
     0 -> Arg 0 V.empty -- s0 / s1 = 0
     1 -> Arg 1 (V.singleton 1) -- s1 / s2 = 1
-    k -> evalState maxFinding (maxCandidate k)
+    k -> flip evalState 0 $ do
+      fromMaybe (error "maximal entry not found") <$> Stream.fold untilInfinity maxFinding
      where
       -- Setup: F(x) = F(x_L, x_i, x_R), |x| = k, |x_L| = i-1, |x_R| = k-i
+      maxCandArg@(Arg _ _) = maxCandidate k
+
       chooseN_i ::
         InductiveEval Integer Rational ->
         Word ->
@@ -86,26 +94,28 @@ chebyFractionMax u2 = computeMax
         let maxG_R = knownFinite (getMax (k - i)) / abs u2
         rateBounds <- Stream.fromEffect $ gets (boundsFor k i knownG_L maxG_R)
         let (minBnd, maxBnd) = bimap ceiling floor rateBounds
-        -- traceShowM (k, i, knownG_L, maxG_R, maxRadius, curMax)
+        -- curMax <- get
+        -- when (i <= 2) $ traceShowM (k, i, inputs s_L, knownG_L, maxG_R, curMax, minBnd, maxBnd)
         n_i <- Stream.filter (/= 0) $ Stream.enumerateFromTo minBnd maxBnd
         pure (next n_i s_L)
 
-      -- TODO Exit when current maximum is infinite
-      maxFinding :: State (Extended Rational) (Arg (Extended Rational) (V.Vector Integer))
-      maxFinding = fmap fromJust . Stream.last $ do
-        curMaxArg@(Arg curMax _) <- Stream.scanl1' max $ do
+      -- Stops when infinity is encountered
+      untilInfinity :: (Monad m) => Fold.Fold m (Arg (Extended r) b) (Maybe (Arg (Extended r) b))
+      untilInfinity = Fold.takeEndBy (\(Arg curMax _) -> Data.ExtendedReal.isInfinite curMax) Fold.last
+
+      maxFinding :: Stream.SerialT (State (Extended Rational)) (Arg (Extended Rational) (V.Vector Integer))
+      maxFinding = do
+        curMaxArg@(Arg curMax _) <- Stream.scanl' max maxCandArg $ do
           s_k1 <- foldM chooseN_i (initChebyNormal u2) [1 .. k]
           let c_k = chebyFraction s_k1
           pure $ Arg (abs <$> c_k) (V.fromList $ inputs s_k1)
+        curMaxArg <$ Stream.fromEffect (put curMax)
 
-        Stream.fromEffect (put curMax)
-        pure curMaxArg
-
--- ! Slow for some numbers.
--- ! 5: 16/5
--- ! 6: 17/6
--- ! 7: (runs, but slow) 5/7, 18/7
--- ! 8: 23/8, 25/8, 31/8
+-- TODO Slow for some numbers.
+-- TODO 6: 17/6
+-- TODO 8: 23/8, 31/8
+-- 9:
+-- 10:
 
 -- >>> findChebyshev (7/3) 8
 -- Just [-3,-1,-1,-1,-3]

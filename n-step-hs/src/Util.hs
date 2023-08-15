@@ -6,12 +6,13 @@ module Util (
 
 import Data.ExtendedReal
 import Data.Semigroup (Arg (..))
+import GHC.Stack
 
 infiDiv :: (Eq a, Num a, Fractional a) => a -> a -> Extended a
 infiDiv nom denom = if denom == 0 then PosInf else Finite (nom / denom)
 infixl 7 `infiDiv`
 
-knownFinite :: Extended a -> a
+knownFinite :: (HasCallStack) => Extended a -> a
 knownFinite = \case
   Finite a -> a
   NegInf -> error "Unexpected negative infinity"
