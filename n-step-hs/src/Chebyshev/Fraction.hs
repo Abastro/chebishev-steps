@@ -31,12 +31,12 @@ chebyPartSlope u2 s_k1 = case previous s_k1 of
   Just (n_k, s_k) -> value s_k `infiDiv` (u2 * fromIntegral n_k * value s_k1)
 
 -- >>> chebyFractionMax 3 3
--- Arg (Finite (3 % 2)) [-1,-1]
+-- Arg (Finite (2 % 1)) [-1,-1,-1]
 
--- >>> chebyFractionMax 3 6
+-- >>> chebyFractionMax 3 5
 -- Arg PosInf [-1,-1,-1,-1,-1]
 
--- >>> chebyFractionMax (8/3) 6
+-- >>> chebyFractionMax (8/3) 5
 -- Arg PosInf [-6,-1,-1,-1,-1]
 
 chebyFractionMax :: Rational -> Word -> Arg (Extended Rational) (V.Vector Integer)
@@ -48,7 +48,7 @@ chebyFractionMax u2 = computeMax
 
   -- Initial max candidate.
   maxCandidate :: Word -> Extended Rational
-  maxCandidate k = chebyFraction $ nexts (n_1 : V.toList argmax_R) (initChebyNormal u2)
+  maxCandidate k = abs . chebyFraction $ nexts (n_1 : V.toList argmax_R) (initChebyNormal u2)
    where
     Arg _ argmax_R = computeMax (k - 1)
     s_R_rev = nexts (V.toList $ V.reverse argmax_R) (initChebyNormal u2)
@@ -71,16 +71,21 @@ chebyFractionMax u2 = computeMax
           $ (1 + getMax (k - i - 1) / curMax)
           / (1 - getMax (k - i) / curMax)
 
+      maxRadiusN_i i maxG_L maxG_R curMax =
+        if i < k
+          then maxG_R * boundMultiple i curMax
+          else maxG_L * knownFinite ((1 / curMax) / (1 - 1 / curMax))
+
       chooseN_i ::
         InductiveEval Integer Rational ->
         Word ->
         Stream.SerialT (State (Extended Rational)) (InductiveEval Integer Rational)
       chooseN_i s_L i = do
-        let max_R = knownFinite (getMax (k - i)) / u2
-            known_L = knownFinite $ chebyPartSlope u2 s_L
-        boundMult <- Stream.fromEffect $ gets (boundMultiple i)
-        let maxDist = max_R * boundMult
-            (minBnd, maxBnd) = (floor $ known_L - maxDist, floor $ known_L + maxDist)
+        let knownG_L = knownFinite $ chebyPartSlope u2 s_L
+        let maxG_R = knownFinite (getMax (k - i)) / abs u2
+        maxRadius <- Stream.fromEffect $ gets (maxRadiusN_i i (abs knownG_L) maxG_R)
+        let (minBnd, maxBnd) = (ceiling $ knownG_L - maxRadius, floor $ knownG_L + maxRadius)
+        -- traceShowM (k, i, knownG_L, maxG_R, maxRadius, curMax)
         n_i <- Stream.filter (/= 0) $ Stream.enumerateFromTo minBnd maxBnd
         pure (next n_i s_L)
 
@@ -88,7 +93,7 @@ chebyFractionMax u2 = computeMax
       maxFinding :: State (Extended Rational) (Arg (Extended Rational) (V.Vector Integer))
       maxFinding = fmap fromJust . Stream.last $ do
         curMaxArg@(Arg curMax _) <- Stream.scanl1' max $ do
-          s_k1 <- foldM chooseN_i (initChebyNormal u2) [1 .. k - 1]
+          s_k1 <- foldM chooseN_i (initChebyNormal u2) [1 .. k]
           let c_k = chebyFraction s_k1
           pure $ Arg (abs <$> c_k) (V.fromList $ inputs s_k1)
 

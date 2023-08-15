@@ -1,7 +1,8 @@
 module Main (main) where
 
 import Chebyshev.Base
-import Chebyshev.Linear
+import Chebyshev.Fraction qualified as Fraction
+import Chebyshev.Linear qualified as Linear
 import Data.Ratio
 import Data.Vector qualified as V
 import Test.QuickCheck
@@ -12,7 +13,16 @@ main :: IO ()
 main = defaultMain $ testGroup "n-step-hs" [properties]
 
 properties :: TestTree
-properties = testGroup "properties" [testGroup "Chebyshev" [chebyshevBase, chebyshevLinear]]
+properties =
+  testGroup
+    "properties"
+    [ testGroup
+        "Chebyshev"
+        [ chebyshevBase,
+          chebyshevLinear,
+          chebyshevFraction
+        ]
+    ]
 
 chebyshevBase :: TestTree
 chebyshevBase =
@@ -33,25 +43,49 @@ chebyshevLinear =
           let n_L = V.fromList $ getNonZero <$> leftNZ
               n_R = V.fromList $ getNonZero <$> rightNZ
               n_ = n_L <> V.singleton n_i <> n_R
-           in constTerm u2 n_L n_R
-                - (slopeTerm u2 n_L n_R / fromIntegral n_i)
+           in Linear.constTerm u2 n_L n_R
+                - (Linear.slopeTerm u2 n_L n_R / fromIntegral n_i)
                 == chebyNormal u2 n_,
-      testProperty "findMinimalChebyshev must give a root"
+      testProperty "findChebyshev must give a root"
         $ withMaxSuccess 20
-        $ \(NonZero (Small p)) (NonZero (Small q)) ->
+        $ mapSize (`div` 2)
+        $ \(NonZero u2) ->
           discardAfter 200000
-            $ let u2 = p % q
-               in case findMinimalChebyshev u2 100 of
-                    Just n_ -> chebyNormal u2 n_ == 0
-                    Nothing -> discard,
-      testProperty "findMinimalChebyshev must give s_3 for roots of s_3"
+            $ case Linear.findChebyshev u2 100 of
+              Just n_ -> chebyNormal u2 n_ == 0
+              Nothing -> discard,
+      testProperty "findChebyshev must give s_3 for roots of s_3"
         $ \(NonZero (Small q)) ->
           let u2 = 1 % q
-           in maybe (-1) length (findMinimalChebyshev u2 5) == 2,
-      testProperty "findMinimalChebyshev must give less than s_4 for roots of s_4"
+           in maybe (-1) length (Linear.findChebyshev u2 5) == 2,
+      testProperty "findChebyshev must give less than s_4 for roots of s_4"
         $ withMaxSuccess 30
         $ \(NonZero (Small a)) (NonZero (Small b)) ->
           discardAfter 200000
             $ let u2 = 1 % a + 1 % b
-               in (u2 /= 0) ==> maybe (-1) length (findMinimalChebyshev u2 6) <= 3
+               in (u2 /= 0) ==> maybe (-1) length (Linear.findChebyshev u2 6) <= 3
+    ]
+
+chebyshevFraction :: TestTree
+chebyshevFraction =
+  testGroup
+    "Fraction"
+    [ testProperty "findChebyshev must give a root"
+        $ withMaxSuccess 20
+        $ mapSize (`div` 2)
+        $ \(NonZero u2) ->
+          discardAfter 200000
+            $ case Fraction.findChebyshev u2 100 of
+              Just n_ -> chebyNormal u2 n_ == 0
+              Nothing -> discard,
+      testProperty "findChebyshev must give s_3 for roots of s_3"
+        $ \(NonZero (Small q)) ->
+          let u2 = 1 % q
+           in maybe (-1) length (Fraction.findChebyshev u2 5) == 2,
+      testProperty "findChebyshev must give less than s_4 for roots of s_4"
+        $ withMaxSuccess 30
+        $ \(NonZero (Small a)) (NonZero (Small b)) ->
+          discardAfter 200000
+            $ let u2 = 1 % a + 1 % b
+               in (u2 /= 0) ==> maybe (-1) length (Fraction.findChebyshev u2 6) <= 3
     ]

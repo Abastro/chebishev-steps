@@ -7,7 +7,7 @@ module Chebyshev.Linear (
   slopeTerm,
   chebyNormalMin,
   boundaryMinAt,
-  findMinimalChebyshev,
+  findChebyshev,
 ) where
 
 import Chebyshev.Base
@@ -138,29 +138,29 @@ initialMinCand u2 (n_L, n_R) = Arg (abs minCand) minN_
   minN_ = n_L <> V.singleton n_i <> n_R
   minCand = iConst - iSlope / fromIntegral n_i
 
--- >>> findMinimalChebyshev (1/2) 8
+-- >>> findChebyshev (1/2) 8
 -- Just [2,1]
 
--- >>> findMinimalChebyshev (2/3) 8
+-- >>> findChebyshev (2/3) 8
 -- Just [3,2,1]
 
--- >>> findMinimalChebyshev 3 8
+-- >>> findChebyshev 3 8
 -- Just [1,1,1,1,1]
 
 -- >>> chebyNormalMin (10/3) 8
 -- Arg (1 % 400) [2,1,1,1,1,1,1]
 
--- >>> findMinimalChebyshev (7/3) 8
+-- >>> findChebyshev (7/3) 8
 -- Just [3,1,1,1,3]
 
--- >>> findMinimalChebyshev (4/5) 8
+-- >>> findChebyshev (4/5) 8
 -- Just [-5,1,1]
 
--- >>> findMinimalChebyshev (8/3) 8
+-- >>> findChebyshev (8/3) 8
 -- Just [6,1,1,1,1]
 
-findMinimalChebyshev :: Rational -> Int -> Maybe (V.Vector Integer)
-findMinimalChebyshev u2 cutoff = case mayFound of
+findChebyshev :: Rational -> Int -> Maybe (V.Vector Integer)
+findChebyshev u2 cutoff = case mayFound of
   Nothing -> Nothing
   Just (Arg _ n_) -> Just n_
  where
