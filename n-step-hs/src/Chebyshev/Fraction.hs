@@ -8,6 +8,7 @@ module Chebyshev.Fraction (
 
 import Chebyshev.Base
 import Control.Monad.State
+import Data.Bifunctor (Bifunctor (..))
 import Data.ExtendedReal
 import Data.Maybe
 import Data.MemoTrie
@@ -59,6 +60,16 @@ chebyFractionMax u2 = computeMax
         | r > 0 -> btwn + 1
         | otherwise -> btwn
 
+  boundsFor :: Word -> Word -> Rational -> Rational -> Extended Rational -> (Rational, Rational)
+  boundsFor k i g_L maxG_R curMax
+    | i < k = (g_L - boundRadius, g_L + boundRadius)
+    | otherwise = if g_L < 0 then (g_L * upperOnK, g_L * lowerOnK) else (g_L * lowerOnK, g_L * upperOnK)
+   where
+    boundMultiple = knownFinite $ (1 + getMax (k - i - 1) / curMax) / (1 - getMax (k - i) / curMax)
+    boundRadius = maxG_R * boundMultiple
+    lowerOnK = knownFinite $ 1 / (1 + 1 / curMax)
+    upperOnK = knownFinite $ 1 / (1 - 1 / curMax)
+
   computeMax :: Word -> Arg (Extended Rational) (V.Vector Integer)
   computeMax = memo $ \case
     0 -> Arg 0 V.empty -- s0 / s1 = 0
@@ -66,16 +77,6 @@ chebyFractionMax u2 = computeMax
     k -> evalState maxFinding (maxCandidate k)
      where
       -- Setup: F(x) = F(x_L, x_i, x_R), |x| = k, |x_L| = i-1, |x_R| = k-i
-      boundMultiple i curMax =
-        knownFinite
-          $ (1 + getMax (k - i - 1) / curMax)
-          / (1 - getMax (k - i) / curMax)
-
-      maxRadiusN_i i maxG_L maxG_R curMax =
-        if i < k
-          then maxG_R * boundMultiple i curMax
-          else maxG_L * knownFinite ((1 / curMax) / (1 - 1 / curMax))
-
       chooseN_i ::
         InductiveEval Integer Rational ->
         Word ->
@@ -83,8 +84,8 @@ chebyFractionMax u2 = computeMax
       chooseN_i s_L i = do
         let knownG_L = knownFinite $ chebyPartSlope u2 s_L
         let maxG_R = knownFinite (getMax (k - i)) / abs u2
-        maxRadius <- Stream.fromEffect $ gets (maxRadiusN_i i (abs knownG_L) maxG_R)
-        let (minBnd, maxBnd) = (ceiling $ knownG_L - maxRadius, floor $ knownG_L + maxRadius)
+        rateBounds <- Stream.fromEffect $ gets (boundsFor k i knownG_L maxG_R)
+        let (minBnd, maxBnd) = bimap ceiling floor rateBounds
         -- traceShowM (k, i, knownG_L, maxG_R, maxRadius, curMax)
         n_i <- Stream.filter (/= 0) $ Stream.enumerateFromTo minBnd maxBnd
         pure (next n_i s_L)
@@ -103,7 +104,7 @@ chebyFractionMax u2 = computeMax
 -- ! Slow for some numbers.
 -- ! 5: 16/5
 -- ! 6: 17/6
--- ! 7: 5/7, 18/7
+-- ! 7: (runs, but slow) 5/7, 18/7
 -- ! 8: 23/8, 25/8, 31/8
 
 -- >>> findChebyshev (7/3) 8

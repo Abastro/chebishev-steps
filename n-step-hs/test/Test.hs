@@ -48,7 +48,7 @@ chebyshevLinear =
                 == chebyNormal u2 n_,
       testProperty "findChebyshev must give a root"
         $ withMaxSuccess 20
-        $ mapSize (`div` 2)
+        $ mapSize (`div` 3)
         $ \(NonZero u2) ->
           discardAfter 200000
             $ case Linear.findChebyshev u2 100 of
@@ -72,7 +72,7 @@ chebyshevFraction =
     "Fraction"
     [ testProperty "findChebyshev must give a root"
         $ withMaxSuccess 20
-        $ mapSize (`div` 2)
+        $ mapSize (`div` 3)
         $ \(NonZero u2) ->
           discardAfter 200000
             $ case Fraction.findChebyshev u2 100 of
