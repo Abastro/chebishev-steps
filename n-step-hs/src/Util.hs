@@ -1,6 +1,21 @@
-module Util (closestToInv) where
+module Util (
+  infiDiv,
+  knownFinite,
+  closestToInv,
+) where
 
+import Data.ExtendedReal
 import Data.Semigroup (Arg (..))
+
+infiDiv :: (Eq a, Num a, Fractional a) => a -> a -> Extended a
+infiDiv nom denom = if denom == 0 then PosInf else Finite (nom / denom)
+infixl 7 `infiDiv`
+
+knownFinite :: Extended a -> a
+knownFinite = \case
+  Finite a -> a
+  NegInf -> error "Unexpected negative infinity"
+  PosInf -> error "Unexpected positive infinity"
 
 -- | closestToInv r is 1/n closest to r where n is integer.
 --

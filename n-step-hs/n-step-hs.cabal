@@ -40,6 +40,7 @@ library
     vector,
     streamly ^>=0.8.3,
     MemoTrie ^>=0.6.11,
+    extended-reals ^>=0.2.4.0,
   hs-source-dirs:   src
   default-language: GHC2021
 
