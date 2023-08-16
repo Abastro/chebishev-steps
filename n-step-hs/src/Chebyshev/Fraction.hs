@@ -96,7 +96,7 @@ chebyFractionMax u2 = computeMax
         let (minBnd, maxBnd) = bimap ceiling floor rateBounds
         -- curMax <- get
         -- when (i <= 2) $ traceShowM (k, i, inputs s_L, knownG_L, maxG_R, curMax, minBnd, maxBnd)
-        n_i <- Stream.filter (/= 0) $ Stream.enumerateFromTo minBnd maxBnd
+        n_i <- Stream.filter (/= 0) $ streamRangeFromCenter (floor knownG_L) minBnd maxBnd
         pure (next n_i s_L)
 
       -- Stops when infinity is encountered
@@ -110,6 +110,14 @@ chebyFractionMax u2 = computeMax
           let c_k = chebyFraction s_k1
           pure $ Arg (abs <$> c_k) (V.fromList $ inputs s_k1)
         curMaxArg <$ Stream.fromEffect (put curMax)
+
+-- >>> Stream.toList $ streamRangeFromCenter (0 :: Int) (-3) 6
+-- [0,1,-1,2,-2,3,-3,4,5,6]
+
+streamRangeFromCenter :: (Enum a, Stream.Enumerable a, Monad m) => a -> a -> a -> Stream.SerialT m a
+streamRangeFromCenter center lower higher =
+  Stream.enumerateFromThenTo center (pred center) lower
+    `Stream.wSerial` Stream.enumerateFromTo (succ center) higher
 
 -- TODO Slow for some numbers.
 -- TODO 6: 17/6, 23/6

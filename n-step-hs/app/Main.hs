@@ -11,6 +11,7 @@ import Data.Vector qualified as V
 import Options.Applicative
 import Streamly.Prelude qualified as Stream
 import System.Console.ANSI
+import System.IO
 import Text.Printf
 
 data Method = Linear | Fraction deriving (Show)
@@ -52,23 +53,33 @@ main = do
   opts <- execParser parseOptions
   printf "Method: %s\n" (show opts.method)
   case opts.command of
-    ComputeFor u2 -> printResult 100 u2 (finder opts.method u2 100)
-    ExhaustDenominator cutoff denom _ -> do
+    ComputeFor u2 -> printResult stdout 100 u2 (finder opts.method u2 100)
+    ExhaustDenominator cutoff denom outFile -> withFileMay outFile $ \outHandle -> do
       let fracts = fractions denom
       remaining <- newMVar fracts
-      Stream.drain . Stream.fromAhead $ do
-        u2 <- Stream.fromFoldable fracts
+      Stream.drain $ do
+        (u2, result) <- Stream.fromAhead $ do
+          u2 <- Stream.fromFoldable fracts
+          Stream.fromEffect $ do
+            result <- evaluate (finder opts.method u2 cutoff)
+            withMVar consoleLock $ \_ -> do
+              clearFromCursorToScreenEnd
+              printResult stdout cutoff u2 result
+              curRemains <- modifyMVar remaining $ \old ->
+                let new = S.delete u2 old in pure (new, new)
+              saveCursor
+              printf "Remaining: %s\n" (show $ S.toList curRemains)
+              restoreCursor
+            pure (u2, result)
+        handle <- Stream.fromFoldable outHandle
         Stream.fromEffect $ do
-          result <- evaluate (finder opts.method u2 cutoff)
-          withMVar consoleLock $ \_ -> do
-            clearFromCursorToScreenEnd
-            printResult cutoff u2 result
-            curRemains <- modifyMVar remaining $ \old ->
-              let new = S.delete u2 old in pure (new, new)
-            saveCursor
-            printf "Remaining: %s\n" (show $ S.toList curRemains)
-            restoreCursor
+          printResult handle cutoff u2 result
+          hFlush handle
  where
+  withFileMay = \case
+    Nothing -> \act -> act Nothing
+    Just path -> \act -> withFile path WriteMode (act . Just)
+
   finder = \case
     Linear -> Linear.findChebyshev
     Fraction -> Fraction.findChebyshev
@@ -79,7 +90,9 @@ main = do
 
   fractions denom = S.fromList $ mapMaybe (`asFraction` denom) [1 .. pred $ denom * 4]
 
-printResult :: Word -> Rational -> Maybe (V.Vector Integer) -> IO ()
-printResult cutoff u2 = \case
-  Just n_ -> printf "%s: %s\n" (show u2) (show n_)
-  Nothing -> printf "%s: over s_%d\n" (show u2) cutoff
+printResult :: Handle -> Word -> Rational -> Maybe (V.Vector Integer) -> IO ()
+printResult handle cutoff u2 = \case
+  Just n_ -> hPrintf handle "%s, s_%d, \"%s\"\n" (showFraction u2) (length n_ + 1) (show n_)
+  Nothing -> hPrintf handle "%s, > s_%d\n" (showFraction u2) cutoff
+  where
+    showFraction frac = show (numerator frac) <> "/" <> show (denominator frac)

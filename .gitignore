@@ -8,6 +8,8 @@ benchmark.*
 *.ps
 *.prof
 
+results
+
 *.code-workspace
 
 *.aux
