@@ -1,8 +1,8 @@
 -- | Properties of minimal chebyshev polynomial in terms of fractions.
 module Chebyshev.Fraction (
-  chebyFraction,
-  chebyPartSlope,
-  chebyFractionMax,
+  chebyNormalFraction,
+  chebyRealFraction,
+  chebyRealFractionMax,
   findChebyshev,
 ) where
 
@@ -21,28 +21,29 @@ import Streamly.Prelude qualified as Stream
 import Util
 
 -- | Normalized chebyshev into fraction.
-chebyFraction :: (Fractional v, Eq v) => InductiveEval a v -> Extended v
-chebyFraction s_k1 = case previous s_k1 of
+chebyNormalFraction :: (Fractional v, Eq v) => InductiveEval a v -> Extended v
+chebyNormalFraction s_k1 = case previous s_k1 of
   Nothing -> Finite 0
   Just (_, s_k) -> value s_k `infiDiv` value s_k1
 
--- | Part of the chebyshev slope fraction.
-chebyPartSlope :: (Fractional v, Eq v, Integral a) => v -> InductiveEval a v -> Extended v
-chebyPartSlope u2 s_k1 = case previous s_k1 of
+-- | Fraction of chebyshev polynomials, divided by u to make it real.
+chebyRealFraction :: (Fractional v, Eq v, Integral a) => v -> InductiveEval a v -> Extended v
+chebyRealFraction u2 s_k1 = case previous s_k1 of
   Nothing -> Finite 0
   Just (n_k, s_k) -> value s_k `infiDiv` (u2 * fromIntegral n_k * value s_k1)
 
--- >>> chebyFractionMax 3 3
--- Arg (Finite (2 % 1)) [-1,-1,-1]
+-- >>> chebyRealFractionMax 3 3
+-- Arg (Finite (2 % 3)) [1,1,1]
 
--- >>> chebyFractionMax 3 5
--- Arg PosInf [-1,-1,-1,-1,-1]
+-- >>> chebyRealFractionMax 3 5
+-- Arg PosInf [1,1,1,1,1]
 
--- >>> chebyFractionMax (8/3) 5
--- Arg PosInf [-6,-1,-1,-1,-1]
+-- >>> chebyRealFractionMax (8/3) 5
+-- Arg PosInf [6,1,1,1,1]
 
-chebyFractionMax :: Rational -> Word -> Arg (Extended Rational) (V.Vector Integer)
-chebyFractionMax u2 = computeMax
+-- | Compute maximal real-fraction G_k given k and steps.
+chebyRealFractionMax :: Rational -> Word -> Arg (Extended Rational) (V.Vector Integer)
+chebyRealFractionMax u2 = computeMax
  where
   getMax :: Word -> Extended Rational
   getMax k = case computeMax k of
@@ -53,32 +54,29 @@ chebyFractionMax u2 = computeMax
   maxCandidate k = Arg maxCand n_
    where
     n_ = V.cons n_1 argmax_R
-    maxCand = abs . chebyFraction $ nexts (V.toList n_) (initChebyNormal u2)
+    maxCand = abs . chebyRealFraction u2 $ nexts (V.toList n_) (initChebyNormal u2)
 
     Arg _ argmax_R = computeMax (k - 1)
     s_R_rev = nexts (V.toList $ V.reverse argmax_R) (initChebyNormal u2)
-    g_R = knownFinite $ chebyPartSlope u2 s_R_rev
-    n_1 = case properFraction g_R of
+    g_R_rev = knownFinite $ chebyRealFraction u2 s_R_rev
+    -- Opposite direction of truncate
+    n_1 = case properFraction g_R_rev of
       (btwn, r)
         | r < 0 -> btwn - 1
         | r > 0 -> btwn + 1
         | otherwise -> btwn
 
-  boundsFor :: Word -> Word -> Rational -> Rational -> Extended Rational -> (Rational, Rational)
-  boundsFor k i g_L maxG_R curMax
-    | i < k = (g_L - boundRadius, g_L + boundRadius)
-    | otherwise = if g_L < 0 then (g_L * upperOnK, g_L * lowerOnK) else (g_L * lowerOnK, g_L * upperOnK)
+  boundRadiusFor :: Word -> Word -> Rational -> Extended Rational -> Rational
+  boundRadiusFor k i maxG_R curMax
+    | i == k = 1 / 2 -- To achieve minimum, n_k should be closest to G_L
+    | otherwise = maxG_R * boundMultiple
    where
     boundMultiple = knownFinite $ (1 + getMax (k - i - 1) / curMax) / (1 - getMax (k - i) / curMax)
-    boundRadius = maxG_R * boundMultiple
-    lowerOnK = knownFinite $ 1 / (1 + 1 / curMax)
-    upperOnK = knownFinite $ 1 / (1 - 1 / curMax)
 
-  -- TODO Bound for n_1 is often horrible; Remedy that part.
   computeMax :: Word -> Arg (Extended Rational) (V.Vector Integer)
   computeMax = memo $ \case
     0 -> Arg 0 V.empty -- s0 / s1 = 0
-    1 -> Arg 1 (V.singleton 1) -- s1 / s2 = 1
+    1 -> Arg (Finite $ 1 / abs u2) (V.singleton 1) -- s1 / s2 = x1 / u^2
     k -> flip evalState 0 $ do
       fromMaybe (error "maximal entry not found") <$> Stream.fold untilInfinity maxFinding
      where
@@ -90,11 +88,12 @@ chebyFractionMax u2 = computeMax
         Word ->
         Stream.SerialT (State (Extended Rational)) (InductiveEval Integer Rational)
       chooseN_i s_L i = do
-        let knownG_L = knownFinite $ chebyPartSlope u2 s_L
-        let maxG_R = knownFinite (getMax (k - i)) / abs u2
-        rateBounds <- Stream.fromEffect $ gets (boundsFor k i knownG_L maxG_R)
-        let (minBnd, maxBnd) = bimap ceiling floor rateBounds
-        n_i <- Stream.filter (/= 0) $ streamRangeFromCenter (floor knownG_L) minBnd maxBnd
+        let knownG_L = knownFinite $ chebyRealFraction u2 s_L
+        let maxG_R = knownFinite $ getMax (k - i)
+        boundRadius <- Stream.fromEffect $ gets (boundRadiusFor k i maxG_R)
+        let centerBnd = round knownG_L
+            (minBnd, maxBnd) = bimap ceiling floor (knownG_L - boundRadius, knownG_L + boundRadius)
+        n_i <- Stream.filter (/= 0) $ streamRangeFromCenter centerBnd minBnd maxBnd
         pure (next n_i s_L)
 
       -- Stops when infinity is encountered
@@ -105,8 +104,8 @@ chebyFractionMax u2 = computeMax
       maxFinding = do
         curMaxArg@(Arg curMax _) <- Stream.scanl' max maxCandArg $ do
           s_k1 <- foldM chooseN_i (initChebyNormal u2) [1 .. k]
-          let c_k = chebyFraction s_k1
-          pure $ Arg (abs <$> c_k) (V.fromList $ inputs s_k1)
+          let g_k = chebyRealFraction u2 s_k1
+          pure $ Arg (abs <$> g_k) (V.fromList $ inputs s_k1)
         curMaxArg <$ Stream.fromEffect (put curMax)
 
 -- >>> Stream.toList $ streamRangeFromCenter (0 :: Int) (-3) 6
@@ -124,16 +123,16 @@ streamRangeFromCenter center lower higher =
 -- 10:
 
 -- >>> findChebyshev (7/3) 8
--- Just [-3,-1,-1,-1,-3]
+-- Just [3,1,1,1,3]
 
 -- >>> findChebyshev (8/3) 8
--- Just [-6,-1,-1,-1,-1]
+-- Just [6,1,1,1,1]
 
 -- | Given a root, find a chebyshev polynomial of minimal degree.
 findChebyshev :: Rational -> Word -> Maybe (V.Vector Integer)
 findChebyshev u2 cutoff = getFirst $ foldMap (First . argForInfinite) [2 .. cutoff]
  where
-  getMax = chebyFractionMax u2
+  getMax = chebyRealFractionMax u2
   -- 'chebyFractionMax u2 k' is infinite when 'chebyNormal u2 (k+1)' is 0.
   argForInfinite k = case getMax (pred k) of
     Arg m arg | Data.ExtendedReal.isInfinite m -> Just arg

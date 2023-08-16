@@ -7,6 +7,8 @@ import Data.Vector qualified as V
 import Inductive
 
 -- | InductiveEval for normalized chebyshev; Starts at s_1.
+--
+-- This is to ensure that the value stays being a quotient.
 initChebyNormal :: (Integral a, Fractional v) => v -> InductiveEval a v
 initChebyNormal u2 = inductive induction 1
  where
