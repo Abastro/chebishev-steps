@@ -14,6 +14,7 @@ import Data.MemoTrie
 import Data.Monoid (First (..))
 import Data.Semigroup (Arg (..))
 import Data.Vector qualified as V
+import Debug.Trace
 import Inductive
 import Streamly.Data.Fold qualified as Fold
 import Streamly.Prelude qualified as Stream
@@ -93,7 +94,8 @@ chebyRealFractionMax u2 = computeMax
       chooseN_i s_L i = do
         let g_L = knownFinite $ chebyRealFraction u2 s_L
         boundRadius <- Stream.fromEffect $ gets (boundRadiusFor k i)
-        -- when (i <= 2) $ traceShowM (k, i, inputs s_L, maxG_R, boundRadius)
+        curMax <- get
+        when (i <= 3) $ traceShowM (k, i, inputs s_L, curMax, g_L, boundRadius)
         let centerBnd = floor g_L
             minBnd = floor $ g_L - boundRadius
             maxBnd = ceiling $ g_L + boundRadius
