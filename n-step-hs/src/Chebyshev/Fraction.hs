@@ -14,7 +14,6 @@ import Data.MemoTrie
 import Data.Monoid (First (..))
 import Data.Semigroup (Arg (..))
 import Data.Vector qualified as V
-import Debug.Trace
 import Inductive
 import Streamly.Data.Fold qualified as Fold
 import Streamly.Prelude qualified as Stream
@@ -31,6 +30,12 @@ chebyRealFraction :: (Fractional v, Eq v, Integral a) => v -> InductiveEval a v 
 chebyRealFraction u2 s_k1 = case previous s_k1 of
   Nothing -> Finite 0
   Just (n_k, s_k) -> value s_k `infiDiv` (u2 * fromIntegral n_k * value s_k1)
+
+-- | Initiate fraction computation of chebyshev polynomials.
+initChebyRealFrac :: (RealFrac v, Integral a) => v -> InductiveEval a (Extended v)
+initChebyRealFrac u2 = inductive induction 0
+  where
+    induction n_k g_k = 1 `infiDiv` knownFinite (Finite u2 * (fromIntegral n_k - value g_k))
 
 -- >>> chebyRealFractionMax 3 3
 -- Arg (Finite (2 % 3)) [1,1,1]
@@ -68,7 +73,7 @@ chebyRealFractionMax u2 = computeMax
 
   boundRadiusFor :: Word -> Word -> Extended Rational -> Rational
   boundRadiusFor k i curMax
-    | i == k = 1 / 2 -- To achieve minimum, n_k should be closest to G_L
+    | i == k = knownFinite (1 / curMax) / u2 -- Typically, very small
     | otherwise = maxG_R * boundMultiple
    where
     maxG_R = knownFinite $ getMax (k - i)
@@ -77,45 +82,48 @@ chebyRealFractionMax u2 = computeMax
       Finite cmax -> (cmax + maxG_R_1) / (cmax - maxG_R)
       _ -> 1
 
+  boundRadiusVec :: Word -> Extended Rational -> V.Vector Rational
+  boundRadiusVec k curMax = V.generate (fromIntegral k) $ \i_1 ->
+    boundRadiusFor k (fromIntegral i_1 + 1) curMax
+
   computeMax :: Word -> Arg (Extended Rational) (V.Vector Integer)
   computeMax = memo $ \case
     0 -> Arg 0 V.empty -- s0 / s1 = 0
     1 -> Arg (Finite $ 1 / abs u2) (V.singleton 1) -- s1 / s2 = x1 / u^2
-    k -> flip evalState 0 $ do
+    k -> flip evalState (error "initial state exposed") $ do
       fromMaybe (error "maximal entry not found") <$> Stream.fold untilInfinity maxFinding
      where
       -- Setup: F(x) = F(x_L, x_i, x_R), |x| = k, |x_L| = i-1, |x_R| = k-i
-      maxCandArg@(Arg _ _) = maxCandidate k
+      maxCandArg = maxCandidate k
 
       chooseN_i ::
-        InductiveEval Integer Rational ->
+        InductiveEval Integer (Extended Rational) ->
         Word ->
-        Stream.SerialT (State (Extended Rational)) (InductiveEval Integer Rational)
-      chooseN_i s_L i = do
-        let g_L = knownFinite $ chebyRealFraction u2 s_L
-        boundRadius <- Stream.fromEffect $ gets (boundRadiusFor k i)
-        curMax <- get
-        when (i <= 3) $ traceShowM (k, i, inputs s_L, curMax, g_L, boundRadius)
-        let centerBnd = floor g_L
-            minBnd = floor $ g_L - boundRadius
-            maxBnd = ceiling $ g_L + boundRadius
+        Stream.SerialT (State (V.Vector Rational)) (InductiveEval Integer (Extended Rational))
+      chooseN_i g_L i = do
+        let vG_L = knownFinite $ value g_L
+        boundRadius <- Stream.fromEffect $ gets (V.! (fromIntegral i - 1))
+        -- when (i <= 3) $ get >>= \curMax -> traceShowM (k, i, inputs s_L, curMax, g_L, boundRadius)
+        let centerBnd = floor vG_L
+            minBnd = floor $ vG_L - boundRadius
+            maxBnd = ceiling $ vG_L + boundRadius
         n_i <-
           if i == 1
             then Stream.enumerateFromTo (max 1 minBnd) maxBnd -- Sign, take n_1 > 0
             else Stream.filter (/= 0) $ streamRangeFromCenter centerBnd minBnd maxBnd
-        pure (next n_i s_L)
+        pure (next n_i g_L)
 
-      -- Stops when infinity is encountered
-      untilInfinity :: (Monad m) => Fold.Fold m (Arg (Extended r) b) (Maybe (Arg (Extended r) b))
-      untilInfinity = Fold.takeEndBy (\(Arg curMax _) -> Data.ExtendedReal.isInfinite curMax) Fold.last
+      withArgPut argValue@(Arg val _) = argValue <$ put (boundRadiusVec k val)
+      puttingMax oldMax new = if oldMax < new then withArgPut new else pure oldMax
 
-      maxFinding :: Stream.SerialT (State (Extended Rational)) (Arg (Extended Rational) (V.Vector Integer))
-      maxFinding = do
-        curMaxArg@(Arg curMax _) <- Stream.scanl' max maxCandArg $ do
-          s_k1 <- foldM chooseN_i (initChebyNormal u2) [1 .. k]
-          let g_k = chebyRealFraction u2 s_k1
-          pure $ Arg (abs <$> g_k) (V.fromList $ inputs s_k1)
-        curMaxArg <$ Stream.fromEffect (put curMax)
+      maxFinding :: Stream.SerialT (State (V.Vector Rational)) (Arg (Extended Rational) (V.Vector Integer))
+      maxFinding = Stream.scanlM' puttingMax (withArgPut maxCandArg) $ do
+        g_k <- foldM chooseN_i (initChebyRealFrac u2) [1 .. k]
+        pure $ Arg (abs <$> value g_k) (V.fromList $ inputs g_k)
+
+-- Stops when infinity is encountered
+untilInfinity :: (Monad m) => Fold.Fold m (Arg (Extended r) b) (Maybe (Arg (Extended r) b))
+untilInfinity = Fold.takeEndBy (\(Arg curMax _) -> Data.ExtendedReal.isInfinite curMax) Fold.last
 
 -- >>> Stream.toList $ streamRangeFromCenter (0 :: Int) (-3) 6
 -- [0,1,-1,2,-2,3,-3,4,5,6]
