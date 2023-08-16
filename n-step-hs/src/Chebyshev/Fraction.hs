@@ -94,8 +94,6 @@ chebyFractionMax u2 = computeMax
         let maxG_R = knownFinite (getMax (k - i)) / abs u2
         rateBounds <- Stream.fromEffect $ gets (boundsFor k i knownG_L maxG_R)
         let (minBnd, maxBnd) = bimap ceiling floor rateBounds
-        -- curMax <- get
-        -- when (i <= 2) $ traceShowM (k, i, inputs s_L, knownG_L, maxG_R, curMax, minBnd, maxBnd)
         n_i <- Stream.filter (/= 0) $ streamRangeFromCenter (floor knownG_L) minBnd maxBnd
         pure (next n_i s_L)
 
