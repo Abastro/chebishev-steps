@@ -8,7 +8,6 @@ module Chebyshev.Fraction (
 
 import Chebyshev.Base
 import Control.Monad.State
-import Data.Bifunctor (Bifunctor (..))
 import Data.ExtendedReal
 import Data.Maybe
 import Data.MemoTrie
@@ -66,12 +65,16 @@ chebyRealFractionMax u2 = computeMax
         | r > 0 -> btwn + 1
         | otherwise -> btwn
 
-  boundRadiusFor :: Word -> Word -> Rational -> Extended Rational -> Rational
-  boundRadiusFor k i maxG_R curMax
+  boundRadiusFor :: Word -> Word -> Extended Rational -> Rational
+  boundRadiusFor k i curMax
     | i == k = 1 / 2 -- To achieve minimum, n_k should be closest to G_L
     | otherwise = maxG_R * boundMultiple
    where
-    boundMultiple = knownFinite $ (1 + getMax (k - i - 1) / curMax) / (1 - getMax (k - i) / curMax)
+    maxG_R = knownFinite $ getMax (k - i)
+    maxG_R_1 = knownFinite $ getMax (k - i - 1)
+    boundMultiple = case curMax of
+      Finite cmax -> (cmax + maxG_R_1) / (cmax - maxG_R)
+      _ -> 1
 
   computeMax :: Word -> Arg (Extended Rational) (V.Vector Integer)
   computeMax = memo $ \case
@@ -88,15 +91,16 @@ chebyRealFractionMax u2 = computeMax
         Word ->
         Stream.SerialT (State (Extended Rational)) (InductiveEval Integer Rational)
       chooseN_i s_L i = do
-        let knownG_L = knownFinite $ chebyRealFraction u2 s_L
-        let maxG_R = knownFinite $ getMax (k - i)
-        boundRadius <- Stream.fromEffect $ gets (boundRadiusFor k i maxG_R)
+        let g_L = knownFinite $ chebyRealFraction u2 s_L
+        boundRadius <- Stream.fromEffect $ gets (boundRadiusFor k i)
         -- when (i <= 2) $ traceShowM (k, i, inputs s_L, maxG_R, boundRadius)
-        let centerBnd = round knownG_L
-            (minBnd, maxBnd) = bimap ceiling floor (knownG_L - boundRadius, knownG_L + boundRadius)
-        n_i <- if i == 1
-          then Stream.enumerateFromTo (max 1 minBnd) maxBnd -- Sign, take n_1 > 0
-          else Stream.filter (/= 0) $ streamRangeFromCenter centerBnd minBnd maxBnd
+        let centerBnd = floor g_L
+            minBnd = floor $ g_L - boundRadius
+            maxBnd = ceiling $ g_L + boundRadius
+        n_i <-
+          if i == 1
+            then Stream.enumerateFromTo (max 1 minBnd) maxBnd -- Sign, take n_1 > 0
+            else Stream.filter (/= 0) $ streamRangeFromCenter centerBnd minBnd maxBnd
         pure (next n_i s_L)
 
       -- Stops when infinity is encountered
