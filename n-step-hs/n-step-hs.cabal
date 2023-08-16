@@ -61,6 +61,7 @@ executable n-step-hs
     streamly ^>=0.8.3,
     MemoTrie ^>=0.6.11,
     optparse-applicative ^>=0.18.1.0,
+    ansi-terminal ^>=1.0,
     n-step-hs,
   hs-source-dirs:   app
   default-language: GHC2021

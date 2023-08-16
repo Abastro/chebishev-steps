@@ -112,7 +112,7 @@ chebyFractionMax u2 = computeMax
         curMaxArg <$ Stream.fromEffect (put curMax)
 
 -- TODO Slow for some numbers.
--- TODO 6: 17/6
+-- TODO 6: 17/6, 23/6
 -- TODO 8: 23/8, 31/8
 -- 9:
 -- 10:
