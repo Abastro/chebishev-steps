@@ -67,9 +67,8 @@ main = do
               printResult stdout cutoff u2 result
               curRemains <- modifyMVar remaining $ \old ->
                 let new = S.delete u2 old in pure (new, new)
-              saveCursor
               printf "Remaining: %s\n" (show $ S.toList curRemains)
-              restoreCursor
+              cursorUpLine 1
             pure (u2, result)
         handle <- Stream.fromFoldable outHandle
         Stream.fromEffect $ do
