@@ -91,9 +91,12 @@ chebyRealFractionMax u2 = computeMax
         let knownG_L = knownFinite $ chebyRealFraction u2 s_L
         let maxG_R = knownFinite $ getMax (k - i)
         boundRadius <- Stream.fromEffect $ gets (boundRadiusFor k i maxG_R)
+        -- when (i <= 2) $ traceShowM (k, i, inputs s_L, maxG_R, boundRadius)
         let centerBnd = round knownG_L
             (minBnd, maxBnd) = bimap ceiling floor (knownG_L - boundRadius, knownG_L + boundRadius)
-        n_i <- Stream.filter (/= 0) $ streamRangeFromCenter centerBnd minBnd maxBnd
+        n_i <- if i == 1
+          then Stream.enumerateFromTo (max 1 minBnd) maxBnd -- Sign, take n_1 > 0
+          else Stream.filter (/= 0) $ streamRangeFromCenter centerBnd minBnd maxBnd
         pure (next n_i s_L)
 
       -- Stops when infinity is encountered
@@ -116,11 +119,9 @@ streamRangeFromCenter center lower higher =
   Stream.enumerateFromThenTo center (pred center) lower
     `Stream.wSerial` Stream.enumerateFromTo (succ center) higher
 
--- TODO Slow for some numbers.
--- TODO 6: 17/6, 23/6
--- TODO 8: 23/8, 31/8
--- 9:
--- 10:
+-- Do not know what is problem now.
+-- 7: 17/6, 23/6
+-- 8: 23/8, 31/8
 
 -- >>> findChebyshev (7/3) 8
 -- Just [3,1,1,1,3]
