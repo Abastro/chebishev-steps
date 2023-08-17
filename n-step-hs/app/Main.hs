@@ -4,12 +4,16 @@ import Chebyshev.Fraction qualified as Fraction
 import Chebyshev.Linear qualified as Linear
 import Control.Concurrent
 import Control.Exception (evaluate)
+import Data.Function
 import Data.Maybe
 import Data.Ratio
 import Data.Set qualified as S
 import Data.Vector qualified as V
 import Options.Applicative
-import Streamly.Prelude qualified as Stream
+import Streamly.Data.Fold qualified as Fold
+import Streamly.Data.Stream qualified as Stream
+import Streamly.Data.Stream.Prelude qualified as Stream
+import Streamly.Data.StreamK qualified as StreamK
 import System.Console.ANSI
 import System.IO
 import Text.Printf
@@ -57,10 +61,13 @@ main = do
     ExhaustDenominator cutoff denom outFile -> withFileMay outFile $ \outHandle -> do
       let fracts = fractions denom
       remaining <- newMVar fracts
-      Stream.drain $ do
-        (u2, result) <- Stream.fromAhead $ do
-          u2 <- Stream.fromFoldable fracts
-          Stream.fromEffect $ do
+      -- Why do they make me do this
+      StreamK.toStream (StreamK.fromFoldable fracts)
+        & Stream.parConcatMap (Stream.ordered True) (Stream.fromEffect . evaluateAndPrint remaining)
+        & Stream.mapM (flip (emitToFile cutoff) outHandle)
+        & Stream.fold Fold.drain
+     where
+      evaluateAndPrint remaining u2 = do
             result <- evaluate (finder opts.method u2 cutoff)
             withMVar consoleLock $ \_ -> do
               clearFromCursorToScreenEnd
@@ -70,10 +77,6 @@ main = do
               printf "Remaining: %s\n" (show $ S.toList curRemains)
               cursorUpLine 1
             pure (u2, result)
-        handle <- Stream.fromFoldable outHandle
-        Stream.fromEffect $ do
-          printResult handle cutoff u2 result
-          hFlush handle
  where
   withFileMay = \case
     Nothing -> \act -> act Nothing
@@ -82,6 +85,12 @@ main = do
   finder = \case
     Linear -> Linear.findChebyshev
     Fraction -> Fraction.findChebyshev
+
+  emitToFile cutoff (u2, result) = \case
+    Nothing -> pure ()
+    Just handle -> do
+      printResult handle cutoff u2 result
+      hFlush handle
 
   asFraction nom denom =
     let u2 = nom % denom
@@ -93,5 +102,5 @@ printResult :: Handle -> Word -> Rational -> Maybe (V.Vector Integer) -> IO ()
 printResult handle cutoff u2 = \case
   Just n_ -> hPrintf handle "%s, s_%d, \"%s\"\n" (showFraction u2) (length n_ + 1) (show n_)
   Nothing -> hPrintf handle "%s, > s_%d\n" (showFraction u2) cutoff
-  where
-    showFraction frac = show (numerator frac) <> "/" <> show (denominator frac)
+ where
+  showFraction frac = show (numerator frac) <> "/" <> show (denominator frac)
