@@ -13,13 +13,15 @@ import Chebyshev.Base
 import Control.Monad.State.Strict
 import Data.Maybe
 import Data.MemoTrie
+import Data.Monoid (First (..))
 import Data.Ratio
 import Data.Semigroup (Arg (..))
 import Data.Vector qualified as V
 import Inductive
-import Streamly.Prelude qualified as Stream
+import Streamly.Data.Fold qualified as Fold
+import Streamly.Data.Stream qualified as Stream
+import Streamly.Internal.Data.Stream.StreamK qualified as StreamK
 import Util
-import Data.Monoid (First(..))
 
 instance (HasTrie a, Integral a) => HasTrie (Ratio a) where
   data Ratio a :->: b = RatioTrie (a :->: (a :->: b))
@@ -62,7 +64,7 @@ slopeTerm u2 n_L n_R = (value s_L * s_R_1_part + s_L_1_part * value s_R) / u2
 -- Arg (0 % 1) [-5,1,1]
 
 -- Bottleneck 1 (?)
-alternatingTo :: (Monad m, Eq a, Num a, Stream.Enumerable a) => a -> Stream.SerialT m a
+alternatingTo :: (Monad m, Eq a, Num a, Stream.Enumerable a) => a -> Stream.Stream m a
 alternatingTo bnd = Stream.filter (/= 0) $ Stream.enumerateFromTo (-bnd) bnd
 
 -- | Minimum value of normalized chebyshev, along with the ns for the minimum.
@@ -83,18 +85,20 @@ chebyNormalMin u2 = computeMin
       boundAt s_L i curMin = floor $ slopeUBAt k s_L i / (constMinAt k s_L i - curMin)
 
       chooseNi ::
-        InductiveEval Integer Rational -> Int -> Stream.SerialT (State Rational) (InductiveEval Integer Rational)
+        InductiveEval Integer Rational -> Int -> StreamK.CrossStreamK (State Rational) (InductiveEval Integer Rational)
       chooseNi s_L i = do
-        bound <- Stream.fromEffect $ gets (boundAt s_L i)
-        n_i <- alternatingTo bound
+        bound <- StreamK.mkCross . StreamK.fromEffect $ gets (boundAt s_L i)
+        n_i <- StreamK.mkCross . StreamK.fromStream $ alternatingTo bound
         pure (next n_i s_L)
 
+      withArgPut argValue@(Arg val _) = argValue <$ put val
+      puttingMin oldMin new = if oldMin > new then withArgPut new else pure oldMin
+
       minFinding :: State Rational (Maybe (Arg Rational (V.Vector Integer)))
-      minFinding = Stream.last $ do
-        curMinArg@(Arg curMin _) <- Stream.scanl' min initMinArg $ do
+      minFinding = Stream.fold Fold.latest $ do
+        Stream.scan (Fold.foldlM' puttingMin $ withArgPut initMinArg) . StreamK.toStream . StreamK.unCross $ do
           s_k <- foldM chooseNi (initChebyNormal u2) [1 .. k - 1]
           pure $ Arg (abs $ value s_k) (V.fromList $ inputs s_k)
-        curMinArg <$ Stream.fromEffect (put curMin)
 
   -- Minimum of constant term where left portion is decided.
   constMinAt :: Int -> InductiveEval a Rational -> Int -> Rational
