@@ -50,7 +50,6 @@ parseOptions = info ((Opts <$> parseCommands <*> methodFlag) <**> helper) fullDe
  where
   methodFlag = flag Fraction Linear (long "linear" <> help "evaluate in linear method")
 
--- TODO Output file
 main :: IO ()
 main = do
   consoleLock <- newMVar ()
@@ -64,19 +63,25 @@ main = do
       -- Why do they make me do this
       StreamK.toStream (StreamK.fromFoldable fracts)
         & Stream.parConcatMap (Stream.ordered True) (Stream.fromEffect . evaluateAndPrint remaining)
-        & Stream.mapM (flip (emitToFile cutoff) outHandle)
+        & Stream.mapM (`emitToFile` outHandle)
         & Stream.fold Fold.drain
      where
       evaluateAndPrint remaining u2 = do
-            result <- evaluate (finder opts.method u2 cutoff)
-            withMVar consoleLock $ \_ -> do
-              clearFromCursorToScreenEnd
-              printResult stdout cutoff u2 result
-              curRemains <- modifyMVar remaining $ \old ->
-                let new = S.delete u2 old in pure (new, new)
-              printf "Remaining: %s\n" (show $ S.toList curRemains)
-              cursorUpLine 1
-            pure (u2, result)
+        result <- evaluate (finder opts.method u2 cutoff)
+        withMVar consoleLock $ \_ -> do
+          clearFromCursorToScreenEnd
+          printResult stdout cutoff u2 result
+          curRemains <- modifyMVar remaining $ \old ->
+            let new = S.delete u2 old in pure (new, new)
+          printf "Remaining: %s\n" (show $ S.toList curRemains)
+          cursorUpLine 1
+        pure (u2, result)
+
+      emitToFile (u2, result) = \case
+        Nothing -> pure ()
+        Just handle -> do
+          printResult handle cutoff u2 result
+          hFlush handle
  where
   withFileMay = \case
     Nothing -> \act -> act Nothing
@@ -85,12 +90,6 @@ main = do
   finder = \case
     Linear -> Linear.findChebyshev
     Fraction -> Fraction.findChebyshev
-
-  emitToFile cutoff (u2, result) = \case
-    Nothing -> pure ()
-    Just handle -> do
-      printResult handle cutoff u2 result
-      hFlush handle
 
   asFraction nom denom =
     let u2 = nom % denom

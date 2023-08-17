@@ -10,6 +10,7 @@ import Chebyshev.Base
 import Control.Monad.State
 import Data.ExtendedReal
 import Data.Foldable
+import Data.Function ((&))
 import Data.Maybe
 import Data.MemoTrie
 import Data.Monoid (First (..))
@@ -77,9 +78,7 @@ chebyRealFractionMax u2 = computeMax
         | otherwise -> btwn
 
   boundRadiusFor :: Word -> Word -> Extended Rational -> Rational
-  boundRadiusFor k i curMax
-    | i == k = knownFinite (1 / curMax) / u2 -- Typically, very small
-    | otherwise = maxG_R * boundMultiple
+  boundRadiusFor k i curMax = maxG_R * boundMultiple
    where
     maxG_R = knownFinite $ getMax (k - i)
     maxG_R_1 = knownFinite $ getMax (k - i - 1)
@@ -88,7 +87,7 @@ chebyRealFractionMax u2 = computeMax
       _ -> 1
 
   boundRadiusVec :: Word -> Extended Rational -> V.Vector Rational
-  boundRadiusVec k curMax = V.generate (fromIntegral k) $ \i_1 ->
+  boundRadiusVec k curMax = V.generate (fromIntegral $ k - 1) $ \i_1 ->
     boundRadiusFor k (fromIntegral i_1 + 1) curMax
 
   computeMax :: Word -> Arg (Extended Rational) (V.Vector Integer)
@@ -116,12 +115,18 @@ chebyRealFractionMax u2 = computeMax
       withArgPut argValue@(Arg val _) = argValue <$ put (boundRadiusVec k val)
       puttingMax oldMax new = if oldMax < new then withArgPut new else pure oldMax
 
-      inductAsArg g_k = Arg (abs <$> value g_k) (V.fromList $ inputs g_k)
+      lastStep :: FractionEval -> Maybe (Arg (Extended Rational) (V.Vector Integer))
+      lastStep g_L =
+        let n_k = round . knownFinite $ value g_L
+            g_k = next n_k g_L
+         in if n_k == 0 then Nothing else Just $ Arg (abs <$> value g_k) (V.fromList $ inputs g_k)
 
       maxFinding :: Stream.Stream (State (V.Vector Rational)) (Arg (Extended Rational) (V.Vector Integer))
       maxFinding =
-        Stream.scan (Fold.foldlM' puttingMax $ withArgPut maxCandArg) $ inductAsArg <$> do
-          StreamK.toStream . StreamK.unCross $ foldlM chooseN_i (initChebyRealFrac u2) [1 .. k]
+        foldlM chooseN_i (initChebyRealFrac u2) [1 .. k - 1]
+          & (StreamK.toStream . StreamK.unCross)
+          & Stream.mapMaybe lastStep
+          & Stream.scan (Fold.foldlM' puttingMax $ withArgPut maxCandArg)
 
 -- Stops when infinity is encountered
 untilInfinity :: (Monad m) => Fold.Fold m (Arg (Extended r) b) (Maybe (Arg (Extended r) b))
