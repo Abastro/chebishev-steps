@@ -39,7 +39,7 @@ chebyRealFraction u2 s_k1 = case previous s_k1 of
 initChebyRealFrac :: (RealFrac v, Integral a) => v -> InductiveEval a (Extended v)
 initChebyRealFrac u2 = inductive induction 0
  where
-  induction n_k g_k = 1 `infiDiv` knownFinite (Finite u2 * (fromIntegral n_k - value g_k))
+  induction n_k g_k = infiRecip . knownFinite $ Finite u2 * (fromIntegral n_k - value g_k)
 
 -- >>> chebyRealFractionMax 3 3
 -- Arg (Finite (2 % 3)) [1,1,1]

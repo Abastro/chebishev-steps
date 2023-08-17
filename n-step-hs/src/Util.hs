@@ -1,5 +1,6 @@
 module Util (
   infiDiv,
+  infiRecip,
   knownFinite,
   closestToInv,
 ) where
@@ -8,9 +9,12 @@ import Data.ExtendedReal
 import Data.Semigroup (Arg (..))
 import GHC.Stack
 
-infiDiv :: (Eq a, Num a, Fractional a) => a -> a -> Extended a
+infiDiv :: (Eq a, Fractional a) => a -> a -> Extended a
 infiDiv nom denom = if denom == 0 then PosInf else Finite (nom / denom)
 infixl 7 `infiDiv`
+
+infiRecip :: (Eq a, Fractional a) => a -> Extended a
+infiRecip v = if v == 0 then PosInf else Finite (recip v)
 
 knownFinite :: (HasCallStack) => Extended a -> a
 knownFinite = \case
