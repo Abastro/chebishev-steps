@@ -19,9 +19,11 @@ import System.IO
 import Text.Printf
 
 data Method = Linear | Fraction deriving (Show)
+data RootConvention = U2 | NegU2 deriving (Show)
 data Opts = Opts
   { command :: !Command,
-    method :: !Method
+    method :: !Method,
+    convention :: !RootConvention
   }
 
 data Command
@@ -46,17 +48,19 @@ parseCommands =
       ]
 
 parseOptions :: ParserInfo Opts
-parseOptions = info ((Opts <$> parseCommands <*> methodFlag) <**> helper) fullDesc
+parseOptions = info ((Opts <$> parseCommands <*> methodFlag <*> conventionFlag) <**> helper) fullDesc
  where
   methodFlag = flag Fraction Linear (long "linear" <> help "evaluate in linear method")
+  conventionFlag = flag NegU2 U2 (long "u2-conv" <> help "use u2 as passed root, instead of -u2")
 
 main :: IO ()
 main = do
   consoleLock <- newMVar ()
   opts <- execParser parseOptions
   printf "Method: %s\n" (show opts.method)
+  printf "Convention: %s\n" (show opts.convention)
   case opts.command of
-    ComputeFor u2 -> printResult stdout 100 u2 (finder opts.method u2 100)
+    ComputeFor root -> printResult stdout 100 root (finder opts.method (convertRoot root opts.convention) 100)
     ExhaustDenominator cutoff denom outFile -> withFileMay outFile $ \outHandle -> do
       let fracts = fractions denom
       remaining <- newMVar fracts
@@ -66,21 +70,21 @@ main = do
         & Stream.mapM (`emitToFile` outHandle)
         & Stream.fold Fold.drain
      where
-      evaluateAndPrint remaining u2 = do
-        result <- evaluate (finder opts.method u2 cutoff)
+      evaluateAndPrint remaining root = do
+        result <- evaluate (finder opts.method (convertRoot root opts.convention) cutoff)
         withMVar consoleLock $ \_ -> do
           clearFromCursorToScreenEnd
-          printResult stdout cutoff u2 result
+          printResult stdout cutoff root result
           curRemains <- modifyMVar remaining $ \old ->
-            let new = S.delete u2 old in pure (new, new)
+            let new = S.delete root old in pure (new, new)
           printf "Remaining: %s\n" (show $ S.toList curRemains)
           cursorUpLine 1
-        pure (u2, result)
+        pure (root, result)
 
-      emitToFile (u2, result) = \case
+      emitToFile (root, result) = \case
         Nothing -> pure ()
         Just handle -> do
-          printResult handle cutoff u2 result
+          printResult handle cutoff root result
           hFlush handle
  where
   withFileMay = \case
@@ -90,6 +94,10 @@ main = do
   finder = \case
     Linear -> Linear.findChebyshev
     Fraction -> Fraction.findChebyshev
+
+  convertRoot root = \case
+    U2 -> root
+    NegU2 -> -root
 
   asFraction nom denom =
     let u2 = nom % denom
