@@ -1,12 +1,11 @@
 -- | Properties of minimal chebyshev polynomial in terms of fractions.
 module Chebyshev.Fraction (
-  chebyNormalFraction,
+  initChebyRealFrac,
   chebyRealFraction,
   chebyRealFractionMax,
   findChebyshev,
 ) where
 
-import Chebyshev.Base
 import Control.Monad.ST
 import Data.ExtendedReal
 import Data.Foldable
@@ -24,23 +23,15 @@ import Streamly.Data.StreamK qualified as StreamK
 import Streamly.Internal.Data.Stream.StreamK qualified as StreamK
 import Util
 
--- | Normalized chebyshev into fraction.
-chebyNormalFraction :: (Fractional v, Eq v) => InductiveEval a v -> Extended v
-chebyNormalFraction s_k1 = case previous s_k1 of
-  Nothing -> Finite 0
-  Just (_, s_k) -> value s_k `infiDiv` value s_k1
-
--- | Fraction of chebyshev polynomials, divided by u to make it real.
-chebyRealFraction :: (Fractional v, Eq v, Integral a) => v -> InductiveEval a v -> Extended v
-chebyRealFraction u2 s_k1 = case previous s_k1 of
-  Nothing -> Finite 0
-  Just (n_k, s_k) -> value s_k `infiDiv` (u2 * fromIntegral n_k * value s_k1)
-
 -- | Initiate fraction computation of chebyshev polynomials.
 initChebyRealFrac :: (RealFrac v, Integral a) => v -> InductiveEval a (Extended v)
 initChebyRealFrac u2 = inductive induction 0
  where
   induction n_k g_k = infiRecip . knownFinite $ Finite u2 * (fromIntegral n_k - value g_k)
+
+-- | Fraction of chebyshev polynomials, divided by u to make it real.
+chebyRealFraction :: Rational -> [Integer] -> Extended Rational
+chebyRealFraction u2 n_ = value $ nexts n_ (initChebyRealFrac u2)
 
 -- >>> chebyRealFractionMax 3 3
 -- Arg (Finite (2 % 3)) [1,1,1]
@@ -53,6 +44,9 @@ initChebyRealFrac u2 = inductive induction 0
 
 type FractionEval = InductiveEval Integer (Extended Rational)
 
+-- TODO Instead of memo, use a structure to store results.
+-- TODO Could be performed in IO this way.
+
 -- | Compute maximal real-fraction G_k given k and steps.
 chebyRealFractionMax :: Rational -> Word -> Arg (Extended Rational) (V.Vector Integer)
 chebyRealFractionMax u2 = computeMax
@@ -63,14 +57,12 @@ chebyRealFractionMax u2 = computeMax
 
   -- Initial max candidate.
   maxCandidate :: Word -> Arg (Extended Rational) (V.Vector Integer)
-  maxCandidate k = Arg maxCand n_
+  maxCandidate k = Arg (abs . chebyRealFraction u2 $ V.toList n_) n_
    where
     n_ = V.cons n_1 argmax_R
-    maxCand = abs . chebyRealFraction u2 $ nexts (V.toList n_) (initChebyNormal u2)
 
     Arg _ argmax_R = computeMax (k - 1)
-    s_R_rev = nexts (V.toList $ V.reverse argmax_R) (initChebyNormal u2)
-    g_R_rev = knownFinite $ chebyRealFraction u2 s_R_rev
+    g_R_rev = knownFinite $ chebyRealFraction u2 (V.toList $ V.reverse argmax_R)
     -- Opposite direction of truncate
     n_1 = case properFraction g_R_rev of
       (btwn, r)
@@ -99,7 +91,11 @@ chebyRealFractionMax u2 = computeMax
       fromMaybe (error "maximal entry not found") <$> Stream.fold untilInfinity maxFinding
      where
       -- Setup: F(x) = F(x_L, x_i, x_R), |x| = k, |x_L| = i-1, |x_R| = k-i
-      chooseN_i :: STRef s (V.Vector Rational) -> FractionEval -> Word -> StreamK.CrossStreamK (ST s) FractionEval
+      chooseN_i ::
+        STRef s (V.Vector Rational) ->
+        FractionEval ->
+        Word ->
+        StreamK.CrossStreamK (ST s) FractionEval
       chooseN_i radiusRef g_L i = StreamK.mkCross . StreamK.concatEffect $ do
         boundRadius <- (V.! (fromIntegral i - 1)) <$> readSTRef radiusRef
         let vG_L = knownFinite $ value g_L

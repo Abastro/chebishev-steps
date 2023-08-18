@@ -30,8 +30,8 @@ chebyshevBase =
     "Base"
     [ testProperty "chebyNormal is symmetric"
         $ \(NonZero u2) nzs ->
-          let n_ = V.fromList $ getNonZero <$> nzs
-           in chebyNormal u2 n_ == chebyNormal u2 (V.reverse n_)
+          let n_ = getNonZero <$> nzs
+           in chebyNormal u2 n_ == chebyNormal u2 n_
     ]
 
 chebyshevLinear :: TestTree
@@ -45,14 +45,14 @@ chebyshevLinear =
               n_ = n_L <> V.singleton n_i <> n_R
            in Linear.constTerm u2 n_L n_R
                 - (Linear.slopeTerm u2 n_L n_R / fromIntegral n_i)
-                == chebyNormal u2 n_,
+                == chebyNormal u2 (V.toList n_),
       testProperty "findChebyshev must give a root"
         $ withMaxSuccess 20
         $ mapSize (`div` 3)
         $ \(NonZero u2) ->
           discardAfter 200000
             $ case Linear.findChebyshev u2 100 of
-              Just n_ -> chebyNormal u2 n_ == 0
+              Just n_ -> chebyNormal u2 (V.toList n_) == 0
               Nothing -> discard,
       testProperty "findChebyshev must give s_3 for roots of s_3"
         $ \(NonZero (Small q)) ->
@@ -76,7 +76,7 @@ chebyshevFraction =
         $ \(NonZero u2) ->
           discardAfter 200000
             $ case Fraction.findChebyshev u2 100 of
-              Just n_ -> chebyNormal u2 n_ == 0
+              Just n_ -> chebyNormal u2 (V.toList n_) == 0
               Nothing -> discard,
       testProperty "findChebyshev must give s_3 for roots of s_3"
         $ \(NonZero (Small q)) ->

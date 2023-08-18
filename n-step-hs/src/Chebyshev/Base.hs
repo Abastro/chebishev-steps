@@ -3,7 +3,6 @@ module Chebyshev.Base (
   chebyNormal,
 ) where
 
-import Data.Vector qualified as V
 import Inductive
 
 -- | InductiveEval for normalized chebyshev; Starts at s_1.
@@ -18,10 +17,10 @@ initChebyNormal u2 = inductive induction 1
 
 -- | Normalized chebyshev polynomial.
 --
--- >>> chebyNormal (1/3) (V.fromList [1, 2, 3])
+-- >>> chebyNormal (1/3) [1, 2, 3]
 -- (-1) % 1
 --
--- >>> chebyNormal 1 (V.fromList [1, 2, 2])
+-- >>> chebyNormal 1 [1, 2, 2]
 -- 1 % 4
-chebyNormal :: Rational -> V.Vector Integer -> Rational
-chebyNormal u2 n_ = value $ nexts (V.toList n_) (initChebyNormal u2)
+chebyNormal :: Rational -> [Integer] -> Rational
+chebyNormal u2 n_ = value $ nexts n_ (initChebyNormal u2)

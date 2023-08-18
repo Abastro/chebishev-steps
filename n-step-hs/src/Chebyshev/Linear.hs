@@ -34,7 +34,7 @@ instance (HasTrie a, Integral a) => HasTrie (Ratio a) where
 
 -- | Constant term in the normalized chebyshev.
 constTerm :: Rational -> V.Vector Integer -> V.Vector Integer -> Rational
-constTerm u2 n_L n_R = chebyNormal u2 n_L * chebyNormal u2 n_R
+constTerm u2 n_L n_R = chebyNormal u2 (V.toList n_L) * chebyNormal u2 (V.toList n_R)
 
 -- | (Negative) slope term in the normalized chebyshev.
 slopeTerm :: Rational -> V.Vector Integer -> V.Vector Integer -> Rational

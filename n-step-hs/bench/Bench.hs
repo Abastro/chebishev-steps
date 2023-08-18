@@ -3,7 +3,6 @@ module Main (main) where
 import Chebyshev.Base
 import Chebyshev.Fraction qualified as Fraction
 import Chebyshev.Linear qualified as Linear
-import Data.Vector qualified as V
 import Test.Tasty.Bench
 
 main :: IO ()
@@ -13,11 +12,11 @@ main =
         "chebyNormal"
         [ bgroup
             "1/3"
-            [ bench "[1..3]" $ whnf (chebyNormal (1 / 3)) (V.enumFromN 1 3)
+            [ bench "[1..3]" $ whnf (chebyNormal (1 / 3)) [1 .. 3]
             ],
           bgroup "2/7"
             $ let cheby = chebyNormal (2 / 7)
-               in [bench (show vec) $ whnf cheby vec | k <- [2 .. 8], let vec = V.enumFromN 1 k]
+               in [bench (show n_) $ whnf cheby n_ | k <- [2 .. 8], let n_ = [1 .. k]]
         ],
       bgroup
         "findChebyshev linear vs fraction"
