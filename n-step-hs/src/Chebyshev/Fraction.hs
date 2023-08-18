@@ -7,13 +7,14 @@ module Chebyshev.Fraction (
 ) where
 
 import Chebyshev.Base
-import Control.Monad.State
+import Control.Monad.ST
 import Data.ExtendedReal
 import Data.Foldable
 import Data.Function ((&))
 import Data.Maybe
 import Data.MemoTrie
 import Data.Monoid (First (..))
+import Data.STRef
 import Data.Semigroup (Arg (..))
 import Data.Vector qualified as V
 import Inductive
@@ -86,23 +87,21 @@ chebyRealFractionMax u2 = computeMax
       Finite cmax -> (cmax + maxG_R_1) / (cmax - maxG_R)
       _ -> 1
 
-  boundRadiusVec :: Word -> Extended Rational -> V.Vector Rational
-  boundRadiusVec k curMax = V.generate (fromIntegral $ k - 1) $ \i_1 ->
+  boundRadiusVec :: Word -> Arg (Extended Rational) a -> V.Vector Rational
+  boundRadiusVec k (Arg curMax _) = V.generate (fromIntegral $ k - 1) $ \i_1 ->
     boundRadiusFor k (fromIntegral i_1 + 1) curMax
 
   computeMax :: Word -> Arg (Extended Rational) (V.Vector Integer)
   computeMax = memo $ \case
     0 -> Arg 0 V.empty -- s0 / s1 = 0
     1 -> Arg (Finite $ 1 / abs u2) (V.singleton 1) -- s1 / s2 = x1 / u^2
-    k -> flip evalState (error "initial state exposed") $ do
+    k -> runST $ do
       fromMaybe (error "maximal entry not found") <$> Stream.fold untilInfinity maxFinding
      where
       -- Setup: F(x) = F(x_L, x_i, x_R), |x| = k, |x_L| = i-1, |x_R| = k-i
-      maxCandArg = maxCandidate k
-
-      chooseN_i :: FractionEval -> Word -> StreamK.CrossStreamK (State (V.Vector Rational)) FractionEval
-      chooseN_i g_L i = StreamK.mkCross . StreamK.concatEffect $ do
-        boundRadius <- gets (V.! (fromIntegral i - 1))
+      chooseN_i :: STRef s (V.Vector Rational) -> FractionEval -> Word -> StreamK.CrossStreamK (ST s) FractionEval
+      chooseN_i radiusRef g_L i = StreamK.mkCross . StreamK.concatEffect $ do
+        boundRadius <- (V.! (fromIntegral i - 1)) <$> readSTRef radiusRef
         let vG_L = knownFinite $ value g_L
             center = floor vG_L
             minBnd = floor $ vG_L - boundRadius
@@ -112,8 +111,8 @@ chebyRealFractionMax u2 = computeMax
             then StreamK.fromStream $ Stream.enumerateFromTo (max 1 minBnd) maxBnd -- Only take n_1 > 0
             else StreamK.filter (/= 0) $ rangeFromCenter center minBnd maxBnd
 
-      withArgPut argValue@(Arg val _) = argValue <$ put (boundRadiusVec k val)
-      puttingMax oldMax new = if oldMax < new then withArgPut new else pure oldMax
+      puttingMax radiusRef oldMax new =
+        if oldMax < new then new <$ writeSTRef radiusRef (boundRadiusVec k new) else pure oldMax
 
       lastStep :: FractionEval -> Maybe (Arg (Extended Rational) (V.Vector Integer))
       lastStep g_L =
@@ -121,12 +120,15 @@ chebyRealFractionMax u2 = computeMax
             g_k = next n_k g_L
          in if n_k == 0 then Nothing else Just $ Arg (abs <$> value g_k) (V.fromList $ inputs g_k)
 
-      maxFinding :: Stream.Stream (State (V.Vector Rational)) (Arg (Extended Rational) (V.Vector Integer))
-      maxFinding =
-        foldlM chooseN_i (initChebyRealFrac u2) [1 .. k - 1]
+      maxFinding :: Stream.Stream (ST s) (Arg (Extended Rational) (V.Vector Integer))
+      maxFinding = Stream.concatEffect $ do
+        let maxCandArg = maxCandidate k
+        radiusRef <- newSTRef $ boundRadiusVec k maxCandArg
+        pure
+          $ foldlM (chooseN_i radiusRef) (initChebyRealFrac u2) [1 .. k - 1]
           & (StreamK.toStream . StreamK.unCross)
           & Stream.mapMaybe lastStep
-          & Stream.scan (Fold.foldlM' puttingMax $ withArgPut maxCandArg)
+          & Stream.scan (Fold.foldlM' (puttingMax radiusRef) $ pure maxCandArg)
 
 -- Stops when infinity is encountered
 untilInfinity :: (Monad m) => Fold.Fold m (Arg (Extended r) b) (Maybe (Arg (Extended r) b))
