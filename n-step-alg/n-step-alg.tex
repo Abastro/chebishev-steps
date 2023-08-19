@@ -1,0 +1,342 @@
+\documentclass{article}
+
+\usepackage{xcolor}
+\usepackage{tikz-cd}
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage{amsthm}
+\usepackage{enumitem}
+\usepackage{mathtools}
+\usepackage{graphicx}
+\usepackage{wrapfig}
+\usepackage[a4paper, total={6in, 8in}]{geometry}
+
+% environments
+\theoremstyle{definition}
+\newtheorem*{definition}{Definition}
+\newtheorem*{example}{Example}
+\newtheorem{exercise}{Exercise}
+
+\theoremstyle{plain}
+\newtheorem{theorem}{Theorem}[section]
+\newtheorem{corollary}[theorem]{Corollary}
+\newtheorem{proposition}{Proposition}[section]
+\newtheorem{lemma}{Lemma}[section]
+
+\theoremstyle{remark}
+\newtheorem*{remark}{Remark}
+\newtheorem*{fact}{Fact}
+
+\newenvironment{claim}[1]{\par\underline{Claim:}\space#1}{\par\smallskip}
+\newenvironment{acase}[1]{\par\underline{Case\space#1:}\space}{\par\smallskip}
+\newcommand{\astep}[2]{\par\textbf{Step #1: #2}\par\smallskip}
+
+\numberwithin{equation}{section}
+% commands
+\newcommand{\contra}{\Rightarrow\!\Leftarrow}
+
+\newcommand{\integer}{\mathbb{Z}}
+\newcommand{\ratio}{\mathbb{Q}}
+\newcommand{\real}{\mathbb{R}}
+\newcommand{\complex}{\mathbb{C}}
+
+\newcommand{\rangewith}[4]{{#2}#1{#3}, \cdots, {#2}#1{#4}}
+\newcommand{\funtyp}[3]{#1: & #2 & \rightarrow & #3 \\ }
+\newcommand{\fundecl}[2]{& #1 & \mapsto & #2 \\ }
+
+\newcommand{\abs}[1]{\left\lvert{#1}\right\rvert}
+
+\title{N-step decision algorithms}
+\author{Junho Lee}
+
+\begin{document}
+\pagecolor{white}
+\color{black}
+\maketitle
+
+It is a hard problem to determine if a number is relational or not.
+Algorithmic approach could be of help here -
+while there is no way to directly decide relational property,
+one could decide if a number is a root of chebyshev polynomial of certain steps.
+This write-up suggests multiple algoirthms to perform this operation.
+
+\section{Problem Definition}
+
+Given $u$, we are to find the minimal $k$ where $u$ is the root of $s^{\mathbf{n}}_k$.
+For this purpose, it helps to consider $s^{\mathbf{n}}_k(u)$ as a function of $\mathbf{n} \in \integer^{k-1}$.
+Hence, we will fix $u$ and denote the chebyshev polynomial as $s_k(\mathbf{n})$ or $s(\mathbf{n})$.
+
+Under this setting, we are tasked to determine if a multivariate polynomial $s_k(\mathbf{n})$
+has a zero within $\integer^{k-1}$.
+
+\subsection{Prior consideration}
+
+Recall that when $\mathbf{n} = (\mathbf{n}_L, n_i, \mathbf{n}_R)
+  = (\mathbf{n}_{L'}, n_{i-1}, n_i, n_{i+1}, \mathbf{n}_{R'})$,
+we have
+\begin{equation}\label{key_equation}
+  s(\mathbf{n}) =
+  n_i u \cdot s(\mathbf{n}_L) \cdot s(\mathbf{n}_R)
+  - s(\mathbf{n}_{L'}, n_{i-1}, n_{i+1}, \mathbf{n}_{R'}).
+\end{equation}
+
+This implies the following properties:
+\begin{enumerate}
+  \item When $n_i = 0$, $s(\mathbf{n}) = - s(\mathbf{n}_{L'}, n_{i-1}, n_{i+1}, \mathbf{n}_{R'})$.
+  Hence, if such $\mathbf{n}$ is a zero, there is a shorter sequence which is a zero.
+  \item As $n_i \to \infty$, $s(\mathbf{n}) / (n_i u)$ converges to $s(\mathbf{n}_L) \cdot s(\mathbf{n}_R)$.
+\end{enumerate}
+
+The first property implies that we do not need to check $n_i = 0$ case for a minimal polynomial,
+so our search is reduced to finding a root in $\integer^{k-1} \setminus \{0\}$.
+
+On the other hand, the latter property means the monic polynomial
+\[
+  \tilde{s}_k(\mathbf{n}) := \frac{s_k(\mathbf{n})}{u^{k-1} n_1 \cdots n_{k-1}}
+\]
+converges to the product of another such monic polynomials $\tilde{s}_i$ and $\tilde{s}_{k-i}$.
+This indicates that this monic polynomial has a limiting behavior
+based on chebyshev polynomials of lower degree.
+
+\section{Recursive computation of minimum of $\tilde{s}_k$}
+
+\subsection{Limit points of range of $\tilde{s}_k$}
+
+First, we capture the general behavior of a function with domain $\integer^{k-1} \setminus \{0\}$.
+To simplify the logic, we may reparameterize $\tilde{s}_k(\mathbf{n})$
+by $\mathbf{x}$ where $x_i = 1 / n_i$.
+This is simply inversion of each parameter.
+Under this terms, $\mathbf{x} \in T^{k-1}$ and $\tilde{s} : T^{k-1} \to \real$
+where $T := \{ 1 / k \mid k \in \integer - \{ 0 \} \}$.
+Clearly, such $\tilde{s}$ is a continuous function.
+Furthermore, it is easy to see that $\tilde{s}$ is defined on the case where some $x_i$'s are 0.
+Hence we may regard $\tilde{s} \in C(\bar{T}^{k-1})$.
+
+Then, we have the following property which holds for any function in $C(\bar{T}^{k-1})$.
+\begin{proposition}
+  Suppose there is a sequence $\{ \mathbf{x}^\alpha \} \subset \bar{T}^{k-1}$
+  where each $\mathbf{x}_\alpha$ is distinct
+  and $\tilde{s}(\mathbf{x}^\alpha)$ converges to some $c \in \real$.
+  Then, $c$ is in the limit point $\tilde{s}(\lim T^{k-1})$.
+\end{proposition}
+\begin{proof}
+  Notice that $\bar{T} = T \cup \{ 0 \}$ is a closed subset of compact interval $[-1, 1]$,
+  so $\bar{T}$ should be compact. Then, $T^{k-1}$ should be compact as its product.
+  Thus, for the given sequence $\{ \mathbf{x}^\alpha \}$,
+  there is a subsequence $\{ \mathbf{y}^\beta \}$ which converges to some $\mathbf{y} \in \bar{T}^{k-1}$.
+  As each $\mathbf{y}_\beta$ should be distinct as well, one has $\mathbf{y} \in \lim T^{k-1}$.
+  Then, by continuity of $\tilde{s}$ we get $\tilde{s}(\mathbf{y}^\beta) \to \tilde{s}(\mathbf{y})$.
+  Therefore, $c = \tilde(s)(\mathbf{y}) \in \tilde{s}(\lim T^{k-1})$.
+\end{proof}
+
+\begin{corollary}
+  There are finitely many distinct $\mathbf{x}$ where $\tilde{s}(\mathbf{x}) = c$ holds.
+  Specifically for $c = 0$, $\tilde{s}$ has finitely many distinct zeros.
+\end{corollary}
+
+\begin{corollary}\label{image_compact}
+  The image $\tilde{s}(\bar{T}^{k-1})$ is closed and compact (this follows from $T^{k-1}$ being compact).
+\end{corollary}
+
+By Corollary \ref{image_compact}, one can find a $\mathbf{x} \in \bar{T}^{k-1}$
+which achieves the minimal distance between $\tilde{s}(\bar{T}^{k-1})$ and $0$.
+In particular, the zeros are obtained as such $\mathbf{x}$ if and only iff this distance is $0$.
+Here, we could get an idea on how to find zeros of $\tilde{s}$.
+
+\subsection{Overview of the algorithm}
+
+This algorithm is to find the minimal distance $\epsilon$ between $\tilde{s}(\bar{T}^{k-1})$ and $0$,
+and the value $\mathbf{m} \in \bar{T}^{k-1}$ which achieves the minimum.
+The algorithm finds this inductively,
+assuming the minimal distance $\epsilon_j$ and the argmin $\mathbf{m}^j$ is found for all $j < k$.
+We may also assume that the minimal distance $\epsilon_j$ is nonzero,
+i.e. $\tilde{s}_j$ does not have a root.
+
+The crux of the algorithm is to restrict number of candidate $\mathbf{x}$'s,
+so that the minimum could be searched and found among them in a manageable time.
+
+\subsection{Bounds of $x_i$}
+
+Suppose $i$ is fixed.
+Recall the equation \eqref{key_equation}.
+By normalizing, the following can be obtained.
+
+\[
+  \tilde{s}(\mathbf{x}) = \tilde{s}(\mathbf{x}_L, x_i, \mathbf{x}_R) =
+  \tilde{s}(\mathbf{x}_L) \cdot \tilde{s}(\mathbf{x}_R)
+  - \frac{x_i}{u^2}
+  (x_{i+1} \cdot \tilde{s}(\mathbf{x}_L) \cdot \tilde{s}(\mathbf{x}_{R'})
+  + x_{i-1} \cdot \tilde{s}(\mathbf{x}_{L'}) \cdot \tilde{s}(\mathbf{x}_R))
+\]
+
+We may substitute the "constant" and "slope" term as
+\begin{align*}
+  & A(x_L, x_R) := \tilde{s}(\mathbf{x}_L) \cdot \tilde{s}(\mathbf{x}_R),\\
+  & B(x_L, x_R) := \frac{1}{u^2}
+  (x_{i+1} \cdot \tilde{s}(\mathbf{x}_L) \cdot \tilde{s}(\mathbf{x}_{R'})
+  + x_{i-1} \cdot \tilde{s}(\mathbf{x}_{L'}) \cdot \tilde{s}(\mathbf{x}_R))
+\end{align*}
+so that we have $\tilde{s}(\mathbf{x}) = A(\mathbf{x}_L, \mathbf{x}_R) - x_i B(\mathbf{x}_L, \mathbf{x}_R)$.
+Remark that this is a linear polynomial in terms of $x_i$.
+
+From the above equation, we can deduce
+\[
+  \abs{x_i} = \frac{\abs{A(\mathbf{x}_L, \mathbf{x}_R) - \tilde{s}(\mathbf{x})}}{\abs{B(\mathbf{x}_L, \mathbf{x}_R)}}
+  \geq \frac{\abs{\abs{A(\mathbf{x}_L, \mathbf{x}_R)} - \abs{\tilde{s}(\mathbf{x})}}}{\abs{B(\mathbf{x}_L, \mathbf{x}_R)}}
+\]
+and given the minimum $\abs{\tilde{s}(\mathbf{m})} = \epsilon \leq \delta
+< \min_{\mathbf{x}_L, \mathbf{x}_R} \abs{A(\mathbf{x}_L, \mathbf{x}_R)}$,
+\begin{equation}\label{normal_key_condition}
+  \abs{m_i}
+  \geq \frac{\abs{A(\mathbf{m}_L, \mathbf{m}_R)} - \abs{\tilde{s}(\mathbf{m})}}{\abs{B(\mathbf{m}_L, \mathbf{m}_R)}}
+  \geq \frac{\min \abs{A(\mathbf{x}_L, \mathbf{x}_R)} - \delta}{\max \abs{B(\mathbf{x}_L, \mathbf{x}_R)}}
+\end{equation}
+
+Therefore, we obtain the lower bound $L$ of $m_i$
+whenever there is a "candidate minimum" $\delta \geq \epsilon$
+which is smaller than minimum of $A$.
+Since $n_i = 1 / m_i \leq 1 / L$, this gives the finite set of $\{ n_i \}$ to search the argmin from.
+
+\subsection{Minimum of $A$, and finding the candidate minimum}
+
+We start by the obvious remark regarding minimum of $A$:
+\begin{remark}
+  $\min \abs{A(\mathbf{x}_L, \mathbf{x}_R)}
+  = \min_{\mathbf{x}_L} \abs{\tilde{s}(\mathbf{x}_L)} \cdot \min_{\mathbf{x}_R} \abs{\tilde{s}(\mathbf{x}_R)}
+  = \epsilon_i \cdot \epsilon_{k-i} > 0$.
+\end{remark}
+By the induction hypothesis, this value could be computed, along with the argmin.
+
+Let the $\mathbf{p}_L, \mathbf{p}_R$ be the argument
+which achieves the minimum $\abs{A(\mathbf{p}_L, \mathbf{p}_R)} = \min \abs{A(\mathbf{x}_L, \mathbf{x}_R)}$.
+Then for $\mathbf{p} = (\mathbf{p}_L, p_i, \mathbf{p}_R)$,
+\begin{equation}\label{candidate-min}
+  \tilde{s}(\mathbf{p}) = A(\mathbf{p}_L, \mathbf{p}_R) - p_i B(\mathbf{p}_L, \mathbf{p}_R).
+\end{equation}
+
+Notice that $p_i \in T$ has a limit point at $0$ from both side.
+Thus, there is small enough $p_i \in T$
+such that $\lvert A(\mathbf{p}_L, \mathbf{p}_R) - p_i B(\mathbf{p}_L, \mathbf{p}_R) \rvert
+< \abs{A(\mathbf{p}_L, \mathbf{p}_R)}$.
+Specifically, if we take $p_i \in T$ to be closest so that
+
+\[
+  \abs{p_i - \frac{A(\mathbf{p}_L, \mathbf{p}_R)}{B(\mathbf{p}_L, \mathbf{p}_R)}}
+  = d \left( \bar{T}, \frac{A(\mathbf{p}_L, \mathbf{p}_R)}{B(\mathbf{p}_L, \mathbf{p}_R)} \right),
+\]
+then $\abs{\tilde{s}(\mathbf{p})}$, absolute value of \eqref{candidate-min}, is minimized.
+In particular,
+\[
+  \abs{\tilde{s}(\mathbf{p}_L, p_i, \mathbf{p}_R)}
+  < \abs{\tilde{s}(\mathbf{p}_L, 0, \mathbf{p}_R)} = \abs{A(\mathbf{p}_L, \mathbf{p}_R)}.
+\]
+
+Since $\epsilon \leq \abs{\tilde{s}(\mathbf{p})} < \abs{A(\mathbf{p}_L, \mathbf{p}_R)}$,
+we might take $\delta$ as minimum of all such $\abs{\tilde{s}(\mathbf{p})}$ over $i$'s.
+Such $\delta$ satisfies the desired condition.
+
+\subsection{Maximum of $B$}
+
+To apply \eqref{normal_key_condition},
+it remains to compute $\max \abs{B(\mathbf{x}_L, \mathbf{x}_R)}$.
+Instead of maximum, we give the upper bound (which is likely achieved often).
+
+Given $(\mathbf{x}_L, x_i, \mathbf{x}_R) = (\mathbf{x}_{L'}, x_{i-1}, x_i, x_{i+1}, x_{i+2})$,
+by definition (and $\abs{x_j} \leq 1, \forall j$)
+\begin{align*}
+  \abs{B(x_L, x_R)}
+  & = \frac{1}{\abs{u^2}}
+  \abs{x_{i+1} \cdot \tilde{s}(\mathbf{x}_L) \cdot \tilde{s}(\mathbf{x}_{R'})
+  + x_{i-1} \cdot \tilde{s}(\mathbf{x}_{L'}) \cdot \tilde{s}(\mathbf{x}_R)} \\
+  & \leq \frac{\abs{x_{i+1}} \abs{\tilde{s}(\mathbf{x}_L)} \abs{\tilde{s}(\mathbf{x}_{R'})}
+  + \abs{x_{i-1}} \abs{\tilde{s}(\mathbf{x}_{L'})} \abs{\tilde{s}(\mathbf{x}_R)}}{\abs{u^2}} \\
+  & \leq \frac{1}{\abs{u^2}} (M_i M_{k-i-1} + M_{i-1} M_{k-i}) =: N_{k, i}
+\end{align*}
+where $M_j \geq \max_{\mathbf{x}} \abs{\tilde{s}_j(\mathbf{x})}$.
+
+We may compute $M_j$ inductively as
+\[
+  \abs{\tilde{s}_{k+1}}
+  \leq \abs{\tilde{s}_k} + \abs{x_k} \abs{x_{k-1}} \abs{u^{-2}} \abs{\tilde{s}_{k-1}}
+  \leq M_k + u^{-2} M_{k-1} =: M_{k+1}.
+\]
+Hence, the upper bound $N_{k, i}$ of $\abs{B(x_L, x_R)}$ could be computed
+and put into the $\max \abs{B(\mathbf{x}_L, \mathbf{x}_R)}$ part of \eqref{normal_key_condition}.
+This concludes the logical basis of the algorithm.
+
+\section{Recursive computation of maximum of Continued fraction}
+
+While the above method technically works,
+the given bound gets progressively worse as $k$ increases.
+A better algorithm could be obtained from the relations between
+inductive formula \eqref{key_equation} and continued fraction.
+
+As demonstrated by Philip Choi, we can obtain
+\[
+  \frac{s(\mathbf{n})}{s(\mathbf{n}_L) \cdot s(\mathbf{n}_R)}
+  = n_i u - \frac{s(\mathbf{n}_{R'})}{s(\mathbf{n}_R)} - \frac{s(\mathbf{n}_{L'})}{s(\mathbf{n}_L)}
+\]
+and terms like $s(\mathbf{n}_{L'}) / s(\mathbf{n}_L)$ is a continued fraction.
+From this, we obtain more easily optimizable recurrence relations.
+
+\subsection{Recurrence relations on continued fraction}
+
+For brevity, let us denote $l(\mathbf{n})$ to be the sequence excluding the last term,
+i.e. $l(\mathbf{n}, n_j) = \mathbf{n}$.
+
+\begin{definition}
+  \[ G(\mathbf{n}) = G_k(\mathbf{n}) := \frac{s_k(l(\mathbf{n}))}{u s_{k+1}(\mathbf{n})} \]
+\end{definition}
+
+Then,
+\[
+  \frac{s(\mathbf{n})}{s(\mathbf{n}_L) \cdot s(\mathbf{n}_R)}
+  = u (n_i - G(\mathbf{n}_L) - G(\overleftarrow{\mathbf{n}_R}))
+\]
+which gives the following recurrence relation on $G$.
+
+\begin{proposition}
+  For $\mathbf{n} = (\mathbf{n}_L, n_i, \mathbf{n}_R)
+  = (\mathbf{n}_{L'}, n_{i-1}, n_i, n_{i+1}, \mathbf{n}_{R'})$, when $i < k$,
+  \[
+    G_k(\mathbf{n}) = \frac{
+      G(\mathbf{n}_R) (n_i - G(\mathbf{n}_L)) - G(\mathbf{n}_{R'}) G(\overleftarrow{\mathbf{n}_R})
+    }{ n_i - G(\mathbf{n}_L) - G(\overleftarrow{\mathbf{n}_R}) }
+  \]
+\end{proposition}
+\begin{proof}
+  To be done
+\end{proof}
+
+\begin{proposition}
+  For $i = k$,
+  \[
+    G_k(\mathbf{n}) = \frac{1}{u^2} \cdot \frac{1}{n_k - G_{k-1}(l(\mathbf{n}))}
+  \]
+\end{proposition}
+\begin{proof}
+  
+\end{proof}
+
+\begin{remark}
+  When $\mathbf{n}$ is a zero of $s_{k+1}$, i.e. $s_{k+1}(\mathbf{n}) = 0$,
+  the denominator of $G_k$ is zero. In this case, we may say $G_k = \infty$.
+\end{remark}
+
+\subsection{Maximum of $\abs{G_k}$}
+
+Notice that similar to $\tilde{s}_k$,
+$G_k$ could also be represented in terms of $x_i = 1 / n_i$.
+We may view $\abs{G_k}$ as a continuous function
+from $\bar{T}^{k-1}$ to the compactification $\real_{+}^\infty = \real_{+} \cup \{ \infty \}$,
+which gives the concrete maximum $\abs{G(m)} \in \real_{+}^\infty$.
+We will demonstrate that this maximum could be computed.
+
+\begin{proposition}
+  $k \mapsto \max_{\mathbf{n}} \abs{G_k(\mathbf{n})}$ is strictly increasing until $\infty$.
+\end{proposition}
+\begin{proof}
+  Proof by induction.
+\end{proof}
+
+\end{document}
