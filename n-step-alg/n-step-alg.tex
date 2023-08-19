@@ -295,7 +295,7 @@ Then,
 \]
 which gives the following recurrence relation on $G$.
 
-\begin{proposition}
+\begin{proposition}\label{fraction_recurrence}
   For $\mathbf{n} = (\mathbf{n}_L, n_i, \mathbf{n}_R)
   = (\mathbf{n}_{L'}, n_{i-1}, n_i, n_{i+1}, \mathbf{n}_{R'})$, when $i < k$,
   \[
@@ -326,9 +326,9 @@ which gives the following recurrence relation on $G$.
 \subsection{Maximum of $\abs{G_k}$}
 
 Notice that similar to $\tilde{s}_k$,
-$G_k$ could also be represented in terms of $x_i = 1 / n_i$.
-We may view $\abs{G_k}$ as a continuous function
-from $\bar{T}^{k-1}$ to the compactification $\real_{+}^\infty = \real_{+} \cup \{ \infty \}$,
+$G_k$ could also be parametrized in terms of $x_i = 1 / n_i$.
+As such, we may view $\abs{G_k}$ as a continuous function
+from $\bar{T}^{k}$ to the compactification $\real_{+}^\infty = \real_{+} \cup \{ \infty \}$,
 which gives the concrete maximum $\abs{G(m)} \in \real_{+}^\infty$.
 We will demonstrate that this maximum could be computed.
 
@@ -338,5 +338,52 @@ We will demonstrate that this maximum could be computed.
 \begin{proof}
   Proof by induction.
 \end{proof}
+
+\begin{corollary}
+  Maximum is always attained inside $T^k$.
+\end{corollary}
+
+Denote $\mathbf{m} \in (\integer \setminus \{ 0 \})^k$
+be the sequence where $G(\mathbf{m})$ obtains the aforementioned maximum.
+
+\subsection{Bound of $n_i$}
+
+% TODO Mention attaining maximum somewhere
+For $i < k$, we can get a bound of $n_i$ as following.
+Denote $\Delta = n_i - G(\mathbf{n}_L)$ and let us use shorthand
+$G_L = G(\mathbf{n}_L), G_R = G(\mathbf{n}_R),
+G_{R'} = G(\mathbf{n}_{R'})$, and $\overleftarrow{G_R} = G(\overleftarrow{\mathbf{n}_R})$.
+Then, equation in Proposition \ref{fraction_recurrence} could be rewritten as
+\[
+  G = \frac{G_R \Delta - G_{R'} \overleftarrow{G_R}}{\Delta - \overleftarrow{G_R}}.
+\]
+
+Reformulated in terms of $\Delta$, we obtain
+\[
+  \Delta = \frac{G - G_{R'}}{G - G_R} \overleftarrow{G_R}.
+\]
+Given $|G| \geq M > \max \abs{G_R} \geq \max \abs{G_{R'}}$, we have the following inequality.
+\[
+  |\Delta| = \frac{\abs{1 - G_{R'} / G}}{\abs{1 - G_R / G}} \abs{\overleftarrow{G_R}}
+  \leq \frac{1 + \abs{G_{R'}} / \abs{G}}{1 - \abs{G_R} / \abs{G}} \abs{\overleftarrow{G_R}}
+  \leq \frac{1 + \max \abs{G_{R'}} / M}{1 - \max \abs{G_R} / M} \max \abs{\overleftarrow{G_R}}
+\]
+
+Since $\max \abs{G_R} = \max \abs{\overleftarrow{G_R}} = \max \abs{G_{k - i}}$
+and $\max \abs{G_{R'}} = \max \abs{G_{k-i-1}}$,
+this gives the bound
+\[
+  \abs{n_i - G_L} \leq \frac{M + \max \abs{G_{k-i-1}}}{M - \max \abs{G_{k-i}}} \max \abs{G_{k-i}}.
+\]
+Hence, once $n_1, \cdots, n_{i-1}$ are determined,
+there are only finite possible values that $n_i$ might take.
+
+This does not cover $i = k$ case, which has distinct bound.
+% TODO
+
+Consequently, once we know $m_1, \cdots, m_{i-1}$,
+we can choose $m_i$ from finitely many possible choices and check inductively.
+This gives rise to the maximum-finding algorithm for $G_k$,
+which in turn gives $\infty$ when the zeros of $s_{k+1}$ could be found.
 
 \end{document}
