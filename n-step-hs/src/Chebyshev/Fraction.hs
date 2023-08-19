@@ -20,9 +20,9 @@ import Inductive
 import Streamly.Data.Fold qualified as Fold
 import Streamly.Data.Stream qualified as Stream
 import Streamly.Data.StreamK qualified as StreamK
+import Streamly.Internal.Data.Stream qualified as Stream
 import Streamly.Internal.Data.Stream.StreamK qualified as StreamK
 import Util
-import qualified Streamly.Internal.Data.Stream as Stream
 
 -- | Initiate fraction computation of chebyshev polynomials.
 initChebyRealFrac :: (RealFrac v, Integral a) => v -> InductiveEval a (Extended v)
@@ -99,10 +99,10 @@ chebyRealFractionMax u2 = computeMax
       chooseN_i ::
         STRef s (V.Vector Rational) ->
         FractionEval ->
-        Word ->
+        Int ->
         StreamK.CrossStreamK (ST s) FractionEval
       chooseN_i radiusRef g_L i = StreamK.mkCross . StreamK.concatEffect $ do
-        boundRadius <- (V.! (fromIntegral i - 1)) <$> readSTRef radiusRef
+        boundRadius <- (V.! pred (fromIntegral i)) <$> readSTRef radiusRef
         let vG_L = knownFinite $ value g_L
             minBnd = floor $ vG_L - boundRadius
             maxBnd = ceiling $ vG_L + boundRadius
@@ -126,9 +126,9 @@ chebyRealFractionMax u2 = computeMax
       maxFinding = Stream.concatEffect $ do
         let maxCandArg = maxCandidate k
         radiusRef <- newSTRef $ boundRadiusVec k maxCandArg
+        let chosens = foldlM (chooseN_i radiusRef) (initChebyRealFrac u2) [1 .. fromIntegral k - 1]
         pure
-          $ foldlM (chooseN_i radiusRef) (initChebyRealFrac u2) [1 .. k - 1]
-          & (StreamK.toStream . StreamK.unCross)
+          $ StreamK.toStream (StreamK.unCross chosens)
           & Stream.mapMaybe lastStep
           & Stream.scan (Fold.foldlM' (puttingMax radiusRef) $ pure maxCandArg)
 
