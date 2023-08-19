@@ -22,6 +22,7 @@ import Streamly.Data.Stream qualified as Stream
 import Streamly.Data.StreamK qualified as StreamK
 import Streamly.Internal.Data.Stream.StreamK qualified as StreamK
 import Util
+import qualified Streamly.Internal.Data.Stream as Stream
 
 -- | Initiate fraction computation of chebyshev polynomials.
 initChebyRealFrac :: (RealFrac v, Integral a) => v -> InductiveEval a (Extended v)
@@ -46,6 +47,10 @@ type FractionEval = InductiveEval Integer (Extended Rational)
 
 -- TODO Instead of memo, use a structure to store results.
 -- TODO Could be performed in IO this way.
+
+-- Stops when infinity is encountered
+untilInfinity :: (Monad m) => Fold.Fold m (Arg (Extended r) b) (Maybe (Arg (Extended r) b))
+untilInfinity = Fold.takeEndBy (\(Arg curMax _) -> Data.ExtendedReal.isInfinite curMax) Fold.latest
 
 -- | Compute maximal real-fraction G_k given k and steps.
 chebyRealFractionMax :: Rational -> Word -> Arg (Extended Rational) (V.Vector Integer)
@@ -99,13 +104,14 @@ chebyRealFractionMax u2 = computeMax
       chooseN_i radiusRef g_L i = StreamK.mkCross . StreamK.concatEffect $ do
         boundRadius <- (V.! (fromIntegral i - 1)) <$> readSTRef radiusRef
         let vG_L = knownFinite $ value g_L
-            center = floor vG_L
             minBnd = floor $ vG_L - boundRadius
             maxBnd = ceiling $ vG_L + boundRadius
+            positives = Stream.takeWhile (<= maxBnd) $ Stream.enumerateFromStepIntegral (max 1 minBnd) 1
+            negatives = Stream.takeWhile (>= minBnd) $ Stream.enumerateFromStepIntegral (min (-1) maxBnd) (-1)
         pure $ (`next` g_L) <$> do
           if i == 1
-            then StreamK.fromStream $ Stream.enumerateFromTo (max 1 minBnd) maxBnd -- Only take n_1 > 0
-            else StreamK.filter (/= 0) $ rangeFromCenter center minBnd maxBnd
+            then StreamK.fromStream positives -- Only take n_1 > 0
+            else StreamK.fromStream positives `StreamK.interleave` StreamK.fromStream negatives
 
       puttingMax radiusRef oldMax new =
         if oldMax < new then new <$ writeSTRef radiusRef (boundRadiusVec k new) else pure oldMax
@@ -125,19 +131,6 @@ chebyRealFractionMax u2 = computeMax
           & (StreamK.toStream . StreamK.unCross)
           & Stream.mapMaybe lastStep
           & Stream.scan (Fold.foldlM' (puttingMax radiusRef) $ pure maxCandArg)
-
--- Stops when infinity is encountered
-untilInfinity :: (Monad m) => Fold.Fold m (Arg (Extended r) b) (Maybe (Arg (Extended r) b))
-untilInfinity = Fold.takeEndBy (\(Arg curMax _) -> Data.ExtendedReal.isInfinite curMax) Fold.latest
-
--- >>> Stream.toList $ rangeFromCenter (0 :: Int) (-3) 6
--- [0,1,-1,2,-2,3,-3,4,5,6]
-
-rangeFromCenter :: (Enum a, Stream.Enumerable a, Monad m) => a -> a -> a -> StreamK.StreamK m a
-rangeFromCenter center lower higher = lowers `StreamK.interleave` highers
- where
-  lowers = StreamK.fromStream $ Stream.enumerateFromThenTo center (pred center) lower
-  highers = StreamK.fromStream $ Stream.enumerateFromTo (succ center) higher
 
 -- Do not know what is problem now.
 -- 7: 17/6, 23/6
