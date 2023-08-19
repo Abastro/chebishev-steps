@@ -17,6 +17,7 @@ import Streamly.Data.StreamK qualified as StreamK
 import System.Console.ANSI
 import System.IO
 import Text.Printf
+import Data.Foldable
 
 data Method = Linear | Fraction deriving (Show)
 data RootConvention = U2 | NegU2 deriving (Show)
@@ -64,6 +65,8 @@ main = do
     ExhaustDenominator cutoff denom outFile -> withFileMay outFile $ \outHandle -> do
       let fracts = fractions denom
       remaining <- newMVar fracts
+      for_ outHandle $ \handle -> hPutStrLn handle "rel #, k, seq n"
+
       -- Why do they make me do this
       StreamK.toStream (StreamK.fromFoldable fracts)
         & Stream.parConcatMap (Stream.ordered True) (Stream.fromEffect . evaluateAndPrint remaining)
@@ -81,9 +84,7 @@ main = do
           cursorUpLine 1
         pure (root, result)
 
-      emitToFile (root, result) = \case
-        Nothing -> pure ()
-        Just handle -> do
+      emitToFile (root, result) = traverse_ $ \handle -> do
           printResult handle cutoff root result
           hFlush handle
  where
