@@ -48,7 +48,7 @@
 
 \newcommand{\abs}[1]{\left\lvert{#1}\right\rvert}
 
-\title{N-step decision algorithms}
+\title{k-step decision algorithms}
 \author{Junho Lee}
 
 \begin{document}
@@ -60,7 +60,7 @@ It is a hard problem to determine if a number is relational or not.
 Algorithmic approach could be of help here -
 while there is no way to directly decide relational property,
 one could decide if a number is a root of chebyshev polynomial of certain steps.
-This write-up suggests multiple algoirthms to perform this operation.
+This write-up suggests multiple decision algoirthms achieving this goal.
 
 \section{Problem Definition}
 
@@ -148,7 +148,7 @@ Then, we have the following property, which holds for any function in $C(\bar{T}
 
 By Corollary \ref{image_compact}, one can find a $\mathbf{x} \in \bar{T}^{k-1}$
 which achieves the minimal distance between $\tilde{s}(\bar{T}^{k-1})$ and $0$.
-In particular, the zeros are obtained as such $\mathbf{x}$ if and only iff this distance $\abs{\tilde{s}}$ is $0$.
+In particular, the zeros are obtained as such $\mathbf{x}$ if and only if this distance $\abs{\tilde{s}}$ is $0$.
 This gives us an idea on how to find zeros of $\tilde{s}$.
 
 \subsection{Overview of the algorithm}
@@ -312,8 +312,8 @@ This concludes the logical basis of the algorithm.
       \For{$i \in [1, k-1]$}
         \State $(A_i, \mathbf{n}^i_L, \mathbf{n}^i_R) \gets$ \Call{ConstMin}{$u^2$, $k$, $i$}
         \State $B_i \gets B(\mathbf{n}^i_L, \mathbf{n}^i_R)$
-        \State $\epsilon_i \gets \min_{n_i \in \integer \setminus \{0\}} (\abs{A_i - B_i / n_i})$
-        \State $\delta \gets \min(\delta, \epsilon_i)$
+        \State $\delta_i \gets \min_{n_i \in \integer \setminus \{0\}} (\abs{A_i - B_i / n_i})$
+        \State $\delta \gets \min(\delta, \delta_i)$
       \EndFor
       \State \textbf{return} $\delta$
     \EndFunction
