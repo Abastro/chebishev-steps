@@ -10,6 +10,8 @@
 \usepackage{graphicx}
 \usepackage{wrapfig}
 \usepackage[a4paper, total={6in, 8in}]{geometry}
+\usepackage{algorithm}
+\usepackage[noend]{algpseudocode}
 
 % environments
 \theoremstyle{definition}
@@ -65,6 +67,7 @@ This write-up suggests multiple algoirthms to perform this operation.
 Given $u$, we are to find the minimal $k$ where $u$ is the root of $s^{\mathbf{n}}_k$.
 For this purpose, it helps to consider $s^{\mathbf{n}}_k(u)$ as a function of $\mathbf{n} \in \integer^{k-1}$.
 Hence, we will fix $u$ and denote the chebyshev polynomial as $s_k(\mathbf{n})$ or $s(\mathbf{n})$.
+To check for the common cases, we will assume $u^2 \in \real$.
 
 Under this setting, we are tasked to determine if a multivariate polynomial $s_k(\mathbf{n})$
 has a zero within $\integer^{k-1}$.
@@ -80,22 +83,24 @@ we have
   - s(\mathbf{n}_{L'}, n_{i-1}, n_{i+1}, \mathbf{n}_{R'}).
 \end{equation}
 
-This implies the following properties:
-\begin{enumerate}
-  \item When $n_i = 0$, $s(\mathbf{n}) = - s(\mathbf{n}_{L'}, n_{i-1}, n_{i+1}, \mathbf{n}_{R'})$.
+This implies the following properties.
+\begin{fact}
+  When $n_i = 0$, $s(\mathbf{n}) = - s(\mathbf{n}_{L'}, n_{i-1}, n_{i+1}, \mathbf{n}_{R'})$.
   Hence, if such $\mathbf{n}$ is a zero, there is a shorter sequence which is a zero.
-  \item As $n_i \to \infty$, $s(\mathbf{n}) / (n_i u)$ converges to $s(\mathbf{n}_L) \cdot s(\mathbf{n}_R)$.
-\end{enumerate}
+\end{fact}
+\begin{fact}
+  As $n_i \to \infty$, $s(\mathbf{n}) / (n_i u)$ converges to $s(\mathbf{n}_L) \cdot s(\mathbf{n}_R)$.
+\end{fact}
 
 The first property implies that we do not need to check $n_i = 0$ case for a minimal polynomial,
 so our search is reduced to finding a root in $\integer^{k-1} \setminus \{0\}$.
 
-On the other hand, the latter property means the monic polynomial
+On the other hand, the latter property means the "normalized" term
 \[
   \tilde{s}_k(\mathbf{n}) := \frac{s_k(\mathbf{n})}{u^{k-1} n_1 \cdots n_{k-1}}
 \]
-converges to the product of another such monic polynomials $\tilde{s}_i$ and $\tilde{s}_{k-i}$.
-This indicates that this monic polynomial has a limiting behavior
+converges to the product of $\tilde{s}_i$ and $\tilde{s}_{k-i}$ as $n_i \to \infty$.
+This indicates that this "Normalized Chebyshev" has a limiting behavior
 based on chebyshev polynomials of lower degree.
 
 \section{Recursive computation of minimum of $\tilde{s}_k$}
@@ -105,14 +110,14 @@ based on chebyshev polynomials of lower degree.
 First, we capture the general behavior of a function with domain $\integer^{k-1} \setminus \{0\}$.
 To simplify the logic, we may reparameterize $\tilde{s}_k(\mathbf{n})$
 by $\mathbf{x}$ where $x_i = 1 / n_i$.
-This is simply inversion of each parameter.
 Under this terms, $\mathbf{x} \in T^{k-1}$ and $\tilde{s} : T^{k-1} \to \real$
 where $T := \{ 1 / k \mid k \in \integer - \{ 0 \} \}$.
-Clearly, such $\tilde{s}$ is a continuous function.
+Since $\tilde{s}$ is a polynomial in terms of $\mathbf{x}$,
+it is a continuous function.
 Furthermore, it is easy to see that $\tilde{s}$ is defined on the case where some $x_i$'s are 0.
-Hence we may regard $\tilde{s} \in C(\bar{T}^{k-1})$.
+Hence, we may regard $\tilde{s} \in C(\bar{T}^{k-1})$.
 
-Then, we have the following property which holds for any function in $C(\bar{T}^{k-1})$.
+Then, we have the following property, which holds for any function in $C(\bar{T}^{k-1})$.
 \begin{proposition}
   Suppose there is a sequence $\{ \mathbf{x}^\alpha \} \subset \bar{T}^{k-1}$
   where each $\mathbf{x}_\alpha$ is distinct
@@ -126,7 +131,7 @@ Then, we have the following property which holds for any function in $C(\bar{T}^
   there is a subsequence $\{ \mathbf{y}^\beta \}$ which converges to some $\mathbf{y} \in \bar{T}^{k-1}$.
   As each $\mathbf{y}_\beta$ should be distinct as well, one has $\mathbf{y} \in \lim T^{k-1}$.
   Then, by continuity of $\tilde{s}$ we get $\tilde{s}(\mathbf{y}^\beta) \to \tilde{s}(\mathbf{y})$.
-  Therefore, $c = \tilde(s)(\mathbf{y}) \in \tilde{s}(\lim T^{k-1})$.
+  Therefore, $c = \tilde{s}(\mathbf{y}) \in \tilde{s}(\lim T^{k-1})$.
 \end{proof}
 
 \begin{corollary}
@@ -135,17 +140,20 @@ Then, we have the following property which holds for any function in $C(\bar{T}^
 \end{corollary}
 
 \begin{corollary}\label{image_compact}
-  The image $\tilde{s}(\bar{T}^{k-1})$ is closed and compact (this follows from $T^{k-1}$ being compact).
+  The image $\tilde{s}(\bar{T}^{k-1})$ is closed and compact.
 \end{corollary}
+\begin{proof}
+  This follows from $\bar{T}^{k-1}$ being compact.
+\end{proof}
 
 By Corollary \ref{image_compact}, one can find a $\mathbf{x} \in \bar{T}^{k-1}$
 which achieves the minimal distance between $\tilde{s}(\bar{T}^{k-1})$ and $0$.
-In particular, the zeros are obtained as such $\mathbf{x}$ if and only iff this distance is $0$.
-Here, we could get an idea on how to find zeros of $\tilde{s}$.
+In particular, the zeros are obtained as such $\mathbf{x}$ if and only iff this distance $\abs{\tilde{s}}$ is $0$.
+This gives us an idea on how to find zeros of $\tilde{s}$.
 
 \subsection{Overview of the algorithm}
 
-This algorithm is to find the minimal distance $\epsilon$ between $\tilde{s}(\bar{T}^{k-1})$ and $0$,
+This algorithm is to find the minimal distance $\epsilon \geq 0$ between $\tilde{s}(\bar{T}^{k-1})$ and $0$,
 and the value $\mathbf{m} \in \bar{T}^{k-1}$ which achieves the minimum.
 The algorithm finds this inductively,
 assuming the minimal distance $\epsilon_j$ and the argmin $\mathbf{m}^j$ is found for all $j < k$.
@@ -157,26 +165,32 @@ so that the minimum could be searched and found among them in a manageable time.
 
 \subsection{Bounds of $x_i$}
 
+\def\xs {\mathbf{x}}
+\def\xsL {\mathbf{x}_L}
+\def\xsR {\mathbf{x}_R}
+\def\xsLl {\mathbf{x}_{L'}}
+\def\xsRr {\mathbf{x}_{R'}}
+
 Suppose $i$ is fixed.
 Recall the equation \eqref{key_equation}.
 By normalizing, the following can be obtained.
 
 \[
-  \tilde{s}(\mathbf{x}) = \tilde{s}(\mathbf{x}_L, x_i, \mathbf{x}_R) =
-  \tilde{s}(\mathbf{x}_L) \cdot \tilde{s}(\mathbf{x}_R)
+  \tilde{s}(\xs) = \tilde{s}(\xsL, x_i, \xsR)
+  = \tilde{s}(\xsL) \cdot \tilde{s}(\xsR)
   - \frac{x_i}{u^2}
-  (x_{i+1} \cdot \tilde{s}(\mathbf{x}_L) \cdot \tilde{s}(\mathbf{x}_{R'})
-  + x_{i-1} \cdot \tilde{s}(\mathbf{x}_{L'}) \cdot \tilde{s}(\mathbf{x}_R))
+  (x_{i+1} \cdot \tilde{s}(\xsL) \cdot \tilde{s}(\xsRr) + x_{i-1} \cdot \tilde{s}(\xsLl) \cdot \tilde{s}(\xsR))
 \]
 
-We may substitute the "constant" and "slope" term as
-\begin{align*}
-  & A(x_L, x_R) := \tilde{s}(\mathbf{x}_L) \cdot \tilde{s}(\mathbf{x}_R),\\
-  & B(x_L, x_R) := \frac{1}{u^2}
-  (x_{i+1} \cdot \tilde{s}(\mathbf{x}_L) \cdot \tilde{s}(\mathbf{x}_{R'})
-  + x_{i-1} \cdot \tilde{s}(\mathbf{x}_{L'}) \cdot \tilde{s}(\mathbf{x}_R))
-\end{align*}
-so that we have $\tilde{s}(\mathbf{x}) = A(\mathbf{x}_L, \mathbf{x}_R) - x_i B(\mathbf{x}_L, \mathbf{x}_R)$.
+We may substitute the "constant" and "slope" term as the following.
+\begin{definition}
+  \begin{align*}
+    & A(\xsL, \xsR) := \tilde{s}(\xsL) \cdot \tilde{s}(\xsR), \\
+    & B(\xsL, \xsR) := \frac{1}{u^2}
+    (x_{i+1} \cdot \tilde{s}(\xsL) \cdot \tilde{s}(\xsRr) + x_{i-1} \cdot \tilde{s}(\xsLl) \cdot \tilde{s}(\xsR)).
+  \end{align*}
+\end{definition}
+Then, we have $\tilde{s}(\mathbf{x}) = A(\mathbf{x}_L, \mathbf{x}_R) - x_i B(\mathbf{x}_L, \mathbf{x}_R)$.
 Remark that this is a linear polynomial in terms of $x_i$.
 
 From the above equation, we can deduce
@@ -189,13 +203,13 @@ and given the minimum $\abs{\tilde{s}(\mathbf{m})} = \epsilon \leq \delta
 \begin{equation}\label{normal_key_condition}
   \abs{m_i}
   \geq \frac{\abs{A(\mathbf{m}_L, \mathbf{m}_R)} - \abs{\tilde{s}(\mathbf{m})}}{\abs{B(\mathbf{m}_L, \mathbf{m}_R)}}
-  \geq \frac{\min \abs{A(\mathbf{x}_L, \mathbf{x}_R)} - \delta}{\max \abs{B(\mathbf{x}_L, \mathbf{x}_R)}}
+  \geq \frac{\min \abs{A(\mathbf{x}_L, \mathbf{x}_R)} - \delta}{\max \abs{B(\mathbf{x}_L, \mathbf{x}_R)}}.
 \end{equation}
 
 Therefore, we obtain the lower bound $L$ of $m_i$
 whenever there is a "candidate minimum" $\delta \geq \epsilon$
-which is smaller than minimum of $A$.
-Since $n_i = 1 / m_i \leq 1 / L$, this gives the finite set of $\{ n_i \}$ to search the argmin from.
+which is smaller than minimum of $\abs{A}$.
+Since $\abs{n_i} = 1 / \abs{m_i} \leq 1 / L$, this gives the finite set of $\{ n_i \}$ to search the argmin from.
 
 \subsection{Minimum of $A$, and finding the candidate minimum}
 
@@ -241,28 +255,91 @@ To apply \eqref{normal_key_condition},
 it remains to compute $\max \abs{B(\mathbf{x}_L, \mathbf{x}_R)}$.
 Instead of maximum, we give the upper bound (which is likely achieved often).
 
-Given $(\mathbf{x}_L, x_i, \mathbf{x}_R) = (\mathbf{x}_{L'}, x_{i-1}, x_i, x_{i+1}, x_{i+2})$,
+Given $(\xsL, x_i, \xsR) = (\xsLl, x_{i-1}, x_i, x_{i+1}, \xsRr)$,
 by definition (and $\abs{x_j} \leq 1, \forall j$)
-\begin{align*}
-  \abs{B(x_L, x_R)}
-  & = \frac{1}{\abs{u^2}}
-  \abs{x_{i+1} \cdot \tilde{s}(\mathbf{x}_L) \cdot \tilde{s}(\mathbf{x}_{R'})
-  + x_{i-1} \cdot \tilde{s}(\mathbf{x}_{L'}) \cdot \tilde{s}(\mathbf{x}_R)} \\
-  & \leq \frac{\abs{x_{i+1}} \abs{\tilde{s}(\mathbf{x}_L)} \abs{\tilde{s}(\mathbf{x}_{R'})}
-  + \abs{x_{i-1}} \abs{\tilde{s}(\mathbf{x}_{L'})} \abs{\tilde{s}(\mathbf{x}_R)}}{\abs{u^2}} \\
-  & \leq \frac{1}{\abs{u^2}} (M_i M_{k-i-1} + M_{i-1} M_{k-i}) =: N_{k, i}
-\end{align*}
-where $M_j \geq \max_{\mathbf{x}} \abs{\tilde{s}_j(\mathbf{x})}$.
+\begin{equation}\label{slope_upper_bound}
+  \begin{aligned}
+    \abs{B(x_L, x_R)}
+    & = \frac{1}{\abs{u^2}}
+    \abs{x_{i+1} \cdot \tilde{s}(\mathbf{x}_L) \cdot \tilde{s}(\mathbf{x}_{R'})
+    + x_{i-1} \cdot \tilde{s}(\mathbf{x}_{L'}) \cdot \tilde{s}(\mathbf{x}_R)} \\
+    & \leq \frac{\abs{x_{i+1}} \abs{\tilde{s}(\mathbf{x}_L)} \abs{\tilde{s}(\mathbf{x}_{R'})}
+    + \abs{x_{i-1}} \abs{\tilde{s}(\mathbf{x}_{L'})} \abs{\tilde{s}(\mathbf{x}_R)}}{\abs{u^2}}
+  \end{aligned}
+\end{equation}
+Hence, enough to find upper bound of $\abs{\tilde{s}}$.
 
-We may compute $M_j$ inductively as
-\[
-  \abs{\tilde{s}_{k+1}}
-  \leq \abs{\tilde{s}_k} + \abs{x_k} \abs{x_{k-1}} \abs{u^{-2}} \abs{\tilde{s}_{k-1}}
-  \leq M_k + u^{-2} M_{k-1} =: M_{k+1}.
-\]
-Hence, the upper bound $N_{k, i}$ of $\abs{B(x_L, x_R)}$ could be computed
-and put into the $\max \abs{B(\mathbf{x}_L, \mathbf{x}_R)}$ part of \eqref{normal_key_condition}.
+\begin{proposition}
+  Consider a sequence $M_k$ given by $M_0 = 0, M_1 = 1$, $M_{k+1} = M_k + \abs{u^{-2}} M_{k-1}$.
+  Then, $\abs{\tilde{s}_k} \leq M_k$.
+\end{proposition}
+\begin{proof}
+  By induction, we have
+  \[
+    \abs{\tilde{s}_{k+1}}
+    \leq \abs{\tilde{s}_k} + \abs{x_k} \abs{x_{k-1}} \abs{u^{-2}} \abs{\tilde{s}_{k-1}}
+    \leq M_k + \abs{u^{-2}} M_{k-1} = M_{k+1}
+  \]
+  as desired.
+\end{proof}
+
+\begin{corollary}
+  Applying above proposition to \eqref{slope_upper_bound}, we obtain
+  \[
+    \abs{B(\xsL, \xsR)} \leq \frac{M_i M_{k-i-1} + M_{i-1} M_{k-i}}{\abs{u^2}}.
+  \]
+\end{corollary}
+
+We can plug in this upper bound of $\abs{B(\xsL, \xsR)}$ to the place of  $\max \abs{B(\xsL, \xsR)}$.
 This concludes the logical basis of the algorithm.
+
+\subsection{Pseudocode}
+
+\begin{algorithm}
+  \caption{Minimum of normalized Chebyshev polynomial}
+  \begin{algorithmic}
+    \Function{ConstMin}{$u^2$, $k$, $i$}
+      \State $(\epsilon_L, \mathbf{n}_L) \gets$ \Call{NormalizedChebyshevMin}{$u^2$, $i$}
+      \State $(\epsilon_R, \mathbf{n}_R) \gets$ \Call{NormalizedChebyshevMin}{$u^2$, $k-i$}
+      \State \textbf{return} $(\epsilon_L \epsilon_R, \mathbf{n}_L, \mathbf{n}_R)$
+    \EndFunction
+
+    \Function{SlopeMax}{$u^2$, $k$, $i$} $= (M_i M_{k-i-1} + M_{i-1} M_{k-i}) / \abs{u^2}$
+    \EndFunction
+
+    \Function{InitMinCand}{$u^2$, $k$}
+      \State $\delta \gets \infty$
+      \For{$i \in [1, k-1]$}
+        \State $(A_i, \mathbf{n}^i_L, \mathbf{n}^i_R) \gets$ \Call{ConstMin}{$u^2$, $k$, $i$}
+        \State $B_i \gets B(\mathbf{n}^i_L, \mathbf{n}^i_R)$
+        \State $\epsilon_i \gets \min_{n_i \in \integer \setminus \{0\}} (\abs{A_i - B_i / n_i})$
+        \State $\delta \gets \min(\delta, \epsilon_i)$
+      \EndFor
+      \State \textbf{return} $\delta$
+    \EndFunction
+
+    \Function{BoundAt}{$u^2$, $k$, $i$, $\delta$}
+      \State $(A, \_, \_) \gets$ \Call{ConstMin}{$u^2$, $k$, $i$}
+      \State $B \gets$ \Call{SlopeMax}{$u^2$, $k$, $i$}
+      \State \textbf{return} {$B / (A - \delta)$}
+    \EndFunction
+
+    \Function{NormalizedChebyshevMin}{$u^2$, $k$}
+      \State $\delta \gets$ \Call{InitMinCand}{$u^2$, $k$}
+      \While{has $\mathbf{n}$ to check}
+        \For{$i \in [1, k-1]$}
+          \State $R \gets$ \Call{BoundAt}{$u^2$, $k$, $i$, $\delta$}
+          \State choose next $n_i \in [- R, R] \setminus \{0\}$
+        \EndFor
+        \If{$\tilde{s}_k(\mathbf{n}) < \delta$}
+          \State $\delta \gets \tilde{s}_k(\mathbf{n})$
+          \State $\mathbf{m} \gets \mathbf{n}$
+        \EndIf
+      \EndWhile
+      \State \textbf{return} $(\delta, \mathbf{m})$
+    \EndFunction
+  \end{algorithmic}
+\end{algorithm}
 
 \section{Recursive computation of maximum of Continued fraction}
 
@@ -281,46 +358,100 @@ From this, we obtain more easily optimizable recurrence relations.
 
 \subsection{Recurrence relations on continued fraction}
 
+\let\rev\overleftarrow
+
 For brevity, let us denote $l(\mathbf{n})$ to be the sequence excluding the last term,
-i.e. $l(\mathbf{n}, n_j) = \mathbf{n}$.
+i.e. $l(\mathbf{n}, n_j) = \mathbf{n}$,
+and $r(\mathbf{n})$ to be the sequence excluding the first term,
+i.e. $r(n_1, \mathbf{n}) = \mathbf{n}$.
 
 \begin{definition}
   \[ G(\mathbf{n}) = G_k(\mathbf{n}) := \frac{s_k(l(\mathbf{n}))}{u s_{k+1}(\mathbf{n})} \]
 \end{definition}
 
-Then,
-\[
+\begin{remark}
+  Assuming $u^2 \in \real$, $G(\mathbf{n}) \in \real$ whenever defined.
+\end{remark}
+
+\begin{remark}
+  When $\mathbf{n}$ is a zero of $s_{k+1}$, i.e. $s_{k+1}(\mathbf{n}) = 0$,
+  the denominator of $G_k$ is zero. In this case, we may say $G_k = \infty$.
+  This indicates the relationship between supremum of $G_k$ and zeros of $s_{k+1}$.
+\end{remark}
+
+Then, we can reformulate above equation as
+\begin{equation}\label{chebyshev_and_fraction}
   \frac{s(\mathbf{n})}{s(\mathbf{n}_L) \cdot s(\mathbf{n}_R)}
   = u (n_i - G(\mathbf{n}_L) - G(\overleftarrow{\mathbf{n}_R}))
-\]
+\end{equation}
 which gives the following recurrence relation on $G$.
 
+\def\ns {\mathbf{n}}
+\def\nsL {\mathbf{n}_L}
+\def\nsR {\mathbf{n}_R}
+\def\nsLl {\mathbf{n}_{L'}}
+\def\nsRr {\mathbf{n}_{R'}}
+
 \begin{proposition}\label{fraction_recurrence}
-  For $\mathbf{n} = (\mathbf{n}_L, n_i, \mathbf{n}_R)
-  = (\mathbf{n}_{L'}, n_{i-1}, n_i, n_{i+1}, \mathbf{n}_{R'})$, when $i < k$,
+  For $\mathbf{n} = (\nsL, n_i, \nsR)
+  = (\nsLl, n_{i-1}, n_i, n_{i+1}, \nsRr)$, when $i < k$,
   \[
     G_k(\mathbf{n}) = \frac{
-      G(\mathbf{n}_R) (n_i - G(\mathbf{n}_L)) - G(\mathbf{n}_{R'}) G(\overleftarrow{\mathbf{n}_R})
-    }{ n_i - G(\mathbf{n}_L) - G(\overleftarrow{\mathbf{n}_R}) }
+      G(\mathbf{n}_R) (n_i - G(\mathbf{n}_L)) - G(\mathbf{n}_{R'}) G(\rev{\mathbf{n}_R})}{ n_i - G(\mathbf{n}_L) - G(\rev{\mathbf{n}_R}) }
   \]
 \end{proposition}
 \begin{proof}
-  To be done
+  Dividing equation \eqref{chebyshev_and_fraction} with $\mathbf{n} \leftarrow l(\mathbf{n})$
+  by \eqref{chebyshev_and_fraction} with $\mathbf{n}$,
+  \[
+    \frac{ \frac{s(l(\ns))}{s(\nsL) s(l(\nsR))} }{ \frac{s(\ns)}{s(\nsL) s(\nsR)} }
+    = \frac{ u (n_i - G(\nsL) - G(\rev{l(\nsR)})) }{ u (n_i - G(\nsL) - G(\rev{\nsR})) }
+  \]
+  which gives
+  \[
+    G(\ns) = \frac{s(l(\ns))}{u s(\ns)}
+    = \frac{s(l(\nsR))}{u s(\nsR)} \cdot \frac{n_i - G(\nsL) - G(\rev{l(\nsR)})}{n_i - G(\nsL) - G(\rev{\nsR})}
+    = G(\nsR) \frac{n_i - G(\nsL) - G(\rev{l(\nsR)})}{n_i - G(\nsL) - G(\rev{\nsR})}.
+  \]
+
+  Notice that
+  \begin{align*}
+    u G(\rev{l(\nsR)}) = \frac{s(r(l(\nsR)))}{s(l(\nsR))}
+    & = \frac{s(\nsR)}{s(l(\nsR))} \cdot \frac{s(r(\nsR))}{s(\nsR)} \cdot \frac{s(l(r(\nsR)))}{s(r(\nsR))} \\
+    & = \frac{1}{u G(\nsR)} \cdot u G(\rev{\nsR}) \cdot u G(r(\nsR)) \\
+    & = \frac{G(\nsRr)}{G(\nsR)} \cdot u G(\rev{\nsR}).
+  \end{align*}
+  Plugging this into the above equation, we obtain
+  \[
+    G(\ns) = G(\nsR) \frac{n_i - G(\nsL) - \frac{G(\nsRr)}{G(\nsR)} G(\rev{\nsR})}{n_i - G(\nsL) - G(\rev{\nsR})}
+    = \frac{G(\nsR) (n_i - G(\nsL)) - G(\nsRr) G(\rev{\nsR})}{n_i - G(\nsL) - G(\rev{\nsR})}
+  \]
+  as desired.
 \end{proof}
 
-\begin{proposition}
+\begin{remark}[Limiting behavior]
+  As $n_i \to \infty$, $G(\mathbf{n}) \to G(\mathbf{n}_R)$.
+\end{remark}
+
+\begin{proposition}\label{fraction_recurrence_last}
   For $i = k$,
   \[
     G_k(\mathbf{n}) = \frac{1}{u^2} \cdot \frac{1}{n_k - G_{k-1}(l(\mathbf{n}))}
   \]
 \end{proposition}
 \begin{proof}
-  
+  \[
+    G_k(\mathbf{n}) = \frac{s_k(l(\ns))}{u s_{k+1}(\ns)}
+    = \frac{s_k(l(\ns))}{u (n_k u \cdot s_k(l(\ns)) - s_{k-1}(l(l(\ns))))}
+    = \frac{1}{u^2 (n_k - G_{k-1}(l(\ns)))}.
+  \]
 \end{proof}
 
-\begin{remark}
-  When $\mathbf{n}$ is a zero of $s_{k+1}$, i.e. $s_{k+1}(\mathbf{n}) = 0$,
-  the denominator of $G_k$ is zero. In this case, we may say $G_k = \infty$.
+\begin{remark}[Limiting behavior]
+  As $n_k \to \infty$, $G(\mathbf{n}) \to 0 = G_0$.
+  Along with the previous remark,
+  this implies that $G(\mathbf{n})$ congregate around previous $G_{j}(\mathbf{n}_R)$ values where $j < k$.
+  In particular, only finitely many could be far from these previously occurred points.
 \end{remark}
 
 \subsection{Maximum of $\abs{G_k}$}
@@ -329,30 +460,67 @@ Notice that similar to $\tilde{s}_k$,
 $G_k$ could also be parametrized in terms of $x_i = 1 / n_i$.
 As such, we may view $\abs{G_k}$ as a continuous function
 from $\bar{T}^{k}$ to the compactification $\real_{+}^\infty = \real_{+} \cup \{ \infty \}$,
-which gives the concrete maximum $\abs{G(m)} \in \real_{+}^\infty$.
+which gives the concrete maximum $\abs{G(\mathbf{m})} \in \real_{+}^\infty$.
 We will demonstrate that this maximum could be computed.
 
-\begin{proposition}
+\begin{proposition}\label{fraction_max_increase}
   $k \mapsto \max_{\mathbf{n}} \abs{G_k(\mathbf{n})}$ is strictly increasing until $\infty$.
 \end{proposition}
 \begin{proof}
-  Proof by induction.
+  We prove $\max \abs{G_{k-1}} < \max \abs{G_{k}}$ by induction.
+  The initial case is obvious since $G_0 = 0$ and
+  \[ \abs{G_1(\{n_1\})} = \frac{1}{\abs{n_1} \abs{u^2}}, \;\; \max \abs{G_1} = \frac{1}{\abs{u^2}} > 0. \]
+
+  For $k \geq 1$, assume for cases less than $k$.
+  For $i = 1$ in \ref{fraction_recurrence},
+  \[
+    G(n_1, \mathbf{n}_R)
+    = \frac{G(\mathbf{n}_R) n_1 - G(\mathbf{n}_{R'}) G(\rev{\mathbf{n}_R})}{n_1 - G(\rev{\mathbf{n}_R})}.
+  \]
+
+  Taking $\mathbf{n}_R = \mathbf{m}_R = (m_2, \mathbf{m}_{R'})$ s.t. $G_{k-1}(\mathbf{m}_R)$ is maximal, we have
+  \[
+    G(n_1, \mathbf{m}_R) = G(\mathbf{m}_R) \cdot \frac{n_1 - \gamma G(\rev{\mathbf{m}_R})}{n_1 - G(\rev{\mathbf{m}_R})}
+  \]
+  where $\gamma = G_{k-2}(\mathbf{m}_{R'}) / G_{k-1}(\mathbf{m}_R)$.
+  By induction hypothesis on $k-1$, $\abs{\gamma} < 1$.
+
+  Now, let $n_1 = m_1$ be the integer closest to $0$ where $G(\rev{\mathbf{m}_R})$ lies between $0$ and $m_1$.
+  Then, since $\abs{m_1} > \abs{G(\rev{\mathbf{m}_R})} > \abs{\gamma G(\rev{\mathbf{m}_R})}$,
+  \[
+    0 < \abs{m_1 - G(\rev{\mathbf{m}_R})} < \abs{m_1 - \gamma  G(\rev{\mathbf{m}_R})},
+  \]
+  thus
+  \[
+    \abs{G(\mathbf{m})} = \abs{G(m_1, \mathbf{m}_R)} < \abs{G(\mathbf{m}_R)} = \max \abs{G_{k-1}}.
+  \]
 \end{proof}
 
-\begin{corollary}
-  Maximum is always attained inside $T^k$.
-\end{corollary}
+\begin{remark}
+  While $\mathbf{m}_R$ obtains maximum of $\abs{G_{k-1}}$, $\mathbf{m}$ might not be maximal for $\abs{G_k}$.
+\end{remark}
 
-Denote $\mathbf{m} \in (\integer \setminus \{ 0 \})^k$
-be the sequence where $G(\mathbf{m})$ obtains the aforementioned maximum.
+\begin{corollary}
+  Maximum of $\abs{G_k}$ is always attained inside $T^k$.
+\end{corollary}
+\begin{proof}
+  For $\mathbf{x} \in \bar{T}^k \setminus T^k$, there is some $x_i = 0$, which corresponds to $n_i = \infty$.
+  Then, by remarks of the previous section, $G_k(\mathbf{x}) = G_{k-i}(\mathbf{n}_R)$.
+  By above proposition, $\abs{G_{k-i}} < \max \abs{G_k}$, so $G_k(\mathbf{x})$ cannot attain the maximum.
+\end{proof}
+
+Consequently, there is a sequence $\mathbf{m} \in (\integer \setminus \{ 0 \})^k$
+where $K = G(\mathbf{m})$ attains the aforementioned maximum.
+We will demonstrate how this could be computed.
 
 \subsection{Bound of $n_i$}
 
-% TODO Mention attaining maximum somewhere
-For $i < k$, we can get a bound of $n_i$ as following.
+Recurrence relations \ref{fraction_recurrence} and \ref{fraction_recurrence_last}
+give distinct bounds of $n_i$ for $i < k$ and $i = k$ case.
+
 Denote $\Delta = n_i - G(\mathbf{n}_L)$ and let us use shorthand
 $G_L = G(\mathbf{n}_L), G_R = G(\mathbf{n}_R),
-G_{R'} = G(\mathbf{n}_{R'})$, and $\overleftarrow{G_R} = G(\overleftarrow{\mathbf{n}_R})$.
+  G_{R'} = G(\mathbf{n}_{R'})$, and $\overleftarrow{G_R} = G(\overleftarrow{\mathbf{n}_R})$.
 Then, equation in Proposition \ref{fraction_recurrence} could be rewritten as
 \[
   G = \frac{G_R \Delta - G_{R'} \overleftarrow{G_R}}{\Delta - \overleftarrow{G_R}}.
@@ -362,28 +530,59 @@ Reformulated in terms of $\Delta$, we obtain
 \[
   \Delta = \frac{G - G_{R'}}{G - G_R} \overleftarrow{G_R}.
 \]
-Given $|G| \geq M > \max \abs{G_R} \geq \max \abs{G_{R'}}$, we have the following inequality.
+Given $|G| \geq M > \max \abs{G_R} \geq \max \abs{G_{R'}}$, we have the following inequality:
 \[
   |\Delta| = \frac{\abs{1 - G_{R'} / G}}{\abs{1 - G_R / G}} \abs{\overleftarrow{G_R}}
   \leq \frac{1 + \abs{G_{R'}} / \abs{G}}{1 - \abs{G_R} / \abs{G}} \abs{\overleftarrow{G_R}}
   \leq \frac{1 + \max \abs{G_{R'}} / M}{1 - \max \abs{G_R} / M} \max \abs{\overleftarrow{G_R}}
 \]
+which gives the following bound.
 
-Since $\max \abs{G_R} = \max \abs{\overleftarrow{G_R}} = \max \abs{G_{k - i}}$
-and $\max \abs{G_{R'}} = \max \abs{G_{k-i-1}}$,
-this gives the bound
-\[
-  \abs{n_i - G_L} \leq \frac{M + \max \abs{G_{k-i-1}}}{M - \max \abs{G_{k-i}}} \max \abs{G_{k-i}}.
-\]
-Hence, once $n_1, \cdots, n_{i-1}$ are determined,
-there are only finite possible values that $n_i$ might take.
+\begin{proposition}\label{fraction_bound}
+  Suppose $i < k$. If $|G| \geq M > \max \abs{G_{k-i}}$, $n_i$ has a bound
+  \[
+    \abs{n_i - G_L} \leq \frac{M + \max \abs{G_{k-i-1}}}{M - \max \abs{G_{k-i}}} \max \abs{G_{k-i}}.
+  \]
+\end{proposition}
+\begin{proof}
+  Since $\max \abs{G_R} = \max \abs{\overleftarrow{G_R}} = \max \abs{G_{k - i}}$
+  and $\max \abs{G_{R'}} = \max \abs{G_{k-i-1}} < \max \abs{G_{k - i}}$,
+  the above equation gives the desired bound.
+\end{proof}
 
-This does not cover $i = k$ case, which has distinct bound.
-% TODO
+On $i = k$, we need a different bound.
 
-Consequently, once we know $m_1, \cdots, m_{i-1}$,
-we can choose $m_i$ from finitely many possible choices and check inductively.
-This gives rise to the maximum-finding algorithm for $G_k$,
-which in turn gives $\infty$ when the zeros of $s_{k+1}$ could be found.
+\begin{proposition}\label{fraction_bound_last}
+  If $G \geq M$, $n_k$ has a bound
+  \[ \abs{n_k - G_L} = \abs{n_k - G_{k-1}} \leq \frac{1}{u^2} \cdot \frac{1}{M}. \]
+\end{proposition}
+
+In both cases, the bound applies whenever the condition is met and $n_1, \cdots, n_{i-1}$ are determined,
+since $G_L$ depends only on these values.
+In other words, there are only finitely many values that $n_i$ might take once the condition is met.
+
+This bound could be applied to the maximal case $K = \abs{G_k(\mathbf{m})}$.
+First, we find the maximum candidate $\max \abs{G_{k-1}} < M \leq K$.
+
+\begin{proposition}
+  Suppose $\mathbf{p}$ attains the maximum for $G_{k-1}$.
+  Then, there is $n_1 \in \integer \setminus \{ 0 \}$ where $\abs{G(n_1, \mathbf{p})} > \max \abs{G_{k-1}}$.
+\end{proposition}
+\begin{proof}
+  In the proof of Proposition \ref{fraction_max_increase},
+  we found $\mathbf{m} = (m_1, \mathbf{m}_R) = (n_1, \mathbf{p})$
+  satisfying the desired condition.
+\end{proof}
+
+Taking $M = \abs{G(n_1, \mathbf{p})}$, we have $M \leq K$ by maximality of $K$.
+Thus, this given $M$ satisfies the condition of \ref{fraction_bound} and \ref{fraction_bound_last}.
+
+Once we know $m_1, \cdots, m_{i-1}$,
+we can choose $m_i$ from finitely many possiblilities, then search for maximum inductively.
+This gives rise to the maximum-finding algorithm for $G_k$.
+
+Recall that $\abs{G_k}(\mathbf{n}) = \infty$ if $s_{k+1}(\mathbf{n}) = 0$.
+Hence, $\max \abs{G_k} = \infty$ if and only if $s_{k+1}$ has a zero.
+Consequently, the maximum-finding algorithm can be used to decide if $s_{k+1}$ has a zero.
 
 \end{document}
