@@ -76,7 +76,7 @@ chebyRealFractionMax u2 = computeMax
         | otherwise -> btwn
 
   boundRadiusFor :: Word -> Word -> Extended Rational -> Rational
-  boundRadiusFor k i curMax = maxG_R * boundMultiple
+  boundRadiusFor k i curMax = min (maxG_R + 1) (maxG_R * boundMultiple) -- Minimum is obtained near G_R.
    where
     maxG_R = knownFinite $ getMax (k - i)
     maxG_R_1 = knownFinite $ getMax (k - i - 1)
@@ -104,8 +104,8 @@ chebyRealFractionMax u2 = computeMax
       chooseN_i radiusRef g_L i = StreamK.mkCross . StreamK.concatEffect $ do
         boundRadius <- (V.! pred (fromIntegral i)) <$> readSTRef radiusRef
         let vG_L = knownFinite $ value g_L
-            minBnd = floor $ vG_L - boundRadius
-            maxBnd = ceiling $ vG_L + boundRadius
+            minBnd = ceiling $ vG_L - boundRadius
+            maxBnd = floor $ vG_L + boundRadius
             positives = Stream.takeWhile (<= maxBnd) $ Stream.enumerateFromStepIntegral (max 1 minBnd) 1
             negatives = Stream.takeWhile (>= minBnd) $ Stream.enumerateFromStepIntegral (min (-1) maxBnd) (-1)
         pure $ (`next` g_L) <$> do
