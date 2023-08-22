@@ -104,8 +104,9 @@ chebyRealFractionMax u2 = computeMax
       chooseN_i radiusRef g_L i = StreamK.mkCross . StreamK.concatEffect $ do
         boundRadius <- (V.! pred (fromIntegral i)) <$> readSTRef radiusRef
         let vG_L = knownFinite $ value g_L
-            minBnd = ceiling $ vG_L - boundRadius
-            maxBnd = floor $ vG_L + boundRadius
+            maxG_R = knownFinite $ getMax (k - fromIntegral i)
+            minBnd = max (ceiling $ vG_L - boundRadius) (floor $ vG_L - maxG_R)
+            maxBnd = min (floor $ vG_L + boundRadius) (ceiling $ vG_L + maxG_R)
             positives = Stream.takeWhile (<= maxBnd) $ Stream.enumerateFromStepIntegral (max 1 minBnd) 1
             negatives = Stream.takeWhile (>= minBnd) $ Stream.enumerateFromStepIntegral (min (-1) maxBnd) (-1)
         pure $ (`next` g_L) <$> do
