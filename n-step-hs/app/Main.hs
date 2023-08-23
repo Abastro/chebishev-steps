@@ -4,11 +4,14 @@ import Chebyshev.Fraction qualified as Fraction
 import Chebyshev.Linear qualified as Linear
 import Control.Concurrent
 import Control.Exception (evaluate)
+import Control.Monad.Identity
+import Data.Foldable
 import Data.Function
 import Data.Maybe
 import Data.Ratio
 import Data.Set qualified as S
 import Data.Vector qualified as V
+import Inductive qualified
 import Options.Applicative
 import Streamly.Data.Fold qualified as Fold
 import Streamly.Data.Stream qualified as Stream
@@ -17,7 +20,7 @@ import Streamly.Data.StreamK qualified as StreamK
 import System.Console.ANSI
 import System.IO
 import Text.Printf
-import Data.Foldable
+import Util
 
 data Method = Linear | Fraction deriving (Show)
 data RootConvention = U2 | NegU2 deriving (Show)
@@ -30,6 +33,7 @@ data Opts = Opts
 data Command
   = ComputeFor !Rational
   | ExhaustDenominator !Word !Integer !(Maybe FilePath)
+  | AfterOnes !Word !Integer
 
 parseCommands :: Parser Command
 parseCommands =
@@ -45,7 +49,14 @@ parseCommands =
                 <*> argument auto (metavar "DENOMINATOR")
                 <*> optional (strOption (long "output" <> short 'o' <> metavar "FILE"))
             )
-          $ progDesc "exhaustively compute for given denominator"
+          $ progDesc "exhaustively compute for given denominator",
+        command "after-ones"
+          $ info
+            ( AfterOnes
+                <$> argument auto (metavar "MAX_K")
+                <*> argument auto (metavar "MAX_DENOMINATOR")
+            )
+          $ progDesc "compute cases after consecutive ones"
       ]
 
 parseOptions :: ParserInfo Opts
@@ -85,8 +96,31 @@ main = do
         pure (root, result)
 
       emitToFile (root, result) = traverse_ $ \handle -> do
-          printResult handle cutoff root result
-          hFlush handle
+        printResult handle cutoff root result
+        hFlush handle
+    AfterOnes maxK maxDenom -> do
+      let fractsFor denom = fractions denom <> S.map negate (fractions denom)
+      Stream.enumerateFromTo 1 maxDenom
+        & Stream.concatMap (StreamK.toStream . StreamK.fromFoldable . fractsFor)
+        & Stream.concatMap (Stream.fromEffect . evaluateAndPrint)
+        & Stream.fold Fold.drain
+     where
+      asInteger x = if denominator x == 1 then Just $ numerator x else Nothing
+      checkAndReturn ev = case asInteger (knownFinite $ Inductive.value ev) of
+        Just n -> Just (V.fromList $ Inductive.inputs ev <> [n])
+        Nothing -> Nothing
+
+      findN root =
+        Stream.replicate (fromIntegral maxK - 2) (1 :: Integer)
+          & Stream.scan
+            ( Fold.foldl'
+                (flip Inductive.next)
+                (Fraction.initChebyRealFrac $ convertRoot root opts.convention)
+            )
+          & Stream.drop 1 -- First is always 0
+          & Stream.fold (Fold.mapMaybe checkAndReturn Fold.one)
+
+      evaluateAndPrint root = printResult stdout maxK root (runIdentity $ findN root)
  where
   withFileMay = \case
     Nothing -> \act -> act Nothing
@@ -106,9 +140,10 @@ main = do
 
   fractions denom = S.fromList $ mapMaybe (`asFraction` denom) [1 .. pred $ denom * 4]
 
+showFraction :: (Show a) => Ratio a -> String
+showFraction frac = show (numerator frac) <> "/" <> show (denominator frac)
+
 printResult :: Handle -> Word -> Rational -> Maybe (V.Vector Integer) -> IO ()
 printResult handle cutoff u2 = \case
   Just n_ -> hPrintf handle "%s, s_%d, \"%s\"\n" (showFraction u2) (length n_ + 1) (show n_)
   Nothing -> hPrintf handle "%s, > s_%d\n" (showFraction u2) cutoff
- where
-  showFraction frac = show (numerator frac) <> "/" <> show (denominator frac)
