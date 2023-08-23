@@ -145,5 +145,5 @@ showFraction frac = show (numerator frac) <> "/" <> show (denominator frac)
 
 printResult :: Handle -> Word -> Rational -> Maybe (V.Vector Integer) -> IO ()
 printResult handle cutoff u2 = \case
-  Just n_ -> hPrintf handle "%s, s_%d, \"%s\"\n" (showFraction u2) (length n_ + 1) (show n_)
-  Nothing -> hPrintf handle "%s, > s_%d\n" (showFraction u2) cutoff
+  Just n_ -> hPrintf handle "%s, \"s_%d\", \"%s\"\n" (showFraction u2) (length n_ + 1) (show n_)
+  Nothing -> hPrintf handle "%s, \"> s_%d\", \"n/a\"\n" (showFraction u2) cutoff
