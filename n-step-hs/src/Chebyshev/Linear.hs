@@ -7,6 +7,7 @@ module Chebyshev.Linear (
   slopeTerm,
   initChebyNormalMin,
   chebyNormalMins,
+  chebyZero,
   findChebyshev,
 ) where
 
@@ -151,11 +152,23 @@ untilZero :: (Monad m, Eq r, Num r) => Fold.Fold m (Arg r b) (Maybe (Arg r b))
 untilZero = Fold.takeEndBy (\(Arg curMin _) -> curMin == 0) Fold.latest
 
 -- | Gives a stream of minimums until 0.
-chebyNormalMins :: Rational -> Stream.Stream Identity ChebyResult
+chebyNormalMins :: (Monad m) => Rational -> Stream.Stream m ChebyResult
 chebyNormalMins u2 =
   Stream.iterate (next ()) (initChebyNormalMin u2)
+    & Stream.drop 1 -- Initial element does not mean anything
     & fmap value
     & Stream.scanMaybe untilZero
+
+-- | Determines if u2 is a s_k's zero.
+chebyZero :: (Monad m) => Rational -> Stream.Stream m (Either Int (V.Vector Integer))
+chebyZero u2 =
+  chebyNormalMins u2
+    & Stream.indexed
+    & fmap argZero
+ where
+  argZero = \case
+    (_, Arg m arg) | m == 0 -> Right arg
+    (k_1, _) -> Left (k_1 + 1)
 
 -- >>> findChebyshev (1/2) 8
 -- Just [2,1]

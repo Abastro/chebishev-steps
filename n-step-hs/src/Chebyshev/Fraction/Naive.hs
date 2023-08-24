@@ -2,7 +2,7 @@
 --
 -- Currently, limits n to be <= denominator/numerator.
 module Chebyshev.Fraction.Naive (
-  chebyFracMaxs,
+  initChebyRealFracMax,
   findChebyshev,
 ) where
 
@@ -111,13 +111,6 @@ fracMaxInduction u2 prev = \case
         $ StreamK.toStream (StreamK.unCross chosens)
         & Stream.mapMaybe lastStep
         & Stream.scan (Fold.foldlM' (puttingMax radiusRef) $ pure maxCandidate)
-
--- | Gives a stream of maximums until infinity.
-chebyFracMaxs :: Rational -> Stream.Stream Identity (Arg (Extended Rational) (V.Vector Integer))
-chebyFracMaxs u2 =
-  Stream.iterate (next ()) (initChebyRealFracMax u2)
-    & fmap value
-    & Stream.scanMaybe untilInfinity
 
 -- >>> chebyFracMaxs (7/3)
 -- fromList [Arg (Finite (0 % 1)) [],Arg (Finite (3 % 7)) [1],Arg (Finite (3 % 4)) [1,1],Arg (Finite (12 % 7)) [1,1,1],Arg (Finite (15 % 2)) [2,1,1,1],Arg PosInf [3,1,1,1,3]]

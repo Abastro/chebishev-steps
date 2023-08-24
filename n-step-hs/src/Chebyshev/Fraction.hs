@@ -1,9 +1,7 @@
 -- | Properties of minimal chebyshev polynomial in terms of fractions.
 module Chebyshev.Fraction (
-  initChebyRealFrac,
-  chebyRealFraction,
+  module Chebyshev.Fraction.Base,
   initChebyRealFracMax,
-  chebyFracMaxs,
   findChebyshev,
 ) where
 
@@ -25,14 +23,14 @@ import Streamly.Internal.Data.Stream qualified as Stream
 import Streamly.Internal.Data.Stream.StreamK qualified as StreamK
 import Util
 
-type FractionEval = InductiveEval Integer (Extended Rational)
-
 -- | Compute maximal real-fraction given u^2.
 initChebyRealFracMax :: Rational -> InductiveEval () FractionResult
 initChebyRealFracMax u2 =
   inductive
     (const $ \prev -> fracMaxInduction u2 prev (inductNum prev + 1))
     (fracMaxInduction u2 (error "unreachable") 0)
+
+type FractionEval = InductiveEval Integer (Extended Rational)
 
 fracMaxInduction :: Rational -> InductiveEval () FractionResult -> Int -> FractionResult
 fracMaxInduction u2 prev = \case
@@ -109,13 +107,6 @@ fracMaxInduction u2 prev = \case
         $ StreamK.toStream (StreamK.unCross chosens)
         & Stream.mapMaybe lastStep
         & Stream.scan (Fold.foldlM' (puttingMax radiusRef) $ pure maxCandidate)
-
--- | Gives a stream of maximums until infinity.
-chebyFracMaxs :: Rational -> Stream.Stream Identity (Arg (Extended Rational) (V.Vector Integer))
-chebyFracMaxs u2 =
-  Stream.iterate (next ()) (initChebyRealFracMax u2)
-    & fmap value
-    & Stream.scanMaybe untilInfinity
 
 -- >>> chebyFracMaxs (7/3)
 -- fromList [Arg (Finite (0 % 1)) [],Arg (Finite (3 % 7)) [1],Arg (Finite (3 % 4)) [1,1],Arg (Finite (12 % 7)) [1,1,1],Arg (Finite (15 % 2)) [2,1,1,1],Arg PosInf [3,1,1,1,3]]

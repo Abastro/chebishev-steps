@@ -25,6 +25,7 @@ import Text.Printf
 import Util
 
 data Method = Linear | Fraction | Reverse | Naive deriving (Show)
+
 readMethod :: String -> Maybe Method
 readMethod = \case
   "linear" -> Just Linear
@@ -42,8 +43,8 @@ data Opts = Opts
 
 data Command
   = ComputeFor !Rational
-  | ExhaustDenominator !Word !Integer !(Maybe FilePath)
-  | AfterOnes !Word !Integer
+  | ExhaustDenominator !Int !Integer !(Maybe FilePath)
+  | AfterOnes !Int !Integer
 
 parseCommands :: Parser Command
 parseCommands =
@@ -55,7 +56,7 @@ parseCommands =
         command "exhaust"
           $ info
             ( ExhaustDenominator
-                <$> argument auto (metavar "STEPS")
+                <$> argument auto (metavar "MAX_K")
                 <*> argument auto (metavar "DENOMINATOR")
                 <*> optional (strOption (long "output" <> short 'o' <> metavar "FILE"))
             )
@@ -87,7 +88,14 @@ main = do
   printf "Method: %s\n" (show opts.method)
   printf "Convention: %s\n" (show opts.convention)
   case opts.command of
-    ComputeFor root -> printResult stdout 100 root (finder opts.method (convertRoot root opts.convention) 100)
+    -- "compute ROOT"
+    ComputeFor root -> do
+      Just result <-
+        finder opts.method (convertRoot root opts.convention)
+          & Stream.fold Fold.latest
+      printResult stdout root result
+
+    -- "exhaust MAX_K DENOMINATOR"
     ExhaustDenominator cutoff denom outFile -> withFileMay outFile $ \outHandle -> do
       let fracts = fractions denom
       remaining <- newMVar fracts
@@ -100,10 +108,14 @@ main = do
         & Stream.fold Fold.drain
      where
       evaluateAndPrint remaining root = do
-        result <- evaluate (finder opts.method (convertRoot root opts.convention) cutoff)
+        Just res <-
+          finder opts.method (convertRoot root opts.convention)
+            & Stream.take cutoff
+            & Stream.fold Fold.latest
+        result <- evaluate res
         withMVar consoleLock $ \_ -> do
           clearFromCursorToScreenEnd
-          printResult stdout cutoff root result
+          printResult stdout root result
           curRemains <- modifyMVar remaining $ \old ->
             let new = S.delete root old in pure (new, new)
           printf "Remaining: %s\n" (show $ S.toList curRemains)
@@ -111,8 +123,10 @@ main = do
         pure (root, result)
 
       emitToFile (root, result) = traverse_ $ \handle -> do
-        printResult handle cutoff root result
+        printResult handle root result
         hFlush handle
+
+    -- "after-ones MAX_K MAX_DENOMINATOR"
     AfterOnes maxK maxDenom -> do
       let fractsFor denom = fractions denom <> S.map negate (fractions denom)
       Stream.enumerateFromTo 1 maxDenom
@@ -135,17 +149,18 @@ main = do
           & Stream.drop 1 -- First is always 0
           & Stream.fold (Fold.mapMaybe checkAndReturn Fold.one)
 
-      evaluateAndPrint root = printResult stdout maxK root (runIdentity $ findN root)
+      evaluateAndPrint root = printResult stdout root $ do
+        maybe (Left maxK) Right . runIdentity $ findN root
  where
   withFileMay = \case
     Nothing -> \act -> act Nothing
     Just path -> \act -> withFile path WriteMode (act . Just)
 
   finder = \case
-    Linear -> Linear.findChebyshev
-    Fraction -> Fraction.findChebyshev
-    Reverse -> Reverse.findChebyshev
-    Naive -> Naive.findChebyshev
+    Linear -> Linear.chebyZero
+    Fraction -> Fraction.chebyZeroOf . Fraction.initChebyRealFracMax
+    Reverse -> Fraction.chebyZeroOf . Reverse.initChebyRealFracMax
+    Naive -> Fraction.chebyZeroOf . Naive.initChebyRealFracMax
 
   convertRoot root = \case
     U2 -> root
@@ -157,10 +172,10 @@ main = do
 
   fractions denom = S.fromList $ mapMaybe (`asFraction` denom) [1 .. pred $ denom * 4]
 
-showFraction :: (Show a) => Ratio a -> String
+showFraction :: Rational -> String
 showFraction frac = show (numerator frac) <> "/" <> show (denominator frac)
 
-printResult :: Handle -> Word -> Rational -> Maybe (V.Vector Integer) -> IO ()
-printResult handle cutoff u2 = \case
-  Just n_ -> hPrintf handle "%s, \"s_%d\", \"%s\"\n" (showFraction u2) (length n_ + 1) (show n_)
-  Nothing -> hPrintf handle "%s, \"> s_%d\", \"n/a\"\n" (showFraction u2) cutoff
+printResult :: Handle -> Rational -> Either Int (V.Vector Integer) -> IO ()
+printResult handle u2 = \case
+  Right n_ -> hPrintf handle "%s, \"s_%d\", \"%s\"\n" (showFraction u2) (length n_ + 1) (show n_)
+  Left triedK -> hPrintf handle "%s, \"> s_%d\", \"n/a\"\n" (showFraction u2) triedK

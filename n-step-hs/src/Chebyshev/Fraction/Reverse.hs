@@ -2,11 +2,10 @@
 module Chebyshev.Fraction.Reverse (
   initChebyReverseFrac,
   initChebyRealFracMax,
-  chebyFracMaxs,
   findChebyshev,
 ) where
 
-import Chebyshev.Fraction.Base hiding (FractionEval)
+import Chebyshev.Fraction.Base
 import Control.Monad.Identity (Identity (..))
 import Control.Monad.ST
 import Data.Bifunctor (Bifunctor (..))
@@ -38,15 +37,6 @@ initChebyReverseFrac u2 = inductive induction (0, 0)
                 (g_l_rev * fromIntegral n_k - knownFinite g_ll_rev * g_l) `infiDiv` (fromIntegral n_k - g_l)
           Nothing -> Finite $ recip (fromIntegral n_k * u2)
      in (g, g_rev)
-
--- >>> chebyRealFractionMax 3 3
--- Arg (Finite (2 % 3)) [1,1,1]
-
--- >>> chebyRealFractionMax 3 5
--- Arg PosInf [1,1,1,1,1]
-
--- >>> chebyRealFractionMax (8/3) 5
--- Arg PosInf [6,1,1,1,1]
 
 type FractionRevEval = InductiveEval Integer (Extended Rational, Extended Rational)
 
@@ -127,13 +117,6 @@ fracMaxInduction u2 prev = \case
         $ StreamK.toStream (StreamK.unCross chosens)
         & fmap (\g_ks -> Arg (abs . snd $ value g_ks) (V.fromList . reverse $ inputs g_ks))
         & Stream.scan (Fold.foldlM' (puttingMax maxCandRef) $ pure maxCandidate)
-
--- | Gives a stream of maximums until infinity.
-chebyFracMaxs :: Rational -> Stream.Stream Identity (Arg (Extended Rational) (V.Vector Integer))
-chebyFracMaxs u2 =
-  Stream.iterate (next ()) (initChebyRealFracMax u2)
-    & fmap value
-    & Stream.scanMaybe untilInfinity
 
 -- >>> chebyFracMaxs (7/3)
 -- fromList [Arg (Finite (0 % 1)) [],Arg (Finite (3 % 7)) [1],Arg (Finite (3 % 4)) [1,1],Arg (Finite (12 % 7)) [1,1,1],Arg (Finite (15 % 2)) [2,1,1,1],Arg PosInf [3,1,1,1,3]]
