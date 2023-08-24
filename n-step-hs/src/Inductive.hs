@@ -4,6 +4,7 @@ module Inductive (
   next,
   nexts,
   previous,
+  inductNum,
   value,
   valueAt,
   input,
@@ -41,6 +42,9 @@ previous :: InductiveEval a v -> Maybe (a, InductiveEval a v)
 previous cur = case cur.evaluated of
   Seq.Empty -> Nothing
   prev Seq.:|> (inp, _) -> Just (inp, cur{evaluated = prev})
+
+inductNum :: InductiveEval a v -> Int
+inductNum eval = Seq.length eval.evaluated
 
 value :: InductiveEval a v -> v
 value eval = case eval.evaluated of
