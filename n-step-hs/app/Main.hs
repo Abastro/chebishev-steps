@@ -38,11 +38,12 @@ data RootConvention = U2 | NegU2 deriving (Show)
 data Opts = Opts
   { command :: !Command,
     method :: !Method,
-    convention :: !RootConvention
+    convention :: !RootConvention,
+    timeOut :: Maybe Int
   }
 
 data Command
-  = ComputeFor !Rational
+  = ComputeFor !Int !Rational
   | ExhaustDenominator !Int !Integer !(Maybe FilePath)
   | AfterOnes !Int !Integer
 
@@ -51,7 +52,11 @@ parseCommands =
   subparser
     $ mconcat
       [ command "compute"
-          $ info (ComputeFor <$> argument auto (metavar "u^2"))
+          $ info
+            ( ComputeFor
+                <$> argument auto (metavar "MAX_K")
+                <*> argument auto (metavar "u^2")
+            )
           $ progDesc "compute for a certain number",
         command "exhaust"
           $ info
@@ -71,15 +76,16 @@ parseCommands =
       ]
 
 parseOptions :: ParserInfo Opts
-parseOptions = info ((Opts <$> parseCommands <*> methodFlag <*> conventionFlag) <**> helper) fullDesc
+parseOptions = info (helper <*> (Opts <$> parseCommands <*> methodOpt <*> conventionFlag <*> timeoutOpt)) fullDesc
  where
-  methodFlag =
+  methodOpt =
     option (maybeReader readMethod)
       $ value Fraction
       <> long "method"
       <> short 'm'
-      <> help "evaluation method, linear|fraction|reverse"
+      <> help "evaluation method, linear|fraction|reverse|naive"
   conventionFlag = flag NegU2 U2 (long "u2-conv" <> help "use u2 as passed root, instead of -u2")
+  timeoutOpt = optional . option auto $ long "timeout" <> short 't' <> help "the timeout"
 
 main :: IO ()
 main = do
@@ -88,15 +94,13 @@ main = do
   printf "Method: %s\n" (show opts.method)
   printf "Convention: %s\n" (show opts.convention)
   case opts.command of
-    -- "compute ROOT"
-    ComputeFor root -> do
-      Just result <-
-        finder opts.method (convertRoot root opts.convention)
-          & Stream.fold Fold.latest
+    -- "compute MAX_K ROOT"
+    ComputeFor maxK root -> do
+      Just result <- takeResult maxK opts.timeOut $ finder opts.method (convertRoot root opts.convention)
       printResult stdout root result
 
     -- "exhaust MAX_K DENOMINATOR"
-    ExhaustDenominator cutoff denom outFile -> withFileMay outFile $ \outHandle -> do
+    ExhaustDenominator maxK denom outFile -> withFileMay outFile $ \outHandle -> do
       let fracts = fractions denom
       remaining <- newMVar fracts
       for_ outHandle $ \handle -> hPutStrLn handle "rel #, k, seq n"
@@ -108,10 +112,7 @@ main = do
         & Stream.fold Fold.drain
      where
       evaluateAndPrint remaining root = do
-        Just res <-
-          finder opts.method (convertRoot root opts.convention)
-            & Stream.take cutoff
-            & Stream.fold Fold.latest
+        Just res <- takeResult maxK opts.timeOut $ finder opts.method (convertRoot root opts.convention)
         result <- evaluate res
         withMVar consoleLock $ \_ -> do
           clearFromCursorToScreenEnd
@@ -161,6 +162,12 @@ main = do
     Fraction -> Fraction.chebyZeroOf . Fraction.initChebyRealFracMax
     Reverse -> Fraction.chebyZeroOf . Reverse.initChebyRealFracMax
     Naive -> Fraction.chebyZeroOf . Naive.initChebyRealFracMax
+  takeResult maxK = \case
+    Nothing -> Stream.fold Fold.latest . Stream.take maxK
+    Just timeout ->
+      Stream.fold Fold.one
+        . Stream.sampleIntervalEnd (fromIntegral timeout)
+        . Stream.take maxK
 
   convertRoot root = \case
     U2 -> root
