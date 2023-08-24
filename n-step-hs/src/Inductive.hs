@@ -5,17 +5,15 @@ module Inductive (
   nexts,
   previous,
   value,
+  valueAt,
   input,
+  inputAt,
   inputs,
 ) where
 
+import Data.Foldable (Foldable (..))
 import Data.List
 import Data.Sequence qualified as Seq
-
-data InductiveResult a v
-  = Initial !v
-  | Next !a !v (InductiveResult a v)
-  deriving (Show)
 
 -- | Datatype for an inductive evaluation of [a] -> v.
 data InductiveEval a v = InductiveEval
@@ -49,12 +47,21 @@ value eval = case eval.evaluated of
   Seq.Empty -> eval.initial
   _ Seq.:|> (_, v) -> v
 
+-- | Note that the initial value is 0.
+valueAt :: Int -> InductiveEval a v -> Maybe v
+valueAt 0 eval = Just eval.initial
+valueAt i eval = snd <$> eval.evaluated Seq.!? (i - 1)
+
 input :: InductiveEval a v -> Maybe a
 input eval = case eval.evaluated of
   Seq.Empty -> Nothing
   _ Seq.:|> (inp, _) -> Just inp
 
+-- | To match with valueAt, input starts at 1.
+inputAt :: Int -> InductiveEval a v -> Maybe a
+inputAt i eval = fst <$> eval.evaluated Seq.!? (i - 1)
+
 -- |
 -- > inputs (nexts inps (inductive ind v0)) == inps
 inputs :: InductiveEval a v -> [a]
-inputs = reverse . unfoldr previous
+inputs eval = fst <$> toList eval.evaluated
