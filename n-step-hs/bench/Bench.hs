@@ -2,7 +2,9 @@ module Main (main) where
 
 import Chebyshev.Base
 import Chebyshev.Fraction qualified as Fraction
+import Chebyshev.Fraction.Reverse qualified as Reverse
 import Chebyshev.Linear qualified as Linear
+
 import Test.Tasty.Bench
 
 main :: IO ()
@@ -22,7 +24,9 @@ main =
         "findChebyshev linear vs fraction"
         [ bench "Linear.findChebyshev 9/5" $ nf (`Linear.findChebyshev` 100) (9 / 5),
           bench "Fraction.findChebyshev 9/5" $ nf (`Fraction.findChebyshev` 100) (9 / 5),
+          bench "Reverse.findChebyshev 9/5" $ nf (`Reverse.findChebyshev` 100) (9 / 5),
           bench "Linear.findChebyshev 8/5" $ nf (`Linear.findChebyshev` 100) (8 / 5),
-          bench "Fraction.findChebyshev 8/5" $ nf (`Fraction.findChebyshev` 100) (8 / 5)
+          bench "Fraction.findChebyshev 8/5" $ nf (`Fraction.findChebyshev` 100) (8 / 5),
+          bench "Reverse.findChebyshev 8/5" $ nf (`Reverse.findChebyshev` 100) (8 / 5)
         ]
     ]

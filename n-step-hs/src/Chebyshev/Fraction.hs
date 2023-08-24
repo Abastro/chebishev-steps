@@ -137,8 +137,6 @@ chebyRealFractionMax u2 = computeMax
 -- 7: 17/6, 23/6
 -- 8: 23/8, 31/8
 
--- TODO Incorporate: Alternating 1, -1 often occurs for big numbers.
-
 -- >>> findChebyshev (7/3) 8
 -- Just [3,1,1,1,3]
 

@@ -2,12 +2,13 @@
 module Chebyshev.Fraction.Reverse (
   initChebyRealFrac,
   chebyRealFraction,
+  initChebyReverseFrac,
   chebyRealFractionMax,
   findChebyshev,
 ) where
 
-import Control.Monad
 import Control.Monad.ST
+import Data.Bifunctor (Bifunctor (..))
 import Data.ExtendedReal
 import Data.Foldable
 import Data.Function ((&))
@@ -17,7 +18,6 @@ import Data.Monoid (First (..))
 import Data.STRef
 import Data.Semigroup (Arg (..))
 import Data.Vector qualified as V
-import Debug.Trace
 import Inductive
 import Streamly.Data.Fold qualified as Fold
 import Streamly.Data.Stream qualified as Stream
@@ -36,14 +36,18 @@ initChebyRealFrac u2 = inductive induction 0
 chebyRealFraction :: Rational -> [Integer] -> Extended Rational
 chebyRealFraction u2 n_ = value $ nexts n_ (initChebyRealFrac u2)
 
--- | Gives G along with the reverse direction.
-initChebyReverseFrac :: v -> InductiveEval a (Extended v, Extended v)
-initChebyReverseFrac u2 = undefined
+-- | Gives G_k along with its reverse direction version.
+initChebyReverseFrac :: (RealFrac v, Integral a) => v -> InductiveEval a (Extended v, Extended v)
+initChebyReverseFrac u2 = inductive induction (0, 0)
  where
-  induction n_1 prev =
-    let (g_r_rev, g_r) = value prev
-        g = undefined
-     in undefined
+  induction n_k g_ls =
+    let (g_l, g_l_rev) = bimap knownFinite knownFinite $ value g_ls
+        g_ll_rev = knownFinite $ case previous g_ls of
+          Just (_, g_lls) -> snd $ value g_lls
+          Nothing -> 0 -- has no effect anyway
+     in ( infiRecip $ u2 * (fromIntegral n_k - g_l),
+          (g_l_rev * fromIntegral n_k - g_ll_rev * g_l) `infiDiv` (fromIntegral n_k - g_l)
+        )
 
 -- >>> chebyRealFractionMax 3 3
 -- Arg (Finite (2 % 3)) [1,1,1]
@@ -54,10 +58,16 @@ initChebyReverseFrac u2 = undefined
 -- >>> chebyRealFractionMax (8/3) 5
 -- Arg PosInf [6,1,1,1,1]
 
-type FractionEval = InductiveEval Integer (Extended Rational)
+type FractionEval = InductiveEval Integer (Extended Rational, Extended Rational)
 
--- TODO Instead of memo, use a structure to store results.
--- TODO Could be performed in IO this way.
+-- Value of delta
+deltaRight :: Rational -> FractionEval -> Rational
+deltaRight g g_Rs = (g - g_Rr) / (g - g_R) * g_R_rev
+ where
+  (g_R_rev, g_R) = bimap knownFinite knownFinite $ value g_Rs
+  g_Rr = knownFinite $ case previous g_Rs of
+    Just (_, g_Rrs) -> snd $ value g_Rrs
+    Nothing -> 0
 
 -- Stops when infinity is encountered
 untilInfinity :: (Monad m) => Fold.Fold m (Arg (Extended r) b) (Maybe (Arg (Extended r) b))
@@ -86,19 +96,6 @@ chebyRealFractionMax u2 = computeMax
         | r > 0 -> btwn + 1
         | otherwise -> btwn
 
-  boundRadiusFor :: Word -> Word -> Extended Rational -> Rational
-  boundRadiusFor k i curMax = min (maxG_R + 1) (maxG_R * boundMultiple) -- Minimum is obtained near G_R.
-   where
-    maxG_R = knownFinite $ getMax (k - i)
-    maxG_R_1 = knownFinite $ getMax (k - i - 1)
-    boundMultiple = case curMax of
-      Finite cmax -> (cmax + maxG_R_1) / (cmax - maxG_R)
-      _ -> 1
-
-  boundRadiusVec :: Word -> Arg (Extended Rational) a -> V.Vector Rational
-  boundRadiusVec k (Arg curMax _) = V.generate (fromIntegral $ k - 1) $ \i_1 ->
-    boundRadiusFor k (fromIntegral i_1 + 1) curMax
-
   computeMax :: Word -> Arg (Extended Rational) (V.Vector Integer)
   computeMax = memo $ \case
     0 -> Arg 0 V.empty -- s0 / s1 = 0
@@ -108,48 +105,41 @@ chebyRealFractionMax u2 = computeMax
      where
       -- Setup: F(x) = F(x_L, x_i, x_R), |x| = k, |x_L| = i-1, |x_R| = k-i
       chooseN_i ::
-        STRef s (V.Vector Rational) ->
+        STRef s (Extended Rational) ->
         FractionEval ->
         Int ->
         StreamK.CrossStreamK (ST s) FractionEval
-      chooseN_i radiusRef g_L i = StreamK.mkCross . StreamK.concatEffect $ do
-        boundRadius <- (V.! pred (fromIntegral i)) <$> readSTRef radiusRef
-        let vG_L = knownFinite $ value g_L
-            maxG_R = knownFinite $ getMax (k - fromIntegral i)
-            minBnd = max (ceiling $ vG_L - boundRadius) (floor $ vG_L - maxG_R)
-            maxBnd = min (floor $ vG_L + boundRadius) (ceiling $ vG_L + maxG_R)
+      chooseN_i maxCandRef g_Rs i = StreamK.mkCross . StreamK.concatEffect $ do
+        maxCand <- knownFinite <$> readSTRef maxCandRef
+        -- Note that we accumulate in the reverse direction.
+        let g_L_maxabs = knownFinite $ getMax (fromIntegral i - 1)
+            -- Possible range of delta
+            (delta1, delta2) = (deltaRight (-maxCand) g_Rs, deltaRight maxCand g_Rs)
+            minBnd = ceiling $ min delta1 delta2 - g_L_maxabs
+            maxBnd = floor $ max delta1 delta2 + g_L_maxabs
             positives = Stream.takeWhile (<= maxBnd) $ Stream.enumerateFromStepIntegral (max 1 minBnd) 1
             negatives = Stream.takeWhile (>= minBnd) $ Stream.enumerateFromStepIntegral (min (-1) maxBnd) (-1)
-        when (i == 1) $ traceShowM (k, i, maxBnd, inputs g_L, value g_L, maxG_R)
-        pure $ (`next` g_L) <$> do
+        pure $ (`next` g_Rs) <$> do
           if i == 1
             then StreamK.fromStream positives -- Only take n_1 > 0 (Maybe this does not work)
             else StreamK.fromStream positives `StreamK.interleave` StreamK.fromStream negatives
 
-      puttingMax radiusRef oldMax new =
-        if oldMax < new then traceShow ("Max: ", oldMax, new) new <$ writeSTRef radiusRef (boundRadiusVec k new) else pure oldMax
-
-      lastStep :: FractionEval -> Maybe (Arg (Extended Rational) (V.Vector Integer))
-      lastStep g_L =
-        let n_k = round . knownFinite $ value g_L
-            g_k = next n_k g_L
-         in if n_k == 0 then Nothing else Just $ Arg (abs <$> value g_k) (V.fromList $ inputs g_k)
+      puttingMax maxCandRef oldMax new@(Arg newV _) =
+        if oldMax < new then new <$ writeSTRef maxCandRef newV else pure oldMax
 
       maxFinding :: Stream.Stream (ST s) (Arg (Extended Rational) (V.Vector Integer))
       maxFinding = Stream.concatEffect $ do
-        let maxCandArg = maxCandidate k
-        radiusRef <- newSTRef $ boundRadiusVec k maxCandArg
-        let chosens = foldlM (chooseN_i radiusRef) (initChebyRealFrac u2) [1 .. fromIntegral k - 1]
+        let maxCandArg@(Arg newCand _) = maxCandidate k
+        maxCandRef <- newSTRef newCand
+        let chosens = foldlM (chooseN_i maxCandRef) (initChebyReverseFrac u2) $ fromIntegral <$> [k, k - 1 .. 1]
         pure
           $ StreamK.toStream (StreamK.unCross chosens)
-          & Stream.mapMaybe lastStep
-          & Stream.scan (Fold.foldlM' (puttingMax radiusRef) $ pure maxCandArg)
+          & fmap (\g_ks -> Arg (abs . snd $ value g_ks) (V.fromList . reverse $ inputs g_ks))
+          & Stream.scan (Fold.foldlM' (puttingMax maxCandRef) $ pure maxCandArg)
 
 -- Slow numbers:
 -- 7: 17/6, 23/6
 -- 8: 23/8, 31/8
-
--- TODO Incorporate: Alternating 1, -1 often occurs for big numbers.
 
 -- >>> findChebyshev (7/3) 8
 -- Just [3,1,1,1,3]

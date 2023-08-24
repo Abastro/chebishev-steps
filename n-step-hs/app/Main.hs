@@ -1,6 +1,7 @@
 module Main (main) where
 
 import Chebyshev.Fraction qualified as Fraction
+import Chebyshev.Fraction.Reverse qualified as Reverse
 import Chebyshev.Linear qualified as Linear
 import Control.Concurrent
 import Control.Exception (evaluate)
@@ -22,7 +23,14 @@ import System.IO
 import Text.Printf
 import Util
 
-data Method = Linear | Fraction deriving (Show)
+data Method = Linear | Fraction | Reverse deriving (Show)
+readMethod :: String -> Maybe Method
+readMethod = \case
+  "linear" -> Just Linear
+  "fraction" -> Just Fraction
+  "reverse" -> Just Reverse
+  _ -> Nothing
+
 data RootConvention = U2 | NegU2 deriving (Show)
 data Opts = Opts
   { command :: !Command,
@@ -62,7 +70,12 @@ parseCommands =
 parseOptions :: ParserInfo Opts
 parseOptions = info ((Opts <$> parseCommands <*> methodFlag <*> conventionFlag) <**> helper) fullDesc
  where
-  methodFlag = flag Fraction Linear (long "linear" <> help "evaluate in linear method")
+  methodFlag =
+    option (maybeReader readMethod)
+      $ value Fraction
+      <> long "method"
+      <> short 'm'
+      <> help "evaluation method, linear|fraction|reverse"
   conventionFlag = flag NegU2 U2 (long "u2-conv" <> help "use u2 as passed root, instead of -u2")
 
 main :: IO ()
@@ -129,6 +142,7 @@ main = do
   finder = \case
     Linear -> Linear.findChebyshev
     Fraction -> Fraction.findChebyshev
+    Reverse -> Reverse.findChebyshev
 
   convertRoot root = \case
     U2 -> root

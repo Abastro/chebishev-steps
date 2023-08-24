@@ -29,6 +29,7 @@ library
     Chebyshev.Base
     Chebyshev.Linear
     Chebyshev.Fraction
+    Chebyshev.Fraction.Reverse
     Chebyshev.Fraction.Async
   default-extensions:
     LambdaCase
