@@ -2,12 +2,11 @@
 --
 -- Currently, limits n to be <= denominator/numerator.
 module Chebyshev.Fraction.Naive (
-  initChebyRealFrac,
-  chebyRealFraction,
   chebyFracMaxs,
   findChebyshev,
 ) where
 
+import Chebyshev.Fraction.Base
 import Control.Monad.Identity (Identity (..))
 import Control.Monad.ST
 import Data.ExtendedReal
@@ -26,22 +25,7 @@ import Streamly.Internal.Data.Stream qualified as Stream
 import Streamly.Internal.Data.Stream.StreamK qualified as StreamK
 import Util
 
--- | Initiate fraction computation of chebyshev polynomials.
-initChebyRealFrac :: (RealFrac v, Integral a) => v -> InductiveEval a (Extended v)
-initChebyRealFrac u2 = inductive induction 0
- where
-  induction n_k g_k = infiRecip . knownFinite $ Finite u2 * (fromIntegral n_k - value g_k)
-
--- | Fraction of chebyshev polynomials, divided by u to make it real.
-chebyRealFraction :: Rational -> [Integer] -> Extended Rational
-chebyRealFraction u2 n_ = value $ nexts n_ (initChebyRealFrac u2)
-
-type FractionResult = Arg (Extended Rational) (V.Vector Integer)
 type FractionEval = InductiveEval Integer (Extended Rational)
-
--- Stops when infinity is encountered
-untilInfinity :: (Monad m) => Fold.Fold m (Arg (Extended r) b) (Maybe (Arg (Extended r) b))
-untilInfinity = Fold.takeEndBy (\(Arg curMax _) -> Data.ExtendedReal.isInfinite curMax) Fold.latest
 
 -- | Compute maximal real-fraction given u^2.
 initChebyRealFracMax :: Rational -> InductiveEval () FractionResult

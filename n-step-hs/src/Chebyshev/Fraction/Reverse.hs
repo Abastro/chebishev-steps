@@ -1,13 +1,12 @@
 -- | Properties of minimal chebyshev polynomial in terms of fractions.
 module Chebyshev.Fraction.Reverse (
-  initChebyRealFrac,
-  chebyRealFraction,
   initChebyReverseFrac,
   initChebyRealFracMax,
   chebyFracMaxs,
   findChebyshev,
 ) where
 
+import Chebyshev.Fraction.Base hiding (FractionEval)
 import Control.Monad.Identity (Identity (..))
 import Control.Monad.ST
 import Data.Bifunctor (Bifunctor (..))
@@ -25,16 +24,6 @@ import Streamly.Data.StreamK qualified as StreamK
 import Streamly.Internal.Data.Stream qualified as Stream
 import Streamly.Internal.Data.Stream.StreamK qualified as StreamK
 import Util
-
--- | Initiate fraction computation of chebyshev polynomials.
-initChebyRealFrac :: (RealFrac v, Integral a) => v -> InductiveEval a (Extended v)
-initChebyRealFrac u2 = inductive induction 0
- where
-  induction n_k g_k = infiRecip . knownFinite $ Finite u2 * (fromIntegral n_k - value g_k)
-
--- | Fraction of chebyshev polynomials, divided by u to make it real.
-chebyRealFraction :: Rational -> [Integer] -> Extended Rational
-chebyRealFraction u2 n_ = value $ nexts n_ (initChebyRealFrac u2)
 
 -- | Gives G_k along with its reverse direction version.
 initChebyReverseFrac :: (RealFrac v, Integral a) => v -> InductiveEval a (Extended v, Extended v)
@@ -59,21 +48,16 @@ initChebyReverseFrac u2 = inductive induction (0, 0)
 -- >>> chebyRealFractionMax (8/3) 5
 -- Arg PosInf [6,1,1,1,1]
 
-type FractionEval = InductiveEval Integer (Extended Rational, Extended Rational)
-type FractionResult = Arg (Extended Rational) (V.Vector Integer)
+type FractionRevEval = InductiveEval Integer (Extended Rational, Extended Rational)
 
 -- Value of delta
-deltaRight :: Rational -> FractionEval -> Rational
+deltaRight :: Rational -> FractionRevEval -> Rational
 deltaRight g g_Rs = (g - g_Rr) / (g - g_R) * g_R_rev
  where
   (g_R_rev, g_R) = bimap knownFinite knownFinite $ value g_Rs
   g_Rr = knownFinite $ case previous g_Rs of
     Just (_, g_Rrs) -> snd $ value g_Rrs
     Nothing -> 0
-
--- Stops when infinity is encountered
-untilInfinity :: (Monad m) => Fold.Fold m (Arg (Extended r) b) (Maybe (Arg (Extended r) b))
-untilInfinity = Fold.takeEndBy (\(Arg curMax _) -> Data.ExtendedReal.isInfinite curMax) Fold.latest
 
 -- | Compute maximal real-fraction given u^2.
 initChebyRealFracMax :: Rational -> InductiveEval () FractionResult
@@ -112,9 +96,9 @@ fracMaxInduction u2 prev = \case
     -- Setup: F(x) = F(x_L, x_i, x_R), |x| = k, |x_L| = i-1, |x_R| = k-i
     chooseN_i ::
       STRef s (Extended Rational) ->
-      FractionEval ->
+      FractionRevEval ->
       Int ->
-      StreamK.CrossStreamK (ST s) FractionEval
+      StreamK.CrossStreamK (ST s) FractionRevEval
     chooseN_i maxCandRef g_Rs i = StreamK.mkCross . StreamK.concatEffect $ do
       maxCand <- knownFinite <$> readSTRef maxCandRef
       -- Note that we accumulate in the reverse direction.
@@ -153,7 +137,6 @@ chebyFracMaxs u2 =
 
 -- >>> chebyFracMaxs (7/3)
 -- fromList [Arg (Finite (0 % 1)) [],Arg (Finite (3 % 7)) [1],Arg (Finite (3 % 4)) [1,1],Arg (Finite (12 % 7)) [1,1,1],Arg (Finite (15 % 2)) [2,1,1,1],Arg PosInf [3,1,1,1,3]]
-
 
 -- >>> findChebyshev (7/3) 8
 -- Just [3,1,1,1,3]
