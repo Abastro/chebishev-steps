@@ -42,12 +42,13 @@ initChebyReverseFrac u2 = inductive induction (0, 0)
  where
   induction n_k g_ls =
     let (g_l, g_l_rev) = bimap knownFinite knownFinite $ value g_ls
-        g_ll_rev = knownFinite $ case previous g_ls of
-          Just (_, g_lls) -> snd $ value g_lls
-          Nothing -> 0 -- has no effect anyway
-     in ( infiRecip $ u2 * (fromIntegral n_k - g_l),
-          (g_l_rev * fromIntegral n_k - g_ll_rev * g_l) `infiDiv` (fromIntegral n_k - g_l)
-        )
+        g = infiRecip $ u2 * (fromIntegral n_k - g_l)
+        g_rev = case previous g_ls of
+          Just (_, g_lls)
+            | (_, g_ll_rev) <- value g_lls ->
+                (g_l_rev * fromIntegral n_k - knownFinite g_ll_rev * g_l) `infiDiv` (fromIntegral n_k - g_l)
+          Nothing -> Finite $ recip (fromIntegral n_k * u2)
+     in (g, g_rev)
 
 -- >>> chebyRealFractionMax 3 3
 -- Arg (Finite (2 % 3)) [1,1,1]
@@ -111,12 +112,14 @@ chebyRealFractionMax u2 = computeMax
         StreamK.CrossStreamK (ST s) FractionEval
       chooseN_i maxCandRef g_Rs i = StreamK.mkCross . StreamK.concatEffect $ do
         maxCand <- knownFinite <$> readSTRef maxCandRef
+        -- traceShowM (k, i, maxCand, g_Rs)
         -- Note that we accumulate in the reverse direction.
         let g_L_maxabs = knownFinite $ getMax (fromIntegral i - 1)
+            g_R_rev = knownFinite . fst $ value g_Rs
             -- Possible range of delta
             (delta1, delta2) = (deltaRight (-maxCand) g_Rs, deltaRight maxCand g_Rs)
-            minBnd = ceiling $ min delta1 delta2 - g_L_maxabs
-            maxBnd = floor $ max delta1 delta2 + g_L_maxabs
+            minBnd = max (floor $ g_R_rev - g_L_maxabs) $ ceiling (min delta1 delta2 - g_L_maxabs)
+            maxBnd = min (ceiling $ g_R_rev + g_L_maxabs) $ floor (max delta1 delta2 + g_L_maxabs)
             positives = Stream.takeWhile (<= maxBnd) $ Stream.enumerateFromStepIntegral (max 1 minBnd) 1
             negatives = Stream.takeWhile (>= minBnd) $ Stream.enumerateFromStepIntegral (min (-1) maxBnd) (-1)
         pure $ (`next` g_Rs) <$> do
