@@ -1,4 +1,6 @@
 -- | Instead of finding real maximum, settle for "good enough".
+--
+-- Currently, limits n to be <= denominator/numerator.
 module Chebyshev.Fraction.Naive (
   initChebyRealFrac,
   chebyRealFraction,
