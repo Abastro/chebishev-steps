@@ -112,7 +112,6 @@ chebyRealFractionMax u2 = computeMax
         StreamK.CrossStreamK (ST s) FractionEval
       chooseN_i maxCandRef g_Rs i = StreamK.mkCross . StreamK.concatEffect $ do
         maxCand <- knownFinite <$> readSTRef maxCandRef
-        -- traceShowM (k, i, maxCand, g_Rs)
         -- Note that we accumulate in the reverse direction.
         let g_L_maxabs = knownFinite $ getMax (fromIntegral i - 1)
             g_R_rev = knownFinite . fst $ value g_Rs

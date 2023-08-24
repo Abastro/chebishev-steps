@@ -1,6 +1,7 @@
 module Main (main) where
 
 import Chebyshev.Fraction qualified as Fraction
+import Chebyshev.Fraction.Naive qualified as Naive
 import Chebyshev.Fraction.Reverse qualified as Reverse
 import Chebyshev.Linear qualified as Linear
 import Control.Concurrent
@@ -23,12 +24,13 @@ import System.IO
 import Text.Printf
 import Util
 
-data Method = Linear | Fraction | Reverse deriving (Show)
+data Method = Linear | Fraction | Reverse | Naive deriving (Show)
 readMethod :: String -> Maybe Method
 readMethod = \case
   "linear" -> Just Linear
   "fraction" -> Just Fraction
   "reverse" -> Just Reverse
+  "naive" -> Just Naive
   _ -> Nothing
 
 data RootConvention = U2 | NegU2 deriving (Show)
@@ -143,6 +145,7 @@ main = do
     Linear -> Linear.findChebyshev
     Fraction -> Fraction.findChebyshev
     Reverse -> Reverse.findChebyshev
+    Naive -> Naive.findChebyshev
 
   convertRoot root = \case
     U2 -> root
