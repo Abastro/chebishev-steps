@@ -13,7 +13,7 @@ import Data.ExtendedReal
 import Data.Foldable
 import Data.Function ((&))
 import Data.Maybe
-import Data.Ratio (denominator, numerator)
+import Data.Ratio
 import Data.STRef
 import Data.Semigroup (Arg (..))
 import Data.Vector qualified as V
@@ -73,7 +73,7 @@ fracMaxInduction u2 prev = \case
     boundRadiusVec (Arg curMax _) = V.generate (k - 1) $ \i_1 ->
       boundRadiusFor (i_1 + 1) curMax
 
-    bound = fromIntegral $ max (denominator u2) (numerator u2)
+    bound = fromIntegral (denominator u2)
 
     -- Setup: F(x) = F(x_L, x_i, x_R), |x| = k, |x_L| = i-1, |x_R| = k-i
     chooseN_i ::
