@@ -1,7 +1,7 @@
 module Main (main) where
 
 import Chebyshev.Fraction qualified as Fraction
-import Chebyshev.Fraction.Naive qualified as Naive
+-- import Chebyshev.Fraction.Naive qualified as Naive
 import Chebyshev.Fraction.Reverse qualified as Reverse
 import Chebyshev.Linear qualified as Linear
 import Control.Concurrent
@@ -159,9 +159,9 @@ main = do
 
   finder = \case
     Linear -> Linear.chebyZero
-    Fraction -> Fraction.chebyZeroOf . Fraction.initChebyRealFracMax
+    Fraction -> Fraction.chebyZeroOf . Fraction.initChebyRealFracMax [Fraction.Complete]
     Reverse -> Fraction.chebyZeroOf . Reverse.initChebyRealFracMax
-    Naive -> Fraction.chebyZeroOf . Naive.initChebyRealFracMax
+    Naive -> Fraction.chebyZeroOf . Fraction.initChebyRealFracMax [Fraction.Narrow]
   takeResult maxK = \case
     Nothing -> Stream.fold Fold.latest . Stream.take maxK
     Just timeout ->
