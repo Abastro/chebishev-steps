@@ -24,6 +24,7 @@ import Streamly.Data.StreamK qualified as StreamK
 import Streamly.Internal.Data.Stream qualified as Stream
 import Streamly.Internal.Data.Stream.StreamK qualified as StreamK
 import Util
+import Chebyshev.Base
 
 -- | Compute maximal real-fraction given u^2.
 initChebyRealFracMax :: [SearchPass] -> Rational -> InductiveEval () FractionResult
@@ -51,7 +52,7 @@ fracMaxInduction passes u2 prev = \case
    where
     runPass :: Refs s -> SearchPass -> Stream.Stream (ST s) FractionResult
     runPass refs pass =
-      foldlM (chooseN_i pass refs) (initChebyRealFrac u2) [1 .. k - 1]
+      foldlM (chooseN_i pass refs) (initContinuedFrac u2) [1 .. k - 1]
         & (StreamK.toStream . StreamK.unCross)
         & Stream.mapMaybe lastStep
         & Stream.mapM (updateAndGetMax refs)
@@ -112,12 +113,12 @@ fracMaxInduction passes u2 prev = \case
     -- Setup: F(x) = F(x_L, x_i, x_R), |x| = k, |x_L| = i-1, |x_R| = k-i
     -- Initial max candidate.
     maxCandidate :: FractionResult
-    maxCandidate = Arg (abs . chebyRealFraction u2 $ V.toList n_) n_
+    maxCandidate = Arg (abs . continuedFraction u2 $ V.toList n_) n_
      where
       n_ = V.cons n_1 argmax_R
 
       Arg _ argmax_R = fromJust $ valueAt (k - 1) prev
-      g_R_rev = knownFinite $ chebyRealFraction u2 (V.toList $ V.reverse argmax_R)
+      g_R_rev = knownFinite $ continuedFraction u2 (V.toList $ V.reverse argmax_R)
       -- Opposite direction of truncate
       n_1 = case properFraction g_R_rev of
         (btwn, r)

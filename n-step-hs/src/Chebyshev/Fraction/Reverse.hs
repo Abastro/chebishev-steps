@@ -5,6 +5,7 @@ module Chebyshev.Fraction.Reverse (
   findChebyshev,
 ) where
 
+import Chebyshev.Base
 import Chebyshev.Fraction.Base
 import Control.Monad.Identity (Identity (..))
 import Control.Monad.ST
@@ -70,12 +71,12 @@ fracMaxInduction u2 prev = \case
 
     -- Initial max candidate.
     maxCandidate :: FractionResult
-    maxCandidate = Arg (abs . chebyRealFraction u2 $ V.toList n_) n_
+    maxCandidate = Arg (abs . continuedFraction u2 $ V.toList n_) n_
      where
       n_ = V.cons n_1 argmax_R
 
       Arg _ argmax_R = fromJust $ valueAt (k - 1) prev
-      g_R_rev = knownFinite $ chebyRealFraction u2 (V.toList $ V.reverse argmax_R)
+      g_R_rev = knownFinite $ continuedFraction u2 (V.toList $ V.reverse argmax_R)
       -- Opposite direction of truncate
       n_1 = case properFraction g_R_rev of
         (btwn, r)

@@ -32,7 +32,6 @@ library
     Chebyshev.Fraction.Base
     Chebyshev.Fraction
     Chebyshev.Fraction.Reverse
-    Chebyshev.Fraction.Naive
   default-extensions:
     LambdaCase
     OverloadedRecordDot
