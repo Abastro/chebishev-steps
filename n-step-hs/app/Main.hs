@@ -1,7 +1,7 @@
 module Main (main) where
 
+import Chebyshev.Base
 import Chebyshev.Fraction qualified as Fraction
--- import Chebyshev.Fraction.Naive qualified as Naive
 import Chebyshev.Fraction.Reverse qualified as Reverse
 import Chebyshev.Linear qualified as Linear
 import Control.Concurrent
@@ -145,7 +145,7 @@ main = do
           & Stream.scan
             ( Fold.foldl'
                 (flip Inductive.next)
-                (Fraction.initChebyRealFrac $ convertRoot root opts.convention)
+                (initContinuedFrac $ convertRoot root opts.convention)
             )
           & Stream.drop 1 -- First is always 0
           & Stream.fold (Fold.mapMaybe checkAndReturn Fold.one)

@@ -9,7 +9,6 @@ module Chebyshev.Fraction (
 import Chebyshev.Fraction.Base
 import Control.Monad.Identity (Identity (..))
 import Control.Monad.ST
-import Data.ExtendedReal
 import Data.Foldable
 import Data.Function ((&))
 import Data.Maybe
@@ -34,7 +33,7 @@ initChebyRealFracMax passes u2 =
         (const $ \prev -> induct prev (inductNum prev + 1))
         (induct (error "unreachable") 0)
 
-type FractionEval = InductiveEval Integer (Extended Rational)
+type FractionEval = InductiveEval Integer (Projective Rational)
 
 data SearchPass = Narrow | Complete
   deriving (Show)
@@ -69,7 +68,7 @@ fracMaxInduction passes u2 prev = \case
     lastStep g_L =
       let n_k = round . knownFinite $ value g_L
           g_k = next n_k g_L
-       in if n_k == 0 then Nothing else Just $ Arg (abs <$> value g_k) (V.fromList $ inputs g_k)
+       in if n_k == 0 then Nothing else Just $ Arg (abs $ value g_k) (V.fromList $ inputs g_k)
 
     narrowSearchRadius = fromIntegral $ denominator u2
 
@@ -96,12 +95,12 @@ fracMaxInduction passes u2 prev = \case
           then StreamK.fromStream positives -- Only take n_1 > 0
           else StreamK.fromStream positives `StreamK.interleave` StreamK.fromStream negatives
 
-    getMax :: Int -> Extended Rational
+    getMax :: Int -> Projective Rational
     getMax i = case valueAt i prev of
       Just (Arg v _) -> v
       Nothing -> error "not yet available"
 
-    boundRadiusFor :: Int -> Extended Rational -> Rational
+    boundRadiusFor :: Int -> Projective Rational -> Rational
     boundRadiusFor i curMax = min (maxG_R + 1) (maxG_R * boundMultiple) -- Minimum is obtained near G_R.
      where
       maxG_R = knownFinite $ getMax (k - i)
@@ -150,5 +149,5 @@ findChebyshev u2 cutoff =
  where
   -- 'chebyFractionMax u2 k' is infinite when 'chebyNormal u2 (k+1)' is 0.
   argInfinite = \case
-    Arg m arg | Data.ExtendedReal.isInfinite m -> Just arg
+    Arg m arg | m == Infinity -> Just arg
     _ -> Nothing

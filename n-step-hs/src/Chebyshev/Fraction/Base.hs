@@ -5,19 +5,19 @@ module Chebyshev.Fraction.Base (
   chebyZeroOf,
 ) where
 
-import Data.ExtendedReal
 import Data.Function ((&))
 import Data.Semigroup (Arg (..))
 import Data.Vector qualified as V
 import Inductive
 import Streamly.Data.Fold qualified as Fold
 import Streamly.Data.Stream qualified as Stream
+import Util
 
-type FractionResult = Arg (Extended Rational) (V.Vector Integer)
+type FractionResult = Arg (Projective Rational) (V.Vector Integer)
 
 -- Stops when infinity is encountered
 untilInfinity :: (Monad m) => Fold.Fold m FractionResult (Maybe FractionResult)
-untilInfinity = Fold.takeEndBy (\(Arg curMax _) -> Data.ExtendedReal.isInfinite curMax) Fold.latest
+untilInfinity = Fold.takeEndBy (\(Arg curMax _) -> curMax == Infinity) Fold.latest
 
 -- | Chebyshev fraction maximum given certain inductive initiation.
 chebyFracMaxOf :: (Monad m) => InductiveEval () FractionResult -> Stream.Stream m FractionResult
@@ -34,5 +34,5 @@ chebyZeroOf initiate =
     & fmap argInfinite
  where
   argInfinite = \case
-    (_, Arg m arg) | Data.ExtendedReal.isInfinite m -> Right arg
+    (_, Arg Infinity arg) -> Right arg
     (k_1, _) -> Left (k_1 + 1)

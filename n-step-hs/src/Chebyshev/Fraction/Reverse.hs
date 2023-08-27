@@ -10,7 +10,6 @@ import Chebyshev.Fraction.Base
 import Control.Monad.Identity (Identity (..))
 import Control.Monad.ST
 import Data.Bifunctor (Bifunctor (..))
-import Data.ExtendedReal
 import Data.Foldable
 import Data.Function ((&))
 import Data.Maybe
@@ -26,20 +25,20 @@ import Streamly.Internal.Data.Stream.StreamK qualified as StreamK
 import Util
 
 -- | Gives G_k along with its reverse direction version.
-initChebyReverseFrac :: (RealFrac v, Integral a) => v -> InductiveEval a (Extended v, Extended v)
+initChebyReverseFrac :: (RealFrac v, Integral a) => v -> InductiveEval a (Projective v, Projective v)
 initChebyReverseFrac u2 = inductive induction (0, 0)
  where
   induction n_k g_ls =
-    let (g_l, g_l_rev) = bimap knownFinite knownFinite $ value g_ls
-        g = infiRecip $ u2 * (fromIntegral n_k - g_l)
+    let (g_l, g_l_rev) = value g_ls
+        g = recip $ Finite u2 * (fromIntegral n_k - g_l)
         g_rev = case previous g_ls of
           Just (_, g_lls)
             | (_, g_ll_rev) <- value g_lls ->
-                (g_l_rev * fromIntegral n_k - knownFinite g_ll_rev * g_l) `infiDiv` (fromIntegral n_k - g_l)
-          Nothing -> Finite $ recip (fromIntegral n_k * u2)
+                (g_l_rev * fromIntegral n_k - g_ll_rev * g_l) / (fromIntegral n_k - g_l)
+          Nothing -> recip (fromIntegral n_k * Finite u2)
      in (g, g_rev)
 
-type FractionRevEval = InductiveEval Integer (Extended Rational, Extended Rational)
+type FractionRevEval = InductiveEval Integer (Projective Rational, Projective Rational)
 
 -- Value of delta
 deltaRight :: Rational -> FractionRevEval -> Rational
@@ -64,7 +63,7 @@ fracMaxInduction u2 prev = \case
   k -> runST $ do
     fromMaybe (error "maximal entry not found") <$> Stream.fold untilInfinity maxFinding
    where
-    getMax :: Int -> Extended Rational
+    getMax :: Int -> Projective Rational
     getMax i = case valueAt i prev of
       Just (Arg v _) -> v
       Nothing -> error "not yet available"
@@ -86,7 +85,7 @@ fracMaxInduction u2 prev = \case
 
     -- Setup: F(x) = F(x_L, x_i, x_R), |x| = k, |x_L| = i-1, |x_R| = k-i
     chooseN_i ::
-      STRef s (Extended Rational) ->
+      STRef s (Projective Rational) ->
       FractionRevEval ->
       Int ->
       StreamK.CrossStreamK (ST s) FractionRevEval
@@ -109,7 +108,7 @@ fracMaxInduction u2 prev = \case
     puttingMax maxCandRef oldMax new@(Arg newV _) =
       if oldMax < new then new <$ writeSTRef maxCandRef newV else pure oldMax
 
-    maxFinding :: Stream.Stream (ST s) (Arg (Extended Rational) (V.Vector Integer))
+    maxFinding :: Stream.Stream (ST s) (Arg (Projective Rational) (V.Vector Integer))
     maxFinding = Stream.concatEffect $ do
       let Arg newCand _ = maxCandidate
       maxCandRef <- newSTRef newCand
@@ -139,5 +138,5 @@ findChebyshev u2 cutoff =
  where
   -- 'chebyFractionMax u2 k' is infinite when 'chebyNormal u2 (k+1)' is 0.
   argInfinite = \case
-    Arg m arg | Data.ExtendedReal.isInfinite m -> Just arg
+    Arg m arg | m == Infinity -> Just arg
     _ -> Nothing

@@ -10,7 +10,6 @@ module Chebyshev.Base (
 ) where
 
 import Control.Monad.ST
-import Data.ExtendedReal
 import Data.Foldable
 import Data.Function ((&))
 import Data.STRef
@@ -43,13 +42,13 @@ chebyNormal :: Rational -> [Integer] -> Rational
 chebyNormal u2 n_ = value $ nexts n_ (initChebyNormal u2)
 
 -- | InductiveEval for continued fraction divided by u.
-initContinuedFrac :: Rational -> InductiveEval Integer (Extended Rational)
+initContinuedFrac :: Rational -> InductiveEval Integer (Projective Rational)
 initContinuedFrac u2 = inductive induction 0
  where
-  induction n_k g_k = infiRecip . knownFinite $ Finite u2 * (fromIntegral n_k - value g_k)
+  induction n_k g_k = recip $ Finite u2 * (fromIntegral n_k - value g_k)
 
 -- | Continued fraction, divided by u to make it real.
-continuedFraction :: Rational -> [Integer] -> Extended Rational
+continuedFraction :: Rational -> [Integer] -> Projective Rational
 continuedFraction u2 n_ = value $ nexts n_ (initContinuedFrac u2)
 
 type IntFnEval = InductiveEval Integer
