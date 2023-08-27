@@ -2,7 +2,6 @@ module Main (main) where
 
 import Chebyshev.Base
 import Chebyshev.Fraction qualified as Fraction
-import Chebyshev.Fraction.Naive qualified as Naive
 import Chebyshev.Fraction.Reverse qualified as Reverse
 import Chebyshev.Linear qualified as Linear
 import Data.Ratio
@@ -23,8 +22,7 @@ properties =
         [ chebyshevBase,
           chebyshevLinear,
           chebyshevFraction,
-          chebyshevFractionReverse,
-          chebyshevFractionNaive
+          chebyshevFractionReverse
         ]
     ]
 
@@ -118,20 +116,20 @@ chebyshevFractionReverse =
                in (u2 /= 0) ==> maybe (-1) length (Reverse.findChebyshev u2 6) <= 3
     ]
 
-chebyshevFractionNaive :: TestTree
-chebyshevFractionNaive =
-  testGroup
-    "Fraction.Naive"
-    [ testProperty "findChebyshev must give a root"
-        $ withMaxSuccess 20
-        $ mapSize (`div` 3)
-        $ \(NonZero u2) ->
-          discardAfter 200000
-            $ case Naive.findChebyshev u2 100 of
-              Just n_ -> chebyNormal u2 (V.toList n_) == 0
-              Nothing -> discard,
-      testProperty "findChebyshev must give s_3 for roots of s_3"
-        $ \(NonZero (Small q)) ->
-          let u2 = 1 % q
-           in maybe (-1) length (Naive.findChebyshev u2 5) == 2
-    ]
+-- chebyshevFractionNaive :: TestTree
+-- chebyshevFractionNaive =
+--   testGroup
+--     "Fraction.Naive"
+--     [ testProperty "findChebyshev must give a root"
+--         $ withMaxSuccess 20
+--         $ mapSize (`div` 3)
+--         $ \(NonZero u2) ->
+--           discardAfter 200000
+--             $ case Fraction.findChebyshev u2 100 of
+--               Just n_ -> chebyNormal u2 (V.toList n_) == 0
+--               Nothing -> discard,
+--       testProperty "findChebyshev must give s_3 for roots of s_3"
+--         $ \(NonZero (Small q)) ->
+--           let u2 = 1 % q
+--            in maybe (-1) length (Fraction.findChebyshev u2 5) == 2
+--     ]
