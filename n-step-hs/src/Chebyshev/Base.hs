@@ -25,8 +25,6 @@ import Streamly.Internal.Data.Stream.StreamK qualified as StreamK
 import Util
 
 -- | InductiveEval for normalized chebyshev; Starts at s_1.
---
--- This is to ensure that the value stays being a quotient.
 initChebyNormal :: Rational -> InductiveEval Integer Rational
 initChebyNormal u2 = inductive induction 1
  where
