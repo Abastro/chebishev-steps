@@ -2,7 +2,6 @@ module Main (main) where
 
 import Chebyshev.Base
 import Chebyshev.Fraction qualified as Fraction
-import Chebyshev.Fraction.Reverse qualified as Reverse
 import Chebyshev.Linear qualified as Linear
 import Control.Concurrent
 import Control.Exception (evaluate)
@@ -24,13 +23,12 @@ import System.IO
 import Text.Printf
 import Util
 
-data Method = Linear | Fraction | Reverse | Naive deriving (Show)
+data Method = Linear | Fraction | Naive deriving (Show)
 
 readMethod :: String -> Maybe Method
 readMethod = \case
   "linear" -> Just Linear
   "fraction" -> Just Fraction
-  "reverse" -> Just Reverse
   "naive" -> Just Naive
   _ -> Nothing
 
@@ -159,9 +157,8 @@ main = do
 
   finder = \case
     Linear -> Linear.chebyZero
-    Fraction -> Fraction.chebyZeroOf . Fraction.initChebyRealFracMax [Fraction.Complete]
-    Reverse -> Fraction.chebyZeroOf . Reverse.initChebyRealFracMax
-    Naive -> Fraction.chebyZeroOf . Fraction.initChebyRealFracMax [Fraction.Narrow]
+    Fraction -> Fraction.chebyZeroOf . Fraction.continuedFractionMax [Fraction.Complete]
+    Naive -> Fraction.chebyZeroOf . Fraction.continuedFractionMax [Fraction.Narrow]
   takeResult maxK = \case
     Nothing -> Stream.fold Fold.latest . Stream.take maxK
     Just timeout ->

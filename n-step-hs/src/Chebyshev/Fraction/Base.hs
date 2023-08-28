@@ -22,6 +22,7 @@ chebyZeroOf :: (Monad m) => (Int -> FractionResult) -> Stream.Stream m (Either I
 chebyZeroOf getMax =
   Stream.enumerateFrom 0
     & fmap getMax
+    & Stream.scanMaybe untilInfinity
     & Stream.indexed
     & fmap argInfinite
  where
