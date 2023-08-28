@@ -37,13 +37,11 @@ slopeTerm u2 n_L n_R = (value s_L * s_R_1_part + s_L_1_part * value s_R) / u2
 -- Assumption: u^2 is rational
 
 chebyNormalMin :: Rational -> Int -> RatioResult
-chebyNormalMin u2 = memo $ \case
+chebyNormalMin u2 = memoFix $ \getMin -> \case
   0 -> Arg 0 V.empty -- (placeholder)
   1 -> Arg 1 V.empty -- normalized s1 = 1
   2 -> Arg 1 (V.singleton 1) -- normalized s2 = 1
   k -> searchMinWith (chebyNormalMinSearch u2 getMin) (k - 1)
- where
-  getMin = chebyNormalMin u2
 
 chebyNormalMinSearch :: Rational -> (Int -> RatioResult) -> MinSearch Rational
 chebyNormalMinSearch u2 getMin =

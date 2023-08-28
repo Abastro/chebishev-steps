@@ -32,7 +32,7 @@ data SearchPass = Narrow | Complete
 
 -- | Maximum of continued fraction given u^2.
 continuedFractionMax :: [SearchPass] -> Rational -> Int -> FractionResult
-continuedFractionMax passes u2 = memo $ \case
+continuedFractionMax passes u2 = memoFix $ \getMaxArg -> \case
   0 -> Arg (Finite 0) V.empty -- s0 / s1 = 0
   1 -> Arg (Finite $ 1 / abs u2) (V.singleton 1) -- s1 / s2 = x1 / u^2
   k -> runST $ do
@@ -112,8 +112,6 @@ continuedFractionMax passes u2 = memo $ \case
           | r < 0 -> btwn - 1
           | r > 0 -> btwn + 1
           | otherwise -> btwn
- where
-  getMaxArg = continuedFractionMax passes u2
 
 -- Slow numbers:
 -- 7: 17/6, 23/6
