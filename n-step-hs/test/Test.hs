@@ -8,6 +8,7 @@ import Data.Vector qualified as V
 import Test.QuickCheck
 import Test.Tasty
 import Test.Tasty.QuickCheck
+import Chebyshev.Fraction (SearchPass(..))
 
 main :: IO ()
 main = defaultMain $ testGroup "n-step-hs" [properties]
@@ -20,7 +21,8 @@ properties =
         "Chebyshev"
         [ chebyshevBase,
           chebyshevLinear,
-          chebyshevFraction
+          chebyshevFraction,
+          chebyshevFractionNaive
         ]
     ]
 
@@ -51,19 +53,19 @@ chebyshevLinear =
         $ mapSize (`div` 3)
         $ \(NonZero u2) ->
           discardAfter 200000
-            $ case Linear.findChebyshev u2 100 of
+            $ case findUntilCutoff 100 (Linear.chebyZero u2) of
               Just n_ -> chebyNormal u2 (V.toList n_) == 0
               Nothing -> discard,
       testProperty "findChebyshev must give s_3 for roots of s_3"
         $ \(NonZero (Small q)) ->
           let u2 = 1 % q
-           in maybe (-1) length (Linear.findChebyshev u2 5) == 2,
+           in maybe (-1) length (findUntilCutoff 5 $ Linear.chebyZero u2) == 2,
       testProperty "findChebyshev must give less than s_4 for roots of s_4"
         $ withMaxSuccess 30
         $ \(NonZero (Small a)) (NonZero (Small b)) ->
           discardAfter 200000
             $ let u2 = 1 % a + 1 % b
-               in (u2 /= 0) ==> maybe (-1) length (Linear.findChebyshev u2 6) <= 3
+               in (u2 /= 0) ==> maybe (-1) length (findUntilCutoff 6 $ Linear.chebyZero u2) <= 3
     ]
 
 chebyshevFraction :: TestTree
@@ -75,35 +77,35 @@ chebyshevFraction =
         $ mapSize (`div` 3)
         $ \(NonZero u2) ->
           discardAfter 200000
-            $ case Fraction.findChebyshev u2 100 of
+            $ case findUntilCutoff 100 (Fraction.chebyZero [Complete] u2) of
               Just n_ -> chebyNormal u2 (V.toList n_) == 0
               Nothing -> discard,
       testProperty "findChebyshev must give s_3 for roots of s_3"
         $ \(NonZero (Small q)) ->
           let u2 = 1 % q
-           in maybe (-1) length (Fraction.findChebyshev u2 5) == 2,
+           in maybe (-1) length (findUntilCutoff 5 $ Fraction.chebyZero [Complete] u2) == 2,
       testProperty "findChebyshev must give less than s_4 for roots of s_4"
         $ withMaxSuccess 30
         $ \(NonZero (Small a)) (NonZero (Small b)) ->
           discardAfter 200000
             $ let u2 = 1 % a + 1 % b
-               in (u2 /= 0) ==> maybe (-1) length (Fraction.findChebyshev u2 6) <= 3
+               in (u2 /= 0) ==> maybe (-1) length (findUntilCutoff 6 $ Fraction.chebyZero [Complete] u2) <= 3
     ]
 
--- chebyshevFractionNaive :: TestTree
--- chebyshevFractionNaive =
---   testGroup
---     "Fraction.Naive"
---     [ testProperty "findChebyshev must give a root"
---         $ withMaxSuccess 20
---         $ mapSize (`div` 3)
---         $ \(NonZero u2) ->
---           discardAfter 200000
---             $ case Fraction.findChebyshev u2 100 of
---               Just n_ -> chebyNormal u2 (V.toList n_) == 0
---               Nothing -> discard,
---       testProperty "findChebyshev must give s_3 for roots of s_3"
---         $ \(NonZero (Small q)) ->
---           let u2 = 1 % q
---            in maybe (-1) length (Fraction.findChebyshev u2 5) == 2
---     ]
+chebyshevFractionNaive :: TestTree
+chebyshevFractionNaive =
+  testGroup
+    "Fraction.Naive"
+    [ testProperty "findChebyshev must give a root"
+        $ withMaxSuccess 20
+        $ mapSize (`div` 3)
+        $ \(NonZero u2) ->
+          discardAfter 200000
+            $ case findUntilCutoff 100 (Fraction.chebyZero [Narrow] u2) of
+              Just n_ -> chebyNormal u2 (V.toList n_) == 0
+              Nothing -> discard,
+      testProperty "findChebyshev must give s_3 for roots of s_3"
+        $ \(NonZero (Small q)) ->
+          let u2 = 1 % q
+           in maybe (-1) length (findUntilCutoff 5 $ Fraction.chebyZero [Narrow] u2) == 2
+    ]

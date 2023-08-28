@@ -1,9 +1,9 @@
 module Main (main) where
 
 import Chebyshev.Base
+import Chebyshev.Fraction (SearchPass (..))
 import Chebyshev.Fraction qualified as Fraction
 import Chebyshev.Linear qualified as Linear
-
 import Test.Tasty.Bench
 
 main :: IO ()
@@ -21,9 +21,9 @@ main =
         ],
       bgroup
         "findChebyshev linear vs fraction"
-        [ bench "Linear.findChebyshev 9/5" $ nf (`Linear.findChebyshev` 100) (9 / 5),
-          bench "Fraction.findChebyshev 9/5" $ nf (`Fraction.findChebyshev` 100) (9 / 5),
-          bench "Linear.findChebyshev 8/5" $ nf (`Linear.findChebyshev` 100) (8 / 5),
-          bench "Fraction.findChebyshev 8/5" $ nf (`Fraction.findChebyshev` 100) (8 / 5)
+        [ bench "Linear.findChebyshev 9/5" $ nf (findUntilCutoff 100 . Linear.chebyZero) (9 / 5),
+          bench "Fraction.findChebyshev 9/5" $ nf (findUntilCutoff 100 . Fraction.chebyZero [Complete]) (9 / 5),
+          bench "Linear.findChebyshev 8/5" $ nf (findUntilCutoff 100 . Linear.chebyZero) (8 / 5),
+          bench "Fraction.findChebyshev 8/5" $ nf (findUntilCutoff 100 . Fraction.chebyZero [Complete]) (8 / 5)
         ]
     ]

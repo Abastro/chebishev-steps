@@ -3,12 +3,11 @@ module Chebyshev.Fraction (
   module Chebyshev.Fraction.Base,
   SearchPass (..),
   continuedFractionMax,
-  findChebyshev,
+  chebyZero,
 ) where
 
 import Chebyshev.Base
 import Chebyshev.Fraction.Base
-import Control.Monad.Identity (Identity (..))
 import Control.Monad.ST
 import Data.Foldable
 import Data.Function ((&))
@@ -18,7 +17,6 @@ import Data.STRef
 import Data.Semigroup (Arg (..))
 import Data.Vector qualified as V
 import Inductive
-import Streamly.Data.Fold qualified as Fold
 import Streamly.Data.Stream qualified as Stream
 import Streamly.Data.StreamK qualified as StreamK
 import Streamly.Internal.Data.Stream qualified as Stream
@@ -117,26 +115,5 @@ continuedFractionMax passes u2 = memoFix $ \getMaxArg -> \case
 -- 7: 17/6, 23/6
 -- 8: 23/8, 31/8
 
--- >>> findChebyshev (7/3) 6
--- Just [3,1,1,1,3]
-
--- >>> findChebyshev (7/3) 5
--- Nothing
-
--- >>> findChebyshev (8/3) 8
--- Just [6,1,1,1,1]
-
--- | Given a root, find a chebyshev polynomial of minimal degree.
-findChebyshev :: Rational -> Word -> Maybe (V.Vector Integer)
-findChebyshev u2 cutoff =
-  Stream.enumerateFrom 0
-    & fmap getMax
-    & Stream.take (fromIntegral cutoff)
-    & Stream.fold (Fold.mapMaybe argInfinite Fold.one)
-    & runIdentity
- where
-  getMax = continuedFractionMax [Complete] u2
-  -- 'continuedFractionMax u2 k' is infinite when 'chebyNormal u2 (k+1)' is 0.
-  argInfinite = \case
-    Arg m arg | m == Infinity -> Just arg
-    _ -> Nothing
+chebyZero :: Monad m => [SearchPass] -> Rational -> Stream.Stream m (Either Int (V.Vector Integer))
+chebyZero passes u2 = chebyZeroOf (continuedFractionMax passes u2)

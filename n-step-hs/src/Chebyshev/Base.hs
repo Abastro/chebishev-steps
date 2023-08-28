@@ -3,12 +3,16 @@ module Chebyshev.Base (
   chebyNormal,
   initContinuedFrac,
   continuedFraction,
+  untilCond,
   IntFnEval,
   RatioResult,
+  findZeroStream,
+  findUntilCutoff,
   MinSearch (..),
   searchMinWith,
 ) where
 
+import Control.Monad.Identity
 import Control.Monad.ST
 import Data.Foldable
 import Data.Function ((&))
@@ -58,6 +62,32 @@ untilCond :: (Monad m) => (r -> Bool) -> Fold.Fold m r (Maybe r)
 untilCond cond = Fold.takeEndBy cond Fold.latest
 
 type RatioResult = Arg Rational (V.Vector Integer)
+
+-- | Stream of some computation which goes on until zero is found.
+--
+-- Assumes that it starts from 1.
+findZeroStream :: (Monad m) => (Int -> RatioResult) -> Stream.Stream m (Either Int (V.Vector Integer))
+findZeroStream getMin =
+  Stream.enumerateFrom 1
+    & fmap (\k -> (k, getMin k))
+    & Stream.scanMaybe (untilCond $ \(_, Arg curMin _) -> curMin == 0)
+    & fmap argZero
+ where
+  argZero = \case
+    (_, Arg m arg) | m == 0 -> Right arg
+    (k, _) -> Left k
+
+-- | Finds in stream until cutoff is reached.
+findUntilCutoff :: Int -> Stream.Stream Identity (Either Int (V.Vector Integer)) -> Maybe (V.Vector Integer)
+findUntilCutoff cutoff stream =
+  stream
+    & Stream.fold (Fold.mapMaybe findEnd $ join <$> Fold.one)
+    & runIdentity
+ where
+  findEnd = \case
+    Left k | k <= cutoff -> Nothing
+    Left _ -> Just Nothing
+    Right res -> Just (Just res)
 
 data MinSearch v = MinSearch
   { initTerm :: IntFnEval v,

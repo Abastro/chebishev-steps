@@ -11,6 +11,12 @@ import Data.Vector qualified as V
 import Inductive
 import Util
 
+-- >>> chebyNormalMin (7/3) 6
+-- Arg (0 % 1) [3,1,1,1,3]
+
+-- >>> chebyNormalMin (8/3) 6
+-- Arg (0 % 1) [6,1,1,1,1]
+
 -- | Minimum of normalized chebyshev using fraction maximum.
 chebyNormalMin ::
   Rational ->

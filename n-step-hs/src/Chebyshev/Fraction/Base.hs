@@ -4,6 +4,7 @@ module Chebyshev.Fraction.Base (
   chebyZeroOf,
 ) where
 
+import Chebyshev.Base
 import Data.Function ((&))
 import Data.Semigroup (Arg (..))
 import Data.Vector qualified as V
@@ -21,11 +22,10 @@ untilInfinity = Fold.takeEndBy (\(Arg curMax _) -> curMax == Infinity) Fold.late
 chebyZeroOf :: (Monad m) => (Int -> FractionResult) -> Stream.Stream m (Either Int (V.Vector Integer))
 chebyZeroOf getMax =
   Stream.enumerateFrom 0
-    & fmap getMax
-    & Stream.scanMaybe untilInfinity
-    & Stream.indexed
+    & fmap (\k -> (k, getMax k))
+    & Stream.scanMaybe (untilCond $ \(_, Arg curMax _) -> curMax == Infinity)
     & fmap argInfinite
  where
   argInfinite = \case
     (_, Arg Infinity arg) -> Right arg
-    (k_1, _) -> Left (k_1 + 1)
+    (k, _) -> Left (k + 1) -- Related with s_(k+1)

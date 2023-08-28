@@ -4,11 +4,9 @@ module Chebyshev.Linear (
   slopeTerm,
   chebyNormalMin,
   chebyZero,
-  findChebyshev,
 ) where
 
 import Chebyshev.Base
-import Control.Monad.Identity (Identity (..))
 import Data.Function ((&))
 import Data.MemoTrie
 import Data.Semigroup (Arg (..))
@@ -102,36 +100,3 @@ chebyZero u2 =
   argZero = \case
     (_, Arg m arg) | m == 0 -> Right arg
     (k_1, _) -> Left (k_1 + 1)
-
--- >>> findChebyshev (1/2) 8
--- Just [2,1]
-
--- >>> findChebyshev (2/3) 8
--- Just [1,3,1]
-
--- >>> findChebyshev 3 8
--- Just [1,1,1,1,1]
-
--- >>> findChebyshev (7/3) 8
--- Just [3,1,1,1,3]
-
--- >>> findChebyshev (4/5) 8
--- Just [1,1,-5]
-
--- >>> findChebyshev (8/3) 5
--- Nothing
-
--- >>> findChebyshev (8/3) 6
--- Just [1,1,1,1,6]
-
-findChebyshev :: Rational -> Word -> Maybe (V.Vector Integer)
-findChebyshev u2 cutoff =
-  Stream.enumerateFrom 1
-    & fmap (chebyNormalMin u2)
-    & Stream.take (fromIntegral cutoff)
-    & Stream.fold (Fold.mapMaybe argZero Fold.one)
-    & runIdentity
- where
-  argZero = \case
-    Arg m arg | m == 0 -> Just arg
-    _ -> Nothing
