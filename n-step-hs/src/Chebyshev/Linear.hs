@@ -2,8 +2,7 @@
 module Chebyshev.Linear (
   constTerm,
   slopeTerm,
-  initChebyNormalMin,
-  chebyNormalMins,
+  chebyNormalMin,
   chebyZero,
   findChebyshev,
 ) where
@@ -11,7 +10,6 @@ module Chebyshev.Linear (
 import Chebyshev.Base
 import Control.Monad.Identity (Identity (..))
 import Data.Function ((&))
-import Data.Maybe
 import Data.MemoTrie
 import Data.Semigroup (Arg (..))
 import Data.Vector qualified as V
@@ -38,29 +36,17 @@ slopeTerm u2 n_L n_R = (value s_L * s_R_1_part + s_L_1_part * value s_R) / u2
 
 -- Assumption: u^2 is rational
 
--- >>> chebyNormalMin (1/2) 3
--- Arg (0 % 1) [2,1]
+chebyNormalMin :: Rational -> Int -> RatioResult
+chebyNormalMin u2 = memo $ \case
+  0 -> Arg 0 V.empty -- (placeholder)
+  1 -> Arg 1 V.empty -- normalized s1 = 1
+  2 -> Arg 1 (V.singleton 1) -- normalized s2 = 1
+  k -> searchMinWith (chebyNormalMinSearch u2 getMin) (k - 1)
+ where
+  getMin = chebyNormalMin u2
 
--- >>> chebyNormalMin (2/3) 3
--- Arg (1 % 4) [2,1]
-
--- >>> chebyNormalMin (2/3) 4
--- Arg (0 % 1) [3,2,1]
-
--- >>> chebyNormalMin (4/5) 4
--- Arg (0 % 1) [-5,1,1]
-
--- alternatingTo :: (Monad m, Eq a, Num a, Stream.Enumerable a) => a -> Stream.Stream m a
--- alternatingTo bnd = Stream.filter (/= 0) $ Stream.enumerateFromTo (-bnd) bnd
-
-initChebyNormalMin :: Rational -> InductiveEval () RatioResult
-initChebyNormalMin u2 =
-  inductive
-    (const $ \prev -> chebyMinInduction u2 prev (inductNum prev + 1))
-    (Arg (-1) V.empty)
-
-chebyNormalMinSearch :: Rational -> InductiveEval () RatioResult -> MinSearch Rational
-chebyNormalMinSearch u2 prev =
+chebyNormalMinSearch :: Rational -> (Int -> RatioResult) -> MinSearch Rational
+chebyNormalMinSearch u2 getMin =
   MinSearch
     { initTerm = initChebyNormal u2,
       minA,
@@ -71,14 +57,14 @@ chebyNormalMinSearch u2 prev =
     }
  where
   minA k_1 i =
-    let Arg s_Lmin n_L = fromJust (valueAt i prev)
-        Arg s_Rmin n_R = fromJust (valueAt (k_1 + 1 - i) prev)
+    let Arg s_Lmin n_L = getMin i
+        Arg s_Rmin n_R = getMin (k_1 + 1 - i)
      in Arg (s_Lmin * s_Rmin) (n_L, n_R)
 
   -- A = constTerm
   minAwith s_L k_1 =
     let i_1 = inductNum s_L
-        Arg s_Rmin _ = fromJust (valueAt (k_1 - i_1) prev)
+        Arg s_Rmin _ = getMin (k_1 - i_1)
      in abs (value s_L) * s_Rmin
 
   -- B = slopeTerm / constTerm
@@ -101,31 +87,20 @@ chebyNormalMinSearch u2 prev =
     1 -> 1
     k -> chebyNormalUB (k - 1) + chebyNormalUB (k - 2) / abs u2
 
-chebyMinInduction :: Rational -> InductiveEval () RatioResult -> Int -> RatioResult
-chebyMinInduction u2 prev = \case
-  1 -> Arg 1 V.empty -- normalized s1 = 1
-  2 -> Arg 1 (V.singleton 1) -- normalized s2 = 1
-  k -> searchMinWith (chebyNormalMinSearch u2 prev) (k - 1)
-
 -- Stops when 0 is encountered
 untilZero :: (Monad m, Eq r, Num r) => Fold.Fold m (Arg r b) (Maybe (Arg r b))
 untilZero = Fold.takeEndBy (\(Arg curMin _) -> curMin == 0) Fold.latest
 
--- | Gives a stream of minimums until 0.
-chebyNormalMins :: (Monad m) => Rational -> Stream.Stream m RatioResult
-chebyNormalMins u2 =
-  Stream.iterate (next ()) (initChebyNormalMin u2)
-    & Stream.drop 1 -- Initial element does not mean anything
-    & fmap value
-    & Stream.scanMaybe untilZero
-
 -- | Determines if u2 is a s_k's zero.
 chebyZero :: (Monad m) => Rational -> Stream.Stream m (Either Int (V.Vector Integer))
 chebyZero u2 =
-  chebyNormalMins u2
+  Stream.enumerateFrom 1
+    & fmap getMin
+    & Stream.scanMaybe untilZero
     & Stream.indexed
     & fmap argZero
  where
+  getMin = chebyNormalMin u2
   argZero = \case
     (_, Arg m arg) | m == 0 -> Right arg
     (k_1, _) -> Left (k_1 + 1)
@@ -134,28 +109,28 @@ chebyZero u2 =
 -- Just [2,1]
 
 -- >>> findChebyshev (2/3) 8
--- Just [3,2,1]
+-- Just [1,3,1]
 
 -- >>> findChebyshev 3 8
 -- Just [1,1,1,1,1]
 
 -- >>> findChebyshev (7/3) 8
--- Just [-3,-1,-1,-1,-3]
+-- Just [3,1,1,1,3]
 
 -- >>> findChebyshev (4/5) 8
--- Just [-5,1,1]
+-- Just [1,1,-5]
 
 -- >>> findChebyshev (8/3) 5
 -- Nothing
 
 -- >>> findChebyshev (8/3) 6
--- Just [6,1,1,1,1]
+-- Just [1,1,1,1,6]
 
 findChebyshev :: Rational -> Word -> Maybe (V.Vector Integer)
 findChebyshev u2 cutoff =
-  Stream.iterate (next ()) (initChebyNormalMin u2)
-    & Stream.take (fromIntegral cutoff + 1)
-    & fmap value
+  Stream.enumerateFrom 1
+    & fmap (chebyNormalMin u2)
+    & Stream.take (fromIntegral cutoff)
     & Stream.fold (Fold.mapMaybe argZero Fold.one)
     & runIdentity
  where
