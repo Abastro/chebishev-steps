@@ -2,16 +2,17 @@
 module Chebyshev.Fraction (
   module Chebyshev.Fraction.Base,
   SearchPass (..),
-  initChebyRealFracMax,
+  continuedFractionMax,
   findChebyshev,
 ) where
 
+import Chebyshev.Base
 import Chebyshev.Fraction.Base
 import Control.Monad.Identity (Identity (..))
 import Control.Monad.ST
 import Data.Foldable
 import Data.Function ((&))
-import Data.Maybe
+import Data.MemoTrie
 import Data.Ratio (denominator)
 import Data.STRef
 import Data.Semigroup (Arg (..))
@@ -23,46 +24,38 @@ import Streamly.Data.StreamK qualified as StreamK
 import Streamly.Internal.Data.Stream qualified as Stream
 import Streamly.Internal.Data.Stream.StreamK qualified as StreamK
 import Util
-import Chebyshev.Base
-
--- | Compute maximal real-fraction given u^2.
-initChebyRealFracMax :: [SearchPass] -> Rational -> InductiveEval () FractionResult
-initChebyRealFracMax passes u2 =
-  let induct = fracMaxInduction passes u2
-   in inductive
-        (const $ \prev -> induct prev (inductNum prev + 1))
-        (induct (error "unreachable") 0)
 
 type FractionEval = InductiveEval Integer (Projective Rational)
 
 data SearchPass = Narrow | Complete
   deriving (Show)
 
-newtype Refs s = Refs {maxRef :: STRef s FractionResult}
-
-fracMaxInduction :: [SearchPass] -> Rational -> InductiveEval () FractionResult -> Int -> FractionResult
-fracMaxInduction passes u2 prev = \case
+-- | Maximum of continued fraction given u^2.
+continuedFractionMax :: [SearchPass] -> Rational -> Int -> FractionResult
+continuedFractionMax passes u2 = memo $ \case
   0 -> Arg (Finite 0) V.empty -- s0 / s1 = 0
   1 -> Arg (Finite $ 1 / abs u2) (V.singleton 1) -- s1 / s2 = x1 / u^2
   k -> runST $ do
-    refs <- Refs <$> newSTRef maxCandidate
-    traverse_ (Stream.drain . runPass refs) passes
-    readSTRef refs.maxRef
+    maxRef <- newSTRef maxCandidate
+    traverse_ (Stream.drain . runPass maxRef) passes
+    readSTRef maxRef
    where
-    runPass :: Refs s -> SearchPass -> Stream.Stream (ST s) FractionResult
-    runPass refs pass =
-      foldlM (chooseN_i pass refs) (initContinuedFrac u2) [1 .. k - 1]
+    getMax i = case getMaxArg i of Arg v _ -> v
+
+    runPass :: STRef s FractionResult -> SearchPass -> Stream.Stream (ST s) FractionResult
+    runPass maxRef pass =
+      foldlM (chooseN_i pass maxRef) (initContinuedFrac u2) [1 .. k - 1]
         & (StreamK.toStream . StreamK.unCross)
         & Stream.mapMaybe lastStep
-        & Stream.mapM (updateAndGetMax refs)
+        & Stream.mapM (updateAndGetMax maxRef)
         & Stream.scanMaybe untilInfinity
 
-    updateAndGetMax :: Refs s -> FractionResult -> ST s FractionResult
-    updateAndGetMax refs new = do
-      old <- readSTRef refs.maxRef
+    updateAndGetMax :: STRef s FractionResult -> FractionResult -> ST s FractionResult
+    updateAndGetMax maxRef new = do
+      old <- readSTRef maxRef
       if old >= new
         then pure old
-        else new <$ writeSTRef refs.maxRef new
+        else new <$ writeSTRef maxRef new
 
     lastStep :: FractionEval -> Maybe FractionResult
     lastStep g_L =
@@ -74,14 +67,14 @@ fracMaxInduction passes u2 prev = \case
 
     chooseN_i ::
       SearchPass ->
-      Refs s ->
+      STRef s FractionResult ->
       FractionEval ->
       Int ->
       StreamK.CrossStreamK (ST s) FractionEval
-    chooseN_i pass refs g_L i = StreamK.mkCross . StreamK.concatEffect $ do
+    chooseN_i pass maxRef g_L i = StreamK.mkCross . StreamK.concatEffect $ do
       let vG_L = knownFinite $ value g_L
           maxG_R = knownFinite $ getMax (k - i)
-      Arg curMax _ <- readSTRef refs.maxRef
+      Arg curMax _ <- readSTRef maxRef
       let boundRadius = boundRadiusFor i curMax
           checkRadius = case pass of
             Narrow -> min narrowSearchRadius boundRadius
@@ -94,11 +87,6 @@ fracMaxInduction passes u2 prev = \case
         if i == 1
           then StreamK.fromStream positives -- Only take n_1 > 0
           else StreamK.fromStream positives `StreamK.interleave` StreamK.fromStream negatives
-
-    getMax :: Int -> Projective Rational
-    getMax i = case valueAt i prev of
-      Just (Arg v _) -> v
-      Nothing -> error "not yet available"
 
     boundRadiusFor :: Int -> Projective Rational -> Rational
     boundRadiusFor i curMax = min (maxG_R + 1) (maxG_R * boundMultiple) -- Minimum is obtained near G_R.
@@ -116,7 +104,7 @@ fracMaxInduction passes u2 prev = \case
      where
       n_ = V.cons n_1 argmax_R
 
-      Arg _ argmax_R = fromJust $ valueAt (k - 1) prev
+      Arg _ argmax_R = getMaxArg (k - 1)
       g_R_rev = knownFinite $ continuedFraction u2 (V.toList $ V.reverse argmax_R)
       -- Opposite direction of truncate
       n_1 = case properFraction g_R_rev of
@@ -124,16 +112,18 @@ fracMaxInduction passes u2 prev = \case
           | r < 0 -> btwn - 1
           | r > 0 -> btwn + 1
           | otherwise -> btwn
-
--- >>> chebyFracMaxs (7/3)
--- fromList [Arg (Finite (0 % 1)) [],Arg (Finite (3 % 7)) [1],Arg (Finite (3 % 4)) [1,1],Arg (Finite (12 % 7)) [1,1,1],Arg (Finite (15 % 2)) [2,1,1,1],Arg PosInf [3,1,1,1,3]]
+ where
+  getMaxArg = continuedFractionMax passes u2
 
 -- Slow numbers:
 -- 7: 17/6, 23/6
 -- 8: 23/8, 31/8
 
--- >>> findChebyshev (7/3) 8
+-- >>> findChebyshev (7/3) 6
 -- Just [3,1,1,1,3]
+
+-- >>> findChebyshev (7/3) 5
+-- Nothing
 
 -- >>> findChebyshev (8/3) 8
 -- Just [6,1,1,1,1]
@@ -141,13 +131,14 @@ fracMaxInduction passes u2 prev = \case
 -- | Given a root, find a chebyshev polynomial of minimal degree.
 findChebyshev :: Rational -> Word -> Maybe (V.Vector Integer)
 findChebyshev u2 cutoff =
-  Stream.iterate (next ()) (initChebyRealFracMax [Complete] u2)
+  Stream.enumerateFrom 0
+    & fmap getMax
     & Stream.take (fromIntegral cutoff)
-    & fmap value
     & Stream.fold (Fold.mapMaybe argInfinite Fold.one)
     & runIdentity
  where
-  -- 'chebyFractionMax u2 k' is infinite when 'chebyNormal u2 (k+1)' is 0.
+  getMax = continuedFractionMax [Complete] u2
+  -- 'continuedFractionMax u2 k' is infinite when 'chebyNormal u2 (k+1)' is 0.
   argInfinite = \case
     Arg m arg | m == Infinity -> Just arg
     _ -> Nothing
