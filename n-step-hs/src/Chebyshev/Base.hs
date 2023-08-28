@@ -23,8 +23,10 @@ import Streamly.Internal.Data.Stream qualified as Stream
 import Streamly.Internal.Data.Stream.StreamK qualified as StreamK
 import Util
 
+type IntFnEval = InductiveEval Integer
+
 -- | InductiveEval for normalized chebyshev; Starts at s_1.
-initChebyNormal :: Rational -> InductiveEval Integer Rational
+initChebyNormal :: Rational -> IntFnEval Rational
 initChebyNormal u2 = inductive induction 1
  where
   induction n_k s_k = case previous s_k of
@@ -42,7 +44,7 @@ chebyNormal :: Rational -> [Integer] -> Rational
 chebyNormal u2 n_ = value $ nexts n_ (initChebyNormal u2)
 
 -- | InductiveEval for continued fraction divided by u.
-initContinuedFrac :: Rational -> InductiveEval Integer (Projective Rational)
+initContinuedFrac :: Rational -> IntFnEval (Projective Rational)
 initContinuedFrac u2 = inductive induction 0
  where
   induction n_k g_k = recip $ Finite u2 * (fromIntegral n_k - value g_k)
@@ -51,12 +53,11 @@ initContinuedFrac u2 = inductive induction 0
 continuedFraction :: Rational -> [Integer] -> Projective Rational
 continuedFraction u2 n_ = value $ nexts n_ (initContinuedFrac u2)
 
-type IntFnEval = InductiveEval Integer
-type RatioResult = Arg Rational (V.Vector Integer)
-
 -- | Folds latest until certain condition is encountered.
 untilCond :: (Monad m) => (r -> Bool) -> Fold.Fold m r (Maybe r)
 untilCond cond = Fold.takeEndBy cond Fold.latest
+
+type RatioResult = Arg Rational (V.Vector Integer)
 
 data MinSearch v = MinSearch
   { initTerm :: IntFnEval v,
