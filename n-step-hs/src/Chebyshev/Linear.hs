@@ -49,7 +49,7 @@ chebyNormalMinSearch u2 getMin =
       computeB = slopeTerm u2,
       minAwith,
       maxBwith,
-      size = abs
+      representative = \s_k -> abs s_k.value
     }
  where
   minA k_1 i =

@@ -5,6 +5,7 @@ module Inductive (
   seqPrev,
   seqNext,
   Induction (..),
+  addBase,
   mapInduction,
   zipInduction,
   Inductive (..),
@@ -19,6 +20,8 @@ import Data.Foldable (Foldable (..))
 import Data.Sequence qualified as Seq
 
 -- | Induction sequence describes the computed values from induction giving [a] -> v.
+--
+-- All the inputs are recorded as well, since the induction can look into previous inputs as well.
 data InductSeq a v = InductSeq
   { initial :: v,
     result :: Seq.Seq (a, v)
@@ -46,6 +49,45 @@ data Induction a v = Induction
   { base :: v,
     step :: a -> InductSeq a v -> v
   }
+
+-- >>> listInduction = Induction{base = [], step = \inp iseq -> inp : seqValue iseq}
+-- >>> basedList = inductive (addBase [] listInduction)
+-- >>> basedShiftedList = inductive (addBaseShifted [] listInduction)
+-- >>> bbsList = inductive (addBase [] . addBaseShifted [] $ listInduction)
+-- >>> bbsList2 = inductive (addBaseShifted [] . addBase [] $ listInduction)
+-- >>> (nexts basedList [1..5]).value
+-- >>> (nexts basedShiftedList [1..5]).value
+-- >>> (nexts bbsList [1..5]).value
+-- >>> (nexts bbsList2 [1..5]).value
+-- [5,4,3,2]
+-- [4,3,2,1]
+-- [4,3,2]
+-- [4,3,2,1]
+
+-- | Add additional base case to the induction, ignoring the first input.
+addBase :: v -> Induction a v -> Induction a v
+addBase aBase ind =
+  Induction
+    { base = aBase,
+      step = \inp iseq -> case iseq.result of
+        Seq.Empty -> ind.base
+        _ Seq.:<| withIgnore -> ind.step inp (InductSeq ind.base withIgnore)
+    }
+
+-- | Add additional base case to the induction, shifting inputs as well.
+--
+-- First input is applied to the second output, second to third, etc.
+-- addBaseShifted :: v -> Induction a v -> Induction a v
+-- addBaseShifted aBase ind =
+--   Induction
+--     { base = aBase,
+--       step = \_ iseq -> case iseq.result of
+--         Seq.Empty -> ind.base
+--         pprev Seq.:|> (prevInp, prevVal) ->
+--           let inps = fst <$> pprev
+--               vals = (snd <$> pprev) Seq.|> prevVal
+--            in ind.step prevInp iseq
+--     }
 
 -- | Maps an induction by bijection.
 mapInduction :: (v -> w) -> (w -> v) -> Induction a v -> Induction a w

@@ -107,10 +107,13 @@ data MinSearch v = MinSearch
     computeB :: V.Vector Integer -> V.Vector Integer -> Rational,
     minAwith :: IntFnInd v -> Int -> Rational,
     maxBwith :: IntFnInd v -> Int -> Rational,
-    size :: v -> Rational
+    -- | The representative to take minimum of.
+    representative :: IntFnInd v -> Rational
   }
 
 -- | Search the minimum of a form V = A_i (1 - B_i / n_i).
+--
+-- The last parameter is length.
 searchMinWith ::
   forall v.
   MinSearch v ->
@@ -118,15 +121,26 @@ searchMinWith ::
   RatioResult
 searchMinWith minSearch len = runST $ do
   minRef <- newSTRef minCandidate
-  Stream.drain $ searchThrough minRef
+  searchRanges (minSearcher minRef) len
   readSTRef minRef
  where
-  searchThrough minRef =
-    foldlM (selectN_i minRef) (inductive minSearch.computeInd) [0 .. pred len]
-      & (StreamK.toStream . StreamK.unCross)
-      & fmap (\ev -> Arg (minSearch.size ev.value) (V.fromList $ inputs ev))
-      & Stream.mapM (updateAndGetMin minRef)
-      & Stream.scanMaybe (untilCond $ \(Arg curMin _) -> curMin == 0)
+  minSearcher :: STRef s RatioResult -> SearchIntFn (ST s) v ()
+  minSearcher minRef =
+    SearchIntFn
+      { fnInduct = minSearch.computeInd,
+        getBounds = \v_L _i -> do
+          let minA = minSearch.minAwith v_L len
+              maxB = minSearch.maxBwith v_L len
+          Arg curMin _ <- readSTRef minRef
+          let boundRadius = maxB / (1 - curMin / minA)
+              minBnd = max (ceiling (-boundRadius)) (floor (-maxB))
+              maxBnd = min (floor boundRadius) (ceiling maxB)
+          pure (minBnd, maxBnd),
+        summarize =
+          Fold.lmap (\ev -> Arg (minSearch.representative ev) (V.fromList $ inputs ev))
+            . Fold.lmapM (updateAndGetMin minRef)
+            $ (void . Fold.find $ \(Arg curMin _) -> curMin == 0)
+      }
 
   updateAndGetMin minRef new = do
     old <- readSTRef minRef
@@ -134,24 +148,7 @@ searchMinWith minSearch len = runST $ do
       then pure old
       else new <$ writeSTRef minRef new
 
-  selectN_i ::
-    STRef s RatioResult ->
-    IntFnInd v ->
-    Int ->
-    StreamK.CrossStreamK (ST s) (IntFnInd v)
-  selectN_i minRef v_L _i = StreamK.mkCross . StreamK.concatEffect $ do
-    let minA = minSearch.minAwith v_L len
-        maxB = minSearch.maxBwith v_L len
-    Arg curMin _ <- readSTRef minRef
-    let boundRadius = maxB / (1 - curMin / minA)
-        minBnd = max (ceiling (-boundRadius)) (floor (-maxB))
-        maxBnd = min (floor boundRadius) (ceiling maxB)
-    -- traceShowM (len, _i, maxB, curMin / minA, boundRadius, minBnd, maxBnd)
-    let positives = Stream.takeWhile (<= maxBnd) $ Stream.enumerateFromStepIntegral (max 1 minBnd) 1
-        negatives = Stream.takeWhile (>= minBnd) $ Stream.enumerateFromStepIntegral (min (-1) maxBnd) (-1)
-        selected = StreamK.fromStream positives `StreamK.interleave` StreamK.fromStream negatives
-    pure (v_L.next <$> selected)
-
+  -- TODO "minimum" can cause unexpected crashes
   minCandidate :: RatioResult
   minCandidate = minimum $ do
     i <- [1 .. len]
@@ -160,3 +157,24 @@ searchMinWith minSearch len = runST $ do
     n_i <- filter (/= 0) [floor vB, ceiling vB]
     let vV = vA * (1 - vB / fromIntegral n_i)
     pure $ Arg (abs vV) (n_L <> V.singleton n_i <> n_R)
+
+data SearchIntFn m v a = SearchIntFn
+  { fnInduct :: Induction Integer v,
+    getBounds :: IntFnInd v -> Int -> m (Integer, Integer),
+    summarize :: Fold.Fold m (IntFnInd v) a
+  }
+
+-- | Search through integer-valued functions.
+searchRanges :: forall m v a. (Monad m) => SearchIntFn m v a -> Int -> m a
+searchRanges search len =
+  foldlM selectN_i (inductive search.fnInduct) [1 .. len]
+    & (StreamK.toStream . StreamK.unCross)
+    & Stream.fold search.summarize
+ where
+  selectN_i :: IntFnInd v -> Int -> StreamK.CrossStreamK m (IntFnInd v)
+  selectN_i v_L i = StreamK.mkCross . StreamK.concatEffect $ do
+    (minBnd, maxBnd) <- search.getBounds v_L i
+    let positives = Stream.takeWhile (<= maxBnd) $ Stream.enumerateFromStepIntegral (max 1 minBnd) 1
+        negatives = Stream.takeWhile (>= minBnd) $ Stream.enumerateFromStepIntegral (min (-1) maxBnd) (-1)
+        selected = StreamK.fromStream positives `StreamK.interleave` StreamK.fromStream negatives
+    pure (v_L.next <$> selected)
