@@ -23,7 +23,7 @@ import Streamly.Internal.Data.Stream qualified as Stream
 import Streamly.Internal.Data.Stream.StreamK qualified as StreamK
 import Util
 
-type FractionEval = InductiveEval Integer (Projective Rational)
+type FractionEval = IntFnInd (Projective Rational)
 
 data SearchPass = Narrow | Complete
   deriving (Show)
@@ -57,9 +57,9 @@ continuedFractionMax passes u2 = memoFix $ \getMaxArg -> \case
 
     lastStep :: FractionEval -> Maybe FractionResult
     lastStep g_L =
-      let n_k = round . knownFinite $ value g_L
-          g_k = next n_k g_L
-       in if n_k == 0 then Nothing else Just $ Arg (abs $ value g_k) (V.fromList $ inputs g_k)
+      let n_k = round . knownFinite $ g_L.value
+          g_k = g_L.next n_k
+       in if n_k == 0 then Nothing else Just $ Arg (abs g_k.value) (V.fromList $ inputs g_k)
 
     narrowSearchRadius = fromIntegral $ denominator u2
 
@@ -70,7 +70,7 @@ continuedFractionMax passes u2 = memoFix $ \getMaxArg -> \case
       Int ->
       StreamK.CrossStreamK (ST s) FractionEval
     chooseN_i pass maxRef g_L i = StreamK.mkCross . StreamK.concatEffect $ do
-      let vG_L = knownFinite $ value g_L
+      let vG_L = knownFinite g_L.value
           maxG_R = knownFinite $ getMax (k - i)
       Arg curMax _ <- readSTRef maxRef
       let boundRadius = boundRadiusFor i curMax
@@ -81,7 +81,7 @@ continuedFractionMax passes u2 = memoFix $ \getMaxArg -> \case
           maxBnd = min (floor $ vG_L + checkRadius) (ceiling $ vG_L + maxG_R)
           positives = Stream.takeWhile (<= maxBnd) $ Stream.enumerateFromStepIntegral (max 1 minBnd) 1
           negatives = Stream.takeWhile (>= minBnd) $ Stream.enumerateFromStepIntegral (min (-1) maxBnd) (-1)
-      pure $ (`next` g_L) <$> do
+      pure $ g_L.next <$> do
         if i == 1
           then StreamK.fromStream positives -- Only take n_1 > 0
           else StreamK.fromStream positives `StreamK.interleave` StreamK.fromStream negatives

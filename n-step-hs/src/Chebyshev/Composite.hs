@@ -52,7 +52,7 @@ chebyNormalMinSearch u2 fracMax chebyMin =
   minAwith s_L k_1 =
     let i_1 = inductNum s_L
         Arg s_Rmin _ = chebyMin (k_1 - i_1)
-     in abs (value s_L) * s_Rmin
+     in abs s_L.value * s_Rmin
 
   computeB n_L n_R =
     let g_L = continuedFraction u2 (V.toList n_L)
@@ -64,3 +64,17 @@ chebyNormalMinSearch u2 fracMax chebyMin =
         g_L = continuedFraction u2 (inputs s_L)
         Arg g_R_rev _ = fracMax (k_1 - i_1 - 1)
      in knownFinite $ abs g_L + g_R_rev
+
+-- | normalized chebyshev along with its shifted version; starts at 1.
+--
+-- Unshifted is first.
+-- initChebyShifted :: Rational -> IntFnInd (Rational, Rational)
+-- initChebyShifted u2 = inductive induction (1, 0)
+--  where
+--   induction n_k ss_k = case previous ss_k of
+--     Nothing -> (1, 1) -- (s_2, shift_2)
+--     Just (n_k_1, ss_k_1) ->
+--       let (s_k, s_k_1) = value ss_k
+--        in error ""
+
+--   nextOf n_k n_k_1 s_k s_k_1 = s_k - s_k_1 / (u2 * fromIntegral (n_k * n_k_1))

@@ -4,7 +4,7 @@ module Chebyshev.Base (
   initContinuedFrac,
   continuedFraction,
   untilCond,
-  IntFnEval,
+  IntFnInd,
   RatioResult,
   findZeroStream,
   findUntilCutoff,
@@ -27,15 +27,18 @@ import Streamly.Internal.Data.Stream qualified as Stream
 import Streamly.Internal.Data.Stream.StreamK qualified as StreamK
 import Util
 
-type IntFnEval = InductiveEval Integer
+type IntFnInd = Inductive Integer
 
--- | InductiveEval for normalized chebyshev; Starts at s_1.
-initChebyNormal :: Rational -> IntFnEval Rational
-initChebyNormal u2 = inductive induction 1
- where
-  induction n_k s_k = case previous s_k of
-    Nothing -> value s_k -- s_2 = s_1
-    Just (n_k_1, s_k_1) -> value s_k - value s_k_1 / (u2 * fromIntegral (n_k * n_k_1))
+-- | Inductive for normalized chebyshev; Starts at s_1.
+initChebyNormal :: Rational -> IntFnInd Rational
+initChebyNormal u2 =
+  inductive
+    Induction
+      { base = 1,
+        step = \n_k s_k -> case seqPrev s_k of
+          Nothing -> 1 -- s_2 = 1
+          Just (n_k_1, s_k_1) -> seqValue s_k - seqValue s_k_1 / (u2 * fromIntegral (n_k * n_k_1))
+      }
 
 -- | Normalized chebyshev polynomial.
 --
@@ -45,17 +48,20 @@ initChebyNormal u2 = inductive induction 1
 -- >>> chebyNormal 1 [1, 2, 2]
 -- 1 % 4
 chebyNormal :: Rational -> [Integer] -> Rational
-chebyNormal u2 n_ = value $ nexts n_ (initChebyNormal u2)
+chebyNormal u2 n_ = (nexts (initChebyNormal u2) n_).value
 
 -- | InductiveEval for continued fraction divided by u.
-initContinuedFrac :: Rational -> IntFnEval (Projective Rational)
-initContinuedFrac u2 = inductive induction 0
- where
-  induction n_k g_k = recip $ Finite u2 * (fromIntegral n_k - value g_k)
+initContinuedFrac :: Rational -> IntFnInd (Projective Rational)
+initContinuedFrac u2 =
+  inductive
+    Induction
+      { base = 0,
+        step = \n_k g_k -> recip $ Finite u2 * (fromIntegral n_k - seqValue g_k)
+      }
 
 -- | Continued fraction, divided by u to make it real.
 continuedFraction :: Rational -> [Integer] -> Projective Rational
-continuedFraction u2 n_ = value $ nexts n_ (initContinuedFrac u2)
+continuedFraction u2 n_ = (nexts (initContinuedFrac u2) n_).value
 
 -- | Folds latest until certain condition is encountered.
 untilCond :: (Monad m) => (r -> Bool) -> Fold.Fold m r (Maybe r)
@@ -90,11 +96,11 @@ findUntilCutoff cutoff stream =
     Right res -> Just (Just res)
 
 data MinSearch v = MinSearch
-  { initTerm :: IntFnEval v,
+  { initTerm :: IntFnInd v,
     minA :: Int -> Int -> Arg Rational (V.Vector Integer, V.Vector Integer),
     computeB :: V.Vector Integer -> V.Vector Integer -> Rational,
-    minAwith :: IntFnEval v -> Int -> Rational,
-    maxBwith :: IntFnEval v -> Int -> Rational,
+    minAwith :: IntFnInd v -> Int -> Rational,
+    maxBwith :: IntFnInd v -> Int -> Rational,
     size :: v -> Rational
   }
 
@@ -112,7 +118,7 @@ searchMinWith minSearch len = runST $ do
   searchThrough minRef =
     foldlM (selectN_i minRef) minSearch.initTerm [0 .. pred len]
       & (StreamK.toStream . StreamK.unCross)
-      & fmap (\ev -> Arg (minSearch.size $ value ev) (V.fromList $ inputs ev))
+      & fmap (\ev -> Arg (minSearch.size ev.value) (V.fromList $ inputs ev))
       & Stream.mapM (updateAndGetMin minRef)
       & Stream.scanMaybe (untilCond $ \(Arg curMin _) -> curMin == 0)
 
@@ -124,9 +130,9 @@ searchMinWith minSearch len = runST $ do
 
   selectN_i ::
     STRef s RatioResult ->
-    IntFnEval v ->
+    IntFnInd v ->
     Int ->
-    StreamK.CrossStreamK (ST s) (IntFnEval v)
+    StreamK.CrossStreamK (ST s) (IntFnInd v)
   selectN_i minRef v_L _i = StreamK.mkCross . StreamK.concatEffect $ do
     let minA = minSearch.minAwith v_L len
         maxB = minSearch.maxBwith v_L len
@@ -138,7 +144,7 @@ searchMinWith minSearch len = runST $ do
     let positives = Stream.takeWhile (<= maxBnd) $ Stream.enumerateFromStepIntegral (max 1 minBnd) 1
         negatives = Stream.takeWhile (>= minBnd) $ Stream.enumerateFromStepIntegral (min (-1) maxBnd) (-1)
         selected = StreamK.fromStream positives `StreamK.interleave` StreamK.fromStream negatives
-    pure ((`next` v_L) <$> selected)
+    pure (v_L.next <$> selected)
 
   minCandidate :: RatioResult
   minCandidate = minimum $ do

@@ -21,16 +21,16 @@ constTerm u2 n_L n_R = chebyNormal u2 (V.toList n_L) * chebyNormal u2 (V.toList 
 
 -- | (Negative) slope term in the normalized chebyshev.
 slopeTerm :: Rational -> V.Vector Integer -> V.Vector Integer -> Rational
-slopeTerm u2 n_L n_R = (value s_L * s_R_1_part + s_L_1_part * value s_R) / u2
+slopeTerm u2 n_L n_R = (s_L.value * s_R_1_part + s_L_1_part * s_R.value) / u2
  where
-  s_L = nexts (V.toList n_L) (initChebyNormal u2)
-  s_R = nexts (V.toList $ V.reverse n_R) (initChebyNormal u2) -- Reversed to remove "initial" input
-  s_L_1_part = case previous s_L of
+  s_L = nexts (initChebyNormal u2) (V.toList n_L)
+  s_R = nexts (initChebyNormal u2) (V.toList $ V.reverse n_R)  -- Reversed to remove "initial" input
+  s_L_1_part = case s_L.previous of
     Nothing -> 0
-    Just (n_i_1, s_n_L_1) -> value s_n_L_1 / fromIntegral n_i_1
-  s_R_1_part = case previous s_R of
+    Just (n_i_1, s_n_L_1) -> s_n_L_1.value / fromIntegral n_i_1
+  s_R_1_part = case s_R.previous of
     Nothing -> 0
-    Just (n_i1, s_n_R_1) -> value s_n_R_1 / fromIntegral n_i1
+    Just (n_i1, s_n_R_1) -> s_n_R_1.value / fromIntegral n_i1
 
 -- Assumption: u^2 is rational
 
@@ -61,19 +61,19 @@ chebyNormalMinSearch u2 getMin =
   minAwith s_L k_1 =
     let i_1 = inductNum s_L
         Arg s_Rmin _ = getMin (k_1 - i_1)
-     in abs (value s_L) * s_Rmin
+     in abs s_L.value * s_Rmin
 
   -- B = slopeTerm / constTerm
   maxBwith s_L k_1 = slopeUBAt s_L (k_1 + 1) (inductNum s_L + 1) / minAwith s_L k_1
 
   -- Upper bound of slope term where left portion is decided.
-  slopeUBAt :: IntFnEval Rational -> Int -> Int -> Rational
+  slopeUBAt :: IntFnInd Rational -> Int -> Int -> Rational
   slopeUBAt s_L k i = (leftBiased + rightBiased) / abs u2
    where
-    s_L_1_part = case previous s_L of
+    s_L_1_part = case s_L.previous of
       Nothing -> 0
-      Just (n_i_1, s_L_1) -> value s_L_1 / fromIntegral n_i_1
-    leftBiased = abs (value s_L) * chebyNormalUB (k - i - 1)
+      Just (n_i_1, s_L_1) -> s_L_1.value / fromIntegral n_i_1
+    leftBiased = abs s_L.value * chebyNormalUB (k - i - 1)
     rightBiased = abs s_L_1_part * chebyNormalUB (k - i)
 
   -- Upper bound of normalized chebyshev.
