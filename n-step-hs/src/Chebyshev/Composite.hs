@@ -63,4 +63,4 @@ chebyNormalMinSearch u2 fracMax chebyMin =
     let i_1 = inductNum s_L
         g_L = continuedFraction u2 (inputs s_L)
         Arg g_R_rev _ = fracMax (k_1 - i_1 - 1)
-     in knownFinite $ g_L + g_R_rev
+     in knownFinite $ abs g_L + g_R_rev

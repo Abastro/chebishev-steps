@@ -28,9 +28,9 @@ library
 
     Chebyshev.Base
     Chebyshev.Linear
-
     Chebyshev.Fraction.Base
     Chebyshev.Fraction
+    Chebyshev.Composite
   default-extensions:
     LambdaCase
     OverloadedRecordDot

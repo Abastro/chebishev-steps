@@ -127,13 +127,14 @@ searchMinWith minSearch len = runST $ do
     IntFnEval v ->
     Int ->
     StreamK.CrossStreamK (ST s) (IntFnEval v)
-  selectN_i minRef v_L _ = StreamK.mkCross . StreamK.concatEffect $ do
+  selectN_i minRef v_L _i = StreamK.mkCross . StreamK.concatEffect $ do
     let minA = minSearch.minAwith v_L len
         maxB = minSearch.maxBwith v_L len
     Arg curMin _ <- readSTRef minRef
     let boundRadius = maxB / (1 - curMin / minA)
         minBnd = max (ceiling (-boundRadius)) (floor (-maxB))
         maxBnd = min (floor boundRadius) (ceiling maxB)
+    -- traceShowM (len, _i, maxB, curMin / minA, boundRadius, minBnd, maxBnd)
     let positives = Stream.takeWhile (<= maxBnd) $ Stream.enumerateFromStepIntegral (max 1 minBnd) 1
         negatives = Stream.takeWhile (>= minBnd) $ Stream.enumerateFromStepIntegral (min (-1) maxBnd) (-1)
         selected = StreamK.fromStream positives `StreamK.interleave` StreamK.fromStream negatives
