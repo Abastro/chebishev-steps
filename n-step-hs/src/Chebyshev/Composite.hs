@@ -33,15 +33,15 @@ chebyNormalMinSearch ::
   Rational ->
   (Int -> FractionResult) ->
   (Int -> RatioResult) ->
-  MinSearch Rational
+  MinSearch (Rational, Projective Rational)
 chebyNormalMinSearch u2 fracMax chebyMin =
   MinSearch
-    { initTerm = initChebyNormal u2,
+    { computeInd = zipInduction (chebyNormalInd u2) (continuedFracInd u2),
       minA,
       computeB,
       minAwith,
       maxBwith,
-      size = abs
+      size = \(s_k, _) -> abs s_k
     }
  where
   minA k_1 i =
@@ -49,19 +49,21 @@ chebyNormalMinSearch u2 fracMax chebyMin =
         Arg s_Rmin n_R = chebyMin (k_1 + 1 - i)
      in Arg (s_Lmin * s_Rmin) (n_L, n_R)
 
-  minAwith s_L k_1 =
-    let i_1 = inductNum s_L
+  minAwith sG_L k_1 =
+    let i_1 = inductNum sG_L
+        (s_L, _) = sG_L.value
         Arg s_Rmin _ = chebyMin (k_1 - i_1)
-     in abs s_L.value * s_Rmin
+     in abs s_L * s_Rmin
 
   computeB n_L n_R =
     let g_L = continuedFraction u2 (V.toList n_L)
         g_R_rev = continuedFraction u2 (V.toList $ V.reverse n_R)
      in knownFinite (g_L + g_R_rev)
 
-  maxBwith s_L k_1 =
-    let i_1 = inductNum s_L
-        g_L = continuedFraction u2 (inputs s_L)
+  maxBwith sG_L k_1 =
+    let i_1 = inductNum sG_L
+        (_, g_L) = sG_L.value
+        -- g_L = continuedFraction u2 (inputs s_L)
         Arg g_R_rev _ = fracMax (k_1 - i_1 - 1)
      in knownFinite $ abs g_L + g_R_rev
 

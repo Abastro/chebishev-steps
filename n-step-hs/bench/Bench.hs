@@ -1,6 +1,7 @@
 module Main (main) where
 
 import Chebyshev.Base
+import Chebyshev.Composite qualified as Composite
 import Chebyshev.Fraction (SearchPass (..))
 import Chebyshev.Fraction qualified as Fraction
 import Chebyshev.Linear qualified as Linear
@@ -21,9 +22,11 @@ main =
         ],
       bgroup
         "findChebyshev linear vs fraction"
-        [ bench "Linear.findChebyshev 9/5" $ nf (findUntilCutoff 100 . Linear.chebyZero) (9 / 5),
-          bench "Fraction.findChebyshev 9/5" $ nf (findUntilCutoff 100 . Fraction.chebyZero [Complete]) (9 / 5),
-          bench "Linear.findChebyshev 8/5" $ nf (findUntilCutoff 100 . Linear.chebyZero) (8 / 5),
-          bench "Fraction.findChebyshev 8/5" $ nf (findUntilCutoff 100 . Fraction.chebyZero [Complete]) (8 / 5)
+        [ bench "Linear.chebyZero 9/5" $ nf (findUntilCutoff 100 . Linear.chebyZero) (9 / 5),
+          bench "Fraction.chebyZero 9/5" $ nf (findUntilCutoff 100 . Fraction.chebyZero [Complete]) (9 / 5),
+          bench "Composite.chebyZero 9/5" $ nf (findUntilCutoff 100 . (findZeroStream . Composite.chebyNormalMin)) (9 / 5),
+          bench "Linear.chebyZero 8/5" $ nf (findUntilCutoff 100 . Linear.chebyZero) (8 / 5),
+          bench "Fraction.chebyZero 8/5" $ nf (findUntilCutoff 100 . Fraction.chebyZero [Complete]) (8 / 5),
+          bench "Composite.chebyZero 8/5" $ nf (findUntilCutoff 100 . (findZeroStream . Composite.chebyNormalMin)) (8 / 5)
         ]
     ]

@@ -1,6 +1,8 @@
 module Chebyshev.Base (
+  chebyNormalInd,
   initChebyNormal,
   chebyNormal,
+  continuedFracInd,
   initContinuedFrac,
   continuedFraction,
   untilCond,
@@ -31,14 +33,16 @@ type IntFnInd = Inductive Integer
 
 -- | Inductive for normalized chebyshev; Starts at s_1.
 initChebyNormal :: Rational -> IntFnInd Rational
-initChebyNormal u2 =
-  inductive
-    Induction
-      { base = 1,
-        step = \n_k s_k -> case seqPrev s_k of
-          Nothing -> 1 -- s_2 = 1
-          Just (n_k_1, s_k_1) -> seqValue s_k - seqValue s_k_1 / (u2 * fromIntegral (n_k * n_k_1))
-      }
+initChebyNormal u2 = inductive (chebyNormalInd u2)
+
+chebyNormalInd :: Rational -> Induction Integer Rational
+chebyNormalInd u2 =
+  Induction
+    { base = 1,
+      step = \n_k s_k -> case seqPrev s_k of
+        Nothing -> 1 -- s_2 = 1
+        Just (n_k_1, s_k_1) -> seqValue s_k - seqValue s_k_1 / (u2 * fromIntegral (n_k * n_k_1))
+    }
 
 -- | Normalized chebyshev polynomial.
 --
@@ -48,16 +52,18 @@ initChebyNormal u2 =
 -- >>> chebyNormal 1 [1, 2, 2]
 -- 1 % 4
 chebyNormal :: Rational -> [Integer] -> Rational
-chebyNormal u2 n_ = (nexts (initChebyNormal u2) n_).value
+chebyNormal u2 n_ = (nexts (inductive $ chebyNormalInd u2) n_).value
+
+continuedFracInd :: Rational -> Induction Integer (Projective Rational)
+continuedFracInd u2 =
+  Induction
+    { base = 0,
+      step = \n_k g_k -> recip $ Finite u2 * (fromIntegral n_k - seqValue g_k)
+    }
 
 -- | InductiveEval for continued fraction divided by u.
 initContinuedFrac :: Rational -> IntFnInd (Projective Rational)
-initContinuedFrac u2 =
-  inductive
-    Induction
-      { base = 0,
-        step = \n_k g_k -> recip $ Finite u2 * (fromIntegral n_k - seqValue g_k)
-      }
+initContinuedFrac u2 = inductive (continuedFracInd u2)
 
 -- | Continued fraction, divided by u to make it real.
 continuedFraction :: Rational -> [Integer] -> Projective Rational
@@ -96,7 +102,7 @@ findUntilCutoff cutoff stream =
     Right res -> Just (Just res)
 
 data MinSearch v = MinSearch
-  { initTerm :: IntFnInd v,
+  { computeInd :: Induction Integer v,
     minA :: Int -> Int -> Arg Rational (V.Vector Integer, V.Vector Integer),
     computeB :: V.Vector Integer -> V.Vector Integer -> Rational,
     minAwith :: IntFnInd v -> Int -> Rational,
@@ -116,7 +122,7 @@ searchMinWith minSearch len = runST $ do
   readSTRef minRef
  where
   searchThrough minRef =
-    foldlM (selectN_i minRef) minSearch.initTerm [0 .. pred len]
+    foldlM (selectN_i minRef) (inductive minSearch.computeInd) [0 .. pred len]
       & (StreamK.toStream . StreamK.unCross)
       & fmap (\ev -> Arg (minSearch.size ev.value) (V.fromList $ inputs ev))
       & Stream.mapM (updateAndGetMin minRef)

@@ -44,7 +44,7 @@ chebyNormalMin u2 = memoFix $ \getMin -> \case
 chebyNormalMinSearch :: Rational -> (Int -> RatioResult) -> MinSearch Rational
 chebyNormalMinSearch u2 getMin =
   MinSearch
-    { initTerm = initChebyNormal u2,
+    { computeInd = chebyNormalInd u2,
       minA,
       computeB = slopeTerm u2,
       minAwith,
