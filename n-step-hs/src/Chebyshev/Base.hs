@@ -12,12 +12,15 @@ module Chebyshev.Base (
   findUntilCutoff,
   MinSearch (..),
   searchMinWith,
+  SearchIntFn (..),
+  searchRanges,
 ) where
 
 import Control.Monad.Identity
 import Control.Monad.ST
 import Data.Foldable
 import Data.Function ((&))
+import Data.Maybe
 import Data.STRef
 import Data.Semigroup (Arg (..))
 import Data.Vector qualified as V
@@ -120,7 +123,7 @@ searchMinWith ::
   Int ->
   RatioResult
 searchMinWith minSearch len = runST $ do
-  minRef <- newSTRef minCandidate
+  minRef <- newSTRef $ fromMaybe (error "error while finding minimal candidate") minCandidate
   searchRanges (minSearcher minRef) len
   readSTRef minRef
  where
@@ -128,9 +131,9 @@ searchMinWith minSearch len = runST $ do
   minSearcher minRef =
     SearchIntFn
       { fnInduct = minSearch.computeInd,
-        getBounds = \v_L _i -> do
-          let minA = minSearch.minAwith v_L len
-              maxB = minSearch.maxBwith v_L len
+        getBounds = \v_L len_ _i -> do
+          let minA = minSearch.minAwith v_L len_
+              maxB = minSearch.maxBwith v_L len_
           Arg curMin _ <- readSTRef minRef
           let boundRadius = maxB / (1 - curMin / minA)
               minBnd = max (ceiling (-boundRadius)) (floor (-maxB))
@@ -148,19 +151,18 @@ searchMinWith minSearch len = runST $ do
       then pure old
       else new <$ writeSTRef minRef new
 
-  -- TODO "minimum" can cause unexpected crashes
-  minCandidate :: RatioResult
-  minCandidate = minimum $ do
-    i <- [1 .. len]
+  minCandidate :: Maybe RatioResult
+  minCandidate = runIdentity . StreamK.fold Fold.minimum . StreamK.unCross $ do
+    i <- StreamK.mkCross $ StreamK.fromList [1 .. len]
     let Arg vA (n_L, n_R) = minSearch.minA len i
         vB = minSearch.computeB n_L n_R
-    n_i <- filter (/= 0) [floor vB, ceiling vB]
+    n_i <- StreamK.mkCross . StreamK.filter (/= 0) $ StreamK.fromList [floor vB, ceiling vB]
     let vV = vA * (1 - vB / fromIntegral n_i)
     pure $ Arg (abs vV) (n_L <> V.singleton n_i <> n_R)
 
 data SearchIntFn m v a = SearchIntFn
   { fnInduct :: Induction Integer v,
-    getBounds :: IntFnInd v -> Int -> m (Integer, Integer),
+    getBounds :: IntFnInd v -> Int -> Int -> m (Integer, Integer),
     summarize :: Fold.Fold m (IntFnInd v) a
   }
 
@@ -173,7 +175,7 @@ searchRanges search len =
  where
   selectN_i :: IntFnInd v -> Int -> StreamK.CrossStreamK m (IntFnInd v)
   selectN_i v_L i = StreamK.mkCross . StreamK.concatEffect $ do
-    (minBnd, maxBnd) <- search.getBounds v_L i
+    (minBnd, maxBnd) <- search.getBounds v_L len i
     let positives = Stream.takeWhile (<= maxBnd) $ Stream.enumerateFromStepIntegral (max 1 minBnd) 1
         negatives = Stream.takeWhile (>= minBnd) $ Stream.enumerateFromStepIntegral (min (-1) maxBnd) (-1)
         selected = StreamK.fromStream positives `StreamK.interleave` StreamK.fromStream negatives

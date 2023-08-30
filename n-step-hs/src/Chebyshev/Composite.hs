@@ -1,17 +1,18 @@
 -- | Composite chebyshevs.
 module Chebyshev.Composite (
   chebyNormalMin,
-  tildeNormalMin,
+  tildeZero,
 ) where
 
 import Chebyshev.Base
 import Chebyshev.Fraction
+import Control.Monad.Identity
 import Data.MemoTrie
 import Data.Semigroup (Arg (..))
 import Data.Vector qualified as V
 import Inductive
+import Streamly.Data.Fold qualified as Fold
 import Util
-import Debug.Trace
 
 -- >>> chebyNormalMin (7/3) 6
 -- Arg (0 % 1) [3,1,1,1,3]
@@ -80,58 +81,47 @@ chebyWithShiftedInd u2 = zipInduction (chebyNormalInd u2) (addBase 0 $ chebyNorm
 -- InductSeq {initial = (1 % 1,0 % 1), result = fromList [(1,(1 % 1,1 % 1)),(2,(1 % 2,1 % 1)),(3,(1 % 3,5 % 6)),(4,(7 % 24,3 % 4)),(5,(11 % 40,17 % 24))]}
 
 -- | Compute T-tilde from shifted inductive.
-_tildeFromShifted :: IntFnInd (Rational, Rational) -> Rational
-_tildeFromShifted ss_k = s_k - shift_k
+tildeFromShifted :: Rational -> IntFnInd (Rational, Rational) -> Rational
+tildeFromShifted u2 ss_k = s_k - shift_k / (u2 * fromIntegral (n_1 * n_k))
  where
+  n = V.fromList (inputs ss_k)
+  (n_1, n_k) = (V.head n, V.last n)
   s_k = fst ss_k.value
   shift_k = case ss_k.previous of
     Nothing -> 0
     Just (_, ss_k_1) -> snd ss_k_1.value
 
--- >>> tildeNormalMin 1 3
--- Prelude.minimum: empty list
+-- >>> tildeZero 2 3
+-- Just [1,1,2]
 
--- | Minimum of tilde.
-tildeNormalMin ::
+-- | Finds zero of tilde.
+tildeZero ::
   Rational ->
   Int ->
-  RatioResult
-tildeNormalMin u2 = memo $ \case
-  1 -> Arg 1 V.empty -- s_2 - s_0, normalized
-  k -> searchMinWith (_tildeMinSearch u2 getFracMax getChebyMin) k
+  Maybe (V.Vector Integer)
+tildeZero u2 = memo $ \case
+  1 -> Nothing -- s_2 - s_0 = 1, normalized
+  k -> runIdentity $ searchRanges (tildeZeroSearch u2 getFracMax) k
  where
   getFracMax = continuedFractionMax [Complete] u2
-  getChebyMin = chebyNormalMin u2
 
-_tildeMinSearch ::
+tildeZeroSearch ::
   Rational ->
   (Int -> FractionResult) ->
-  (Int -> RatioResult) ->
-  MinSearch (Rational, Rational)
-_tildeMinSearch u2 fracMax chebyMin =
-  MinSearch
-    { computeInd = chebyWithShiftedInd u2,
-      minA,
-      computeB,
-      minAwith,
-      maxBwith,
-      representative = abs . _tildeFromShifted
+  SearchIntFn Identity (Rational, Rational) (Maybe (V.Vector Integer))
+tildeZeroSearch u2 fracMax =
+  SearchIntFn
+    { fnInduct = chebyWithShiftedInd u2,
+      getBounds = \_ k _ ->
+        Identity
+          $ let Arg maxB _ = fracMax (k - 1)
+                boundRadius = knownFinite (2 * maxB)
+             in (ceiling (-boundRadius), floor boundRadius),
+      summarize =
+        Fold.lmap (\ind -> Arg (tildeFromShifted u2 ind) (V.fromList $ inputs ind))
+          $ Fold.mapMaybe emitWhenZero Fold.one
     }
- where
-  -- A (n_L, n_R) is normalized chebyshev with (n_R, -n_L).
-  minA k i = case chebyMin k of
-    Arg v vec | (n_R, neg_n_L) <- V.splitAt (i - 1) vec -> Arg v (negate <$> neg_n_L, n_R)
-
-  -- Known n_L values do not improve the minimum of A.
-  minAwith _ k = case chebyMin k of
-    Arg v _ -> v
-
-  -- B (n_L, n_R) is linear combination of continued fractions.
-  computeB n_L n_R =
-    let neg_n_L = negate <$> n_L
-        normal = continuedFraction u2 (V.toList $ n_R <> neg_n_L)
-        reversed = continuedFraction u2 (V.toList . V.reverse $ n_R <> neg_n_L)
-     in traceShow (n_L, n_R, normal, reversed) $ knownFinite (-normal + reversed)
-
-  maxBwith _ k = case fracMax (k - 1) of
-    Arg v _ -> knownFinite (2 * v)
+  where
+    emitWhenZero = \case
+      Arg v n | v == 0 -> Just n
+      _ -> Nothing
