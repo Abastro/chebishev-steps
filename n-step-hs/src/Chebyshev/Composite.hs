@@ -2,6 +2,7 @@
 module Chebyshev.Composite (
   chebyNormalMin,
   tildeZero,
+  hatZero,
 ) where
 
 import Chebyshev.Base
@@ -121,7 +122,53 @@ tildeZeroSearch u2 fracMax =
         Fold.lmap (\ind -> Arg (tildeFromShifted u2 ind) (V.fromList $ inputs ind))
           $ Fold.mapMaybe emitWhenZero Fold.one
     }
-  where
-    emitWhenZero = \case
-      Arg v n | v == 0 -> Just n
-      _ -> Nothing
+ where
+  emitWhenZero = \case
+    Arg v n | v == 0 -> Just n
+    _ -> Nothing
+
+-- | Compute T-hat from shifted inductive.
+hatFromShifted :: Rational -> IntFnInd (Rational, Rational) -> Rational
+hatFromShifted u2 ss_k = s_k + shift_k / (u2 * fromIntegral (n_1 * n_k))
+ where
+  n = V.fromList (inputs ss_k)
+  (n_1, n_k) = (V.head n, V.last n)
+  s_k = fst ss_k.value
+  shift_k = case ss_k.previous of
+    Nothing -> 0
+    Just (_, ss_k_1) -> snd ss_k_1.value
+
+-- >>> hatZero 2 3
+-- Nothing
+
+-- | Finds zero of T-hat.
+hatZero ::
+  Rational ->
+  Int ->
+  Maybe (V.Vector Integer)
+hatZero u2 = memo $ \case
+  1 -> Nothing -- s_2 - s_0 = 1, normalized
+  k -> runIdentity $ searchRanges (hatZeroSearch u2 getFracMax) k
+ where
+  getFracMax = continuedFractionMax [Complete] u2
+
+hatZeroSearch ::
+  Rational ->
+  (Int -> FractionResult) ->
+  SearchIntFn Identity (Rational, Rational) (Maybe (V.Vector Integer))
+hatZeroSearch u2 fracMax =
+  SearchIntFn
+    { fnInduct = chebyWithShiftedInd u2,
+      getBounds = \_ k _ ->
+        Identity
+          $ let Arg maxB _ = fracMax (k - 1)
+                boundRadius = knownFinite (2 * maxB)
+             in (ceiling (-boundRadius), floor boundRadius),
+      summarize =
+        Fold.lmap (\ind -> Arg (hatFromShifted u2 ind) (V.fromList $ inputs ind))
+          $ Fold.mapMaybe emitWhenZero Fold.one
+    }
+ where
+  emitWhenZero = \case
+    Arg v n | v == 0 -> Just n
+    _ -> Nothing
