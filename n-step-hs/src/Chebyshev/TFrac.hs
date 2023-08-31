@@ -11,7 +11,9 @@ import Chebyshev.Fraction.Base
 import Control.Monad
 import Control.Monad.ST
 import Data.Bifunctor (Bifunctor (..))
+import Data.Foldable
 import Data.MemoTrie
+import Data.Ratio (denominator)
 import Data.STRef
 import Data.Semigroup (Arg (..))
 import Data.Vector qualified as V
@@ -26,7 +28,6 @@ tfunNormal u2 = \case
   [] -> 2 -- Somehow this fits
   [n_1] -> chebyNormal u2 [n_1]
   n@(n_1 : n_2 : n_R) -> chebyNormal u2 n - chebyNormal u2 n_R / (u2 * fromIntegral (n_1 * n_2))
-
 
 -- | Induction for fraction of Reverse-T function.
 tfunFracInd :: Rational -> Induction Integer (Projective Rational)
@@ -43,16 +44,17 @@ tfunFraction :: Rational -> [Integer] -> Projective Rational
 tfunFraction u2 n = (nexts (inductive $ tfunFracInd u2) n).value
 
 -- | Maximum of fraction of Reverse-T function given u^2.
-tfunFracMax :: Rational -> Int -> FractionResult
-tfunFracMax u2 = memo $ \case
+tfunFracMax :: [Fraction.SearchPass] -> Rational -> Int -> FractionResult
+tfunFracMax passes u2 = memo $ \case
   0 -> Arg (Finite 0) V.empty -- H_0 = 0
   1 -> Arg (Finite $ 2 / abs u2) (V.singleton 1) -- H_1 = 2 / u^2 n_1
   k -> runST $ do
     maxRef <- newSTRef maxCandidate
-    searchRanges (tfunFracSearch u2 getFracMax maxRef) k
+    let searchPass pass = searchRanges (tfunFracSearch pass u2 getFracMax maxRef) k
+    traverse_ searchPass passes
     readSTRef maxRef
    where
-    getFracMaxArg = Fraction.continuedFractionMax [Fraction.Complete] u2
+    getFracMaxArg = Fraction.continuedFractionMax passes u2
     getFracMax i = case getFracMaxArg i of Arg v _ -> knownFinite v
 
     -- Setup: H(a) = H(a_L, a_i, a_R), |a| = k, |a_L| = i-1, |a_R| = k-i
@@ -72,11 +74,12 @@ tfunFracMax u2 = memo $ \case
           | otherwise -> btwn
 
 tfunFracSearch ::
+  Fraction.SearchPass ->
   Rational ->
   (Int -> Rational) ->
   STRef s FractionResult ->
   SearchIntFn (ST s) (Projective Rational) ()
-tfunFracSearch u2 fracMax maxRef =
+tfunFracSearch pass u2 fracMax maxRef =
   SearchIntFn
     { fnInduct = tfunFracInd u2,
       getBounds = getBounds,
@@ -86,6 +89,8 @@ tfunFracSearch u2 fracMax maxRef =
           $ (void . Fold.find $ \(Arg curMax _) -> curMax == Infinity)
     }
  where
+  narrowSearchRadius = fromIntegral $ denominator u2
+
   -- len = k here
   getBounds h_L k i = do
     let vH_L = knownFinite h_L.value
@@ -97,9 +102,12 @@ tfunFracSearch u2 fracMax maxRef =
           Finite cmax -> (cmax + maxG_R_1) / (cmax - maxG_R)
           Infinity -> 1
         boundRadius = maxG_R * boundMultiple
+        checkRadius = case pass of
+          Fraction.Narrow -> min narrowSearchRadius boundRadius
+          Fraction.Complete -> boundRadius
 
-    let minBnd = max (ceiling $ vH_L - boundRadius) (floor $ vH_L - maxG_R)
-        maxBnd = min (floor $ vH_L + boundRadius) (ceiling $ vH_L + maxG_R)
+    let minBnd = max (ceiling $ vH_L - checkRadius) (floor $ vH_L - maxG_R)
+        maxBnd = min (floor $ vH_L + checkRadius) (ceiling $ vH_L + maxG_R)
     pure $ case i of
       -- Only check positive values. (vH_L = 0 here)
       -- In addition, effectively we are using n_1 / 2 here.
@@ -114,5 +122,5 @@ tfunFracSearch u2 fracMax maxRef =
       else new <$ writeSTRef maxRef new
 
 -- | Zeroes of Reverse-T function. (Subtract 1 because it was added..)
-tfunZero :: (Monad m) => Rational -> Stream.Stream m (Either Int (V.Vector Integer))
-tfunZero u2 = first (subtract 1) <$> findInftyStream (tfunFracMax u2)
+tfunZero :: (Monad m) => [Fraction.SearchPass] -> Rational -> Stream.Stream m (Either Int (V.Vector Integer))
+tfunZero passes u2 = first (subtract 1) <$> findInftyStream (tfunFracMax passes u2)

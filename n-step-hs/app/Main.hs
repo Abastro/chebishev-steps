@@ -3,6 +3,7 @@ module Main (main) where
 import Chebyshev.Base
 import Chebyshev.Fraction qualified as Fraction
 import Chebyshev.Linear qualified as Linear
+import Chebyshev.TFrac qualified as TFun
 import Control.Concurrent
 import Control.Exception (evaluate)
 import Control.Monad.Identity
@@ -23,13 +24,15 @@ import System.IO
 import Text.Printf
 import Util
 
-data Method = Linear | Fraction | Naive deriving (Show)
+data Method = Linear | Fraction | Naive | TFun | TFunNarrow deriving (Show)
 
 readMethod :: String -> Maybe Method
 readMethod = \case
   "linear" -> Just Linear
   "fraction" -> Just Fraction
   "naive" -> Just Naive
+  "tfun" -> Just TFun
+  "tfun-narrow" -> Just TFunNarrow
   _ -> Nothing
 
 data RootConvention = U2 | NegU2 deriving (Show)
@@ -134,7 +137,7 @@ main = do
         & Stream.fold Fold.drain
      where
       asInteger x = if denominator x == 1 then Just $ numerator x else Nothing
-      checkAndReturn ev = case asInteger (knownFinite $ Inductive.value ev) of
+      checkAndReturn ev = case asInteger (knownFinite ev.value) of
         Just n -> Just (V.fromList $ Inductive.inputs ev <> [n])
         Nothing -> Nothing
 
@@ -142,7 +145,7 @@ main = do
         Stream.replicate (fromIntegral maxK - 2) (1 :: Integer)
           & Stream.scan
             ( Fold.foldl'
-                (flip Inductive.next)
+                (\ev -> ev.next)
                 (initContinuedFrac $ convertRoot root opts.convention)
             )
           & Stream.drop 1 -- First is always 0
@@ -157,8 +160,10 @@ main = do
 
   finder = \case
     Linear -> Linear.chebyZero
-    Fraction -> Fraction.chebyZeroOf . Fraction.continuedFractionMax [Fraction.Complete]
-    Naive -> Fraction.chebyZeroOf . Fraction.continuedFractionMax [Fraction.Narrow]
+    Fraction -> Fraction.chebyZero [Fraction.Complete]
+    Naive -> Fraction.chebyZero [Fraction.Narrow]
+    TFun -> TFun.tfunZero [Fraction.Complete]
+    TFunNarrow -> TFun.tfunZero [Fraction.Narrow]
   takeResult maxK = \case
     Nothing -> Stream.fold Fold.latest . Stream.take maxK
     Just timeout ->

@@ -147,7 +147,7 @@ tfunZero =
         $ mapSize (`div` 3)
         $ \(NonZero u2) ->
           discardAfter 200000
-            $ case findUntilCutoff 100 (TFun.tfunZero u2) of
+            $ case findUntilCutoff 100 (TFun.tfunZero [Complete] u2) of
               Just n_ -> TFun.tfunNormal u2 (V.toList n_) == 0
               Nothing -> discard
     ]
