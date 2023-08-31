@@ -5,6 +5,7 @@ import Chebyshev.Composite qualified as Composite
 import Chebyshev.Fraction (SearchPass (..))
 import Chebyshev.Fraction qualified as Fraction
 import Chebyshev.Linear qualified as Linear
+import Chebyshev.TFrac qualified as TFun
 import Data.Ratio
 import Data.Vector qualified as V
 import Test.QuickCheck
@@ -24,7 +25,8 @@ properties =
           chebyshevLinear,
           chebyshevFraction,
           chebyshevFractionNaive,
-          chebyshevComposite
+          chebyshevComposite,
+          tfunZero
         ]
     ]
 
@@ -134,4 +136,18 @@ chebyshevComposite =
             $ let fractionSol = findUntilCutoff 100 (Fraction.chebyZero [Complete] u2)
                   compositeSol = findUntilCutoff 100 (findZeroStream $ Composite.chebyNormalMin u2)
                in fmap length fractionSol == fmap length compositeSol
+    ]
+
+tfunZero :: TestTree
+tfunZero =
+  testGroup
+    "TFrac"
+    [ testProperty "tfunZero must give a root"
+        $ withMaxSuccess 20
+        $ mapSize (`div` 3)
+        $ \(NonZero u2) ->
+          discardAfter 200000
+            $ case findUntilCutoff 100 (TFun.tfunZero u2) of
+              Just n_ -> TFun.tfunNormal u2 (V.toList n_) == 0
+              Nothing -> discard
     ]

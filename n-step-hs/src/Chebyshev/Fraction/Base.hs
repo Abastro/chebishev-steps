@@ -12,7 +12,7 @@ import Util
 
 type FractionResult = Arg (Projective Rational) (V.Vector Integer)
 
--- | Determines if the initiated case has s_k's zero.
+-- | Finds the infinity from the stream.
 findInftyStream :: (Monad m) => (Int -> FractionResult) -> Stream.Stream m (Either Int (V.Vector Integer))
 findInftyStream getMax =
   Stream.enumerateFrom 1

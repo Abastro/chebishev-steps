@@ -1,7 +1,8 @@
 module Chebyshev.TFrac (
+  tfunNormal,
   tfunFraction,
   tfunFracMax,
-  tfnZero,
+  tfunZero,
 ) where
 
 import Chebyshev.Base
@@ -9,6 +10,7 @@ import Chebyshev.Fraction qualified as Fraction
 import Chebyshev.Fraction.Base
 import Control.Monad
 import Control.Monad.ST
+import Data.Bifunctor (Bifunctor (..))
 import Data.MemoTrie
 import Data.STRef
 import Data.Semigroup (Arg (..))
@@ -17,6 +19,14 @@ import Inductive
 import Streamly.Data.Fold qualified as Fold
 import Streamly.Data.Stream qualified as Stream
 import Util
+
+-- | Compute the normalized Reverse-T function.
+tfunNormal :: Rational -> [Integer] -> Rational
+tfunNormal u2 = \case
+  [] -> 2 -- Somehow this fits
+  [n_1] -> chebyNormal u2 [n_1]
+  n@(n_1 : n_2 : n_R) -> chebyNormal u2 n - chebyNormal u2 n_R / (u2 * fromIntegral (n_1 * n_2))
+
 
 -- | Induction for fraction of Reverse-T function.
 tfunFracInd :: Rational -> Induction Integer (Projective Rational)
@@ -103,6 +113,6 @@ tfunFracSearch u2 fracMax maxRef =
       then pure old
       else new <$ writeSTRef maxRef new
 
--- | Zeros of Reverse-T function.
-tfnZero :: (Monad m) => Rational -> Stream.Stream m (Either Int (V.Vector Integer))
-tfnZero u2 = findInftyStream (tfunFracMax u2)
+-- | Zeroes of Reverse-T function. (Subtract 1 because it was added..)
+tfunZero :: (Monad m) => Rational -> Stream.Stream m (Either Int (V.Vector Integer))
+tfunZero u2 = first (subtract 1) <$> findInftyStream (tfunFracMax u2)
