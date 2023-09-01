@@ -61,7 +61,7 @@ continuedFracSearch ::
   SearchIntFn (ST s) (Projective Rational) ()
 continuedFracSearch pass u2 fracMax maxRef =
   SearchIntFn
-    { fnInduct = continuedFracInd u2,
+    { fnInduct = inductive $ continuedFracInd u2,
       getBounds = getBounds,
       summarize =
         Fold.lmap (\g_k -> Arg (abs g_k.value) (V.fromList $ inputs g_k))

@@ -130,7 +130,7 @@ searchMinWith minSearch len = runST $ do
   minSearcher :: STRef s RatioResult -> SearchIntFn (ST s) v ()
   minSearcher minRef =
     SearchIntFn
-      { fnInduct = minSearch.computeInd,
+      { fnInduct = inductive minSearch.computeInd,
         getBounds = \v_L len_ _i -> do
           let minA = minSearch.minAwith v_L len_
               maxB = minSearch.maxBwith v_L len_
@@ -161,7 +161,7 @@ searchMinWith minSearch len = runST $ do
     pure $ Arg (abs vV) (n_L <> V.singleton n_i <> n_R)
 
 data SearchIntFn m v a = SearchIntFn
-  { fnInduct :: Induction Integer v,
+  { fnInduct :: Inductive Integer v,
     getBounds :: IntFnInd v -> Int -> Int -> m (Integer, Integer),
     summarize :: Fold.Fold m (IntFnInd v) a
   }
@@ -169,7 +169,7 @@ data SearchIntFn m v a = SearchIntFn
 -- | Search through integer-valued functions.
 searchRanges :: forall m v a. (Monad m) => SearchIntFn m v a -> Int -> m a
 searchRanges search len =
-  foldlM selectN_i (inductive search.fnInduct) [1 .. len]
+  foldlM selectN_i search.fnInduct [1 .. len]
     & (StreamK.toStream . StreamK.unCross)
     & Stream.fold search.summarize
  where

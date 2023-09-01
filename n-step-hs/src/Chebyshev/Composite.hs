@@ -113,7 +113,7 @@ tildeZeroSearch ::
   SearchIntFn Identity (Rational, Rational) (Maybe (V.Vector Integer))
 tildeZeroSearch u2 fracMax =
   SearchIntFn
-    { fnInduct = chebyWithShiftedInd u2,
+    { fnInduct = inductive $ chebyWithShiftedInd u2,
       getBounds = \_ k _ ->
         Identity
           $ let Arg maxB _ = fracMax (k - 1)
@@ -167,7 +167,7 @@ hatZeroSearch ::
   SearchIntFn Identity (Rational, Rational) (Maybe (V.Vector Integer))
 hatZeroSearch u2 fracMax =
   SearchIntFn
-    { fnInduct = chebyWithShiftedInd u2,
+    { fnInduct = inductive $ chebyWithShiftedInd u2,
       getBounds = \_ k _ ->
         Identity
           $ let Arg maxB _ = fracMax (k - 1)

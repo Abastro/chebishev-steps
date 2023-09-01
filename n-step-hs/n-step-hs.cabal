@@ -32,6 +32,8 @@ library
     Chebyshev.Fraction
     Chebyshev.Composite
     Chebyshev.TFun
+
+    Chebyshev.Fraction.Prefixed
   default-extensions:
     LambdaCase
     OverloadedRecordDot
