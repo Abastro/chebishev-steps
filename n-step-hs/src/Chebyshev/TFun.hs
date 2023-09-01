@@ -102,10 +102,13 @@ tfunFracSearch breadth u2 fracMax maxRef =
 
     let minBnd = max (ceiling $ vH_L - checkRadius) (floor $ vH_L - maxG_R)
         maxBnd = min (floor $ vH_L + checkRadius) (ceiling $ vH_L + maxG_R)
+
+    -- when (i < k) $ traceShowM (k, i, inputs h_L, checkRadius, minBnd, maxBnd)
+
     pure $ case i of
       -- Only check positive values. (vH_L = 0 here)
       -- In addition, effectively we are using n_1 / 2 here.
-      1 -> (1, max (ceiling $ vH_L + 2 * boundRadius) (floor $ vH_L + 2 * maxG_R))
+      1 -> (1, min (ceiling $ vH_L + 2 * checkRadius) (floor $ vH_L + 2 * maxG_R))
       _ | i == k -> let n_k = round . knownFinite $ h_L.value in (n_k, n_k)
       _ -> (minBnd, maxBnd)
 
