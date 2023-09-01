@@ -5,7 +5,7 @@ import Chebyshev.Composite qualified as Composite
 import Chebyshev.Fraction (SearchPass (..))
 import Chebyshev.Fraction qualified as Fraction
 import Chebyshev.Linear qualified as Linear
-import Chebyshev.TFrac qualified as TFun
+import Chebyshev.TFun qualified as TFun
 import Data.Ratio
 import Data.Vector qualified as V
 import Test.QuickCheck

@@ -1,6 +1,7 @@
 -- | Composite chebyshevs.
 module Chebyshev.Composite (
   chebyNormalMin,
+  findJustStream,
   tildeZero,
   hatZero,
 ) where
@@ -8,12 +9,15 @@ module Chebyshev.Composite (
 import Chebyshev.Base
 import Chebyshev.Fraction
 import Control.Monad.Identity
+import Data.Function ((&))
 import Data.MemoTrie
 import Data.Semigroup (Arg (..))
 import Data.Vector qualified as V
 import Inductive
 import Streamly.Data.Fold qualified as Fold
+import Streamly.Data.Stream qualified as Stream
 import Util
+import Data.Maybe
 
 -- >>> chebyNormalMin (7/3) 6
 -- Arg (0 % 1) [3,1,1,1,3]
@@ -31,7 +35,7 @@ chebyNormalMin u2 = memoFix $ \getChebyMin -> \case
   2 -> Arg 1 (V.singleton 1) -- normalized s2 = 1
   k -> searchMinWith (chebyNormalMinSearch u2 getFracMax getChebyMin) (k - 1)
  where
-  getFracMax = continuedFractionMax [Complete] u2
+  getFracMax = continuedFracMax [Complete] u2
 
 chebyNormalMinSearch ::
   Rational ->
@@ -96,15 +100,12 @@ tildeFromShifted u2 ss_k = s_k - shift_k / (u2 * fromIntegral (n_1 * n_k))
 -- Just [1,1,2]
 
 -- | Finds zero of tilde.
-tildeZero ::
-  Rational ->
-  Int ->
-  Maybe (V.Vector Integer)
-tildeZero u2 = memo $ \case
+tildeZero :: [SearchPass] -> Rational -> Int -> Maybe (V.Vector Integer)
+tildeZero passes u2 = memo $ \case
   1 -> Nothing -- s_2 - s_0 = 1, normalized
   k -> runIdentity $ searchRanges (tildeZeroSearch u2 getFracMax) k
  where
-  getFracMax = continuedFractionMax [Complete] u2
+  getFracMax = continuedFracMax passes u2
 
 tildeZeroSearch ::
   Rational ->
@@ -138,19 +139,27 @@ hatFromShifted u2 ss_k = s_k + shift_k / (u2 * fromIntegral (n_1 * n_k))
     Nothing -> 0
     Just (_, ss_k_1) -> snd ss_k_1.value
 
+findJustStream :: (Monad m) => (Int -> Maybe a) -> Stream.Stream m (Either Int a)
+findJustStream fn =
+  Stream.enumerateFrom 1
+    & fmap (\k -> (k, fn k))
+    & Stream.scanMaybe (untilCond $ \(_, m) -> isJust m)
+    & fmap mapper
+ where
+  mapper = \case
+    (_, Just v) -> Right v
+    (k, _) -> Left k
+
 -- >>> hatZero 2 3
 -- Nothing
 
 -- | Finds zero of T-hat.
-hatZero ::
-  Rational ->
-  Int ->
-  Maybe (V.Vector Integer)
-hatZero u2 = memo $ \case
+hatZero :: [SearchPass] -> Rational -> Int -> Maybe (V.Vector Integer)
+hatZero passes u2 = memo $ \case
   1 -> Nothing -- s_2 - s_0 = 1, normalized
   k -> runIdentity $ searchRanges (hatZeroSearch u2 getFracMax) k
  where
-  getFracMax = continuedFractionMax [Complete] u2
+  getFracMax = continuedFracMax passes u2
 
 hatZeroSearch ::
   Rational ->

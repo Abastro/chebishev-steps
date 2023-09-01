@@ -2,7 +2,7 @@
 module Chebyshev.Fraction (
   module Chebyshev.Fraction.Base,
   SearchPass (..),
-  continuedFractionMax,
+  continuedFracMax,
   chebyZero,
 ) where
 
@@ -25,8 +25,8 @@ data SearchPass = Narrow | Complete
   deriving (Show)
 
 -- | Maximum of continued fraction given u^2.
-continuedFractionMax :: [SearchPass] -> Rational -> Int -> FractionResult
-continuedFractionMax passes u2 = memoFix $ \getMaxArg -> \case
+continuedFracMax :: [SearchPass] -> Rational -> Int -> FractionResult
+continuedFracMax passes u2 = memoFix $ \getMaxArg -> \case
   0 -> Arg (Finite 0) V.empty -- G0 = 0
   1 -> Arg (Finite $ 1 / abs u2) (V.singleton 1) -- G1 = 1 / (n_1 * u^2)
   k -> runST $ do
@@ -104,4 +104,4 @@ continuedFracSearch pass u2 fracMax maxRef =
 -- 8: 23/8, 31/8
 
 chebyZero :: (Monad m) => [SearchPass] -> Rational -> Stream.Stream m (Either Int (V.Vector Integer))
-chebyZero passes u2 = findInftyStream (continuedFractionMax passes u2)
+chebyZero passes u2 = findInftyStream (continuedFracMax passes u2)

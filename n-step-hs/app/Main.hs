@@ -1,11 +1,12 @@
 module Main (main) where
 
 import Chebyshev.Base
+import Chebyshev.Composite qualified as Composite
 import Chebyshev.Fraction qualified as Fraction
 import Chebyshev.Linear qualified as Linear
-import Chebyshev.TFrac qualified as TFun
+import Chebyshev.TFun qualified as TFun
 import Control.Concurrent
-import Control.Exception (evaluate)
+import Control.Exception (ErrorCall (..), evaluate, handle)
 import Control.Monad.Identity
 import Data.Foldable
 import Data.Function
@@ -24,15 +25,23 @@ import System.IO
 import Text.Printf
 import Util
 
-data Method = Linear | Fraction | Naive | TFun | TFunNarrow deriving (Show)
+data Method
+  = Linear
+  | Fraction Fraction.SearchPass
+  | TFun Fraction.SearchPass
+  | TTilde
+  | THat
+  deriving (Show)
 
 readMethod :: String -> Maybe Method
 readMethod = \case
   "linear" -> Just Linear
-  "fraction" -> Just Fraction
-  "naive" -> Just Naive
-  "tfun" -> Just TFun
-  "tfun-narrow" -> Just TFunNarrow
+  "fraction" -> Just (Fraction Fraction.Complete)
+  "fraction-narrow" -> Just (Fraction Fraction.Narrow)
+  "tfun" -> Just (TFun Fraction.Complete)
+  "tfun-narrow" -> Just (TFun Fraction.Narrow)
+  "ttilde" -> Just TTilde
+  "that" -> Just THat
   _ -> Nothing
 
 data RootConvention = U2 | NegU2 deriving (Show)
@@ -81,12 +90,12 @@ parseOptions = info (helper <*> (Opts <$> parseCommands <*> methodOpt <*> conven
  where
   methodOpt =
     option (maybeReader readMethod)
-      $ value Fraction
+      $ value (Fraction Fraction.Complete)
       <> long "method"
       <> short 'm'
-      <> help "evaluation method, linear|fraction|reverse|naive"
+      <> help "evaluation method"
   conventionFlag = flag NegU2 U2 (long "u2-conv" <> help "use u2 as passed root, instead of -u2")
-  timeoutOpt = optional . option auto $ long "timeout" <> short 't' <> help "the timeout"
+  timeoutOpt = optional . option auto $ long "timeout" <> short 't' <> help "timeout deadline for evaluation"
 
 main :: IO ()
 main = do
@@ -104,7 +113,7 @@ main = do
     ExhaustDenominator maxK denom outFile -> withFileMay outFile $ \outHandle -> do
       let fracts = fractions denom
       remaining <- newMVar fracts
-      for_ outHandle $ \handle -> hPutStrLn handle "rel #, k, seq n"
+      for_ outHandle $ \out -> hPutStrLn out "rel #, k, seq n"
 
       -- Why do they make me do this
       StreamK.toStream (StreamK.fromFoldable fracts)
@@ -112,7 +121,7 @@ main = do
         & Stream.mapM (`emitToFile` outHandle)
         & Stream.fold Fold.drain
      where
-      evaluateAndPrint remaining root = do
+      evaluateAndPrint remaining root = handle (\(ErrorCall _) -> pure (root, Left (-1))) $ do
         Just res <- takeResult maxK opts.timeOut $ finder opts.method (convertRoot root opts.convention)
         result <- evaluate res
         withMVar consoleLock $ \_ -> do
@@ -124,9 +133,9 @@ main = do
           cursorUpLine 1
         pure (root, result)
 
-      emitToFile (root, result) = traverse_ $ \handle -> do
-        printResult handle root result
-        hFlush handle
+      emitToFile (root, result) = traverse_ $ \out -> do
+        printResult out root result
+        hFlush out
 
     -- "after-ones MAX_K MAX_DENOMINATOR"
     AfterOnes maxK maxDenom -> do
@@ -160,10 +169,10 @@ main = do
 
   finder = \case
     Linear -> Linear.chebyZero
-    Fraction -> Fraction.chebyZero [Fraction.Complete]
-    Naive -> Fraction.chebyZero [Fraction.Narrow]
-    TFun -> TFun.tfunZero [Fraction.Complete]
-    TFunNarrow -> TFun.tfunZero [Fraction.Narrow]
+    Fraction pass -> Fraction.chebyZero [pass]
+    TFun pass -> TFun.tfunZero [pass]
+    TTilde -> Composite.findJustStream . Composite.tildeZero [Fraction.Narrow]
+    THat -> Composite.findJustStream . Composite.hatZero [Fraction.Narrow]
   takeResult maxK = \case
     Nothing -> Stream.fold Fold.latest . Stream.take maxK
     Just timeout ->
@@ -185,6 +194,6 @@ showFraction :: Rational -> String
 showFraction frac = show (numerator frac) <> "/" <> show (denominator frac)
 
 printResult :: Handle -> Rational -> Either Int (V.Vector Integer) -> IO ()
-printResult handle u2 = \case
-  Right n_ -> hPrintf handle "%s, \"s_%d\", \"%s\"\n" (showFraction u2) (length n_ + 1) (show n_)
-  Left triedK -> hPrintf handle "%s, \"> s_%d\", \"n/a\"\n" (showFraction u2) triedK
+printResult out u2 = \case
+  Right n_ -> hPrintf out "%s, \"s_%d\", \"%s\"\n" (showFraction u2) (length n_ + 1) (show n_)
+  Left triedK -> hPrintf out "%s, \"> s_%d\", \"n/a\"\n" (showFraction u2) triedK

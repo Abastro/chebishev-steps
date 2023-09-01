@@ -1,4 +1,4 @@
-module Chebyshev.TFrac (
+module Chebyshev.TFun (
   tfunNormal,
   tfunFraction,
   tfunFracMax,
@@ -54,7 +54,7 @@ tfunFracMax passes u2 = memo $ \case
     traverse_ searchPass passes
     readSTRef maxRef
    where
-    getFracMaxArg = Fraction.continuedFractionMax passes u2
+    getFracMaxArg = Fraction.continuedFracMax passes u2
     getFracMax i = case getFracMaxArg i of Arg v _ -> knownFinite v
 
     -- Setup: H(a) = H(a_L, a_i, a_R), |a| = k, |a_L| = i-1, |a_R| = k-i
