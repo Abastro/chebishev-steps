@@ -1,7 +1,6 @@
 -- | Properties of minimal chebyshev polynomial in terms of fractions.
 module Chebyshev.Fraction (
   module Chebyshev.Fraction.Base,
-  SearchPass (..),
   continuedFracMax,
   chebyZero,
 ) where
@@ -10,9 +9,7 @@ import Chebyshev.Base
 import Chebyshev.Fraction.Base
 import Control.Monad
 import Control.Monad.ST
-import Data.Foldable
 import Data.MemoTrie
-import Data.Ratio (denominator)
 import Data.STRef
 import Data.Semigroup (Arg (..))
 import Data.Vector qualified as V
@@ -21,18 +18,14 @@ import Streamly.Data.Fold qualified as Fold
 import Streamly.Data.Stream qualified as Stream
 import Util
 
-data SearchPass = Narrow | Complete
-  deriving (Show)
-
 -- | Maximum of continued fraction given u^2.
-continuedFracMax :: [SearchPass] -> Rational -> Int -> FractionResult
-continuedFracMax passes u2 = memoFix $ \getMaxArg -> \case
+continuedFracMax :: Breadth -> Rational -> Int -> FractionResult
+continuedFracMax breadth u2 = memoFix $ \getMaxArg -> \case
   0 -> Arg (Finite 0) V.empty -- G0 = 0
   1 -> Arg (Finite $ 1 / abs u2) (V.singleton 1) -- G1 = 1 / (n_1 * u^2)
   k -> runST $ do
     maxRef <- newSTRef maxCandidate
-    let searchPass pass = searchRanges (continuedFracSearch pass u2 getMax maxRef) k
-    traverse_ searchPass passes
+    searchRanges (continuedFracSearch breadth u2 getMax maxRef) k
     readSTRef maxRef
    where
     getMax i = case getMaxArg i of Arg v _ -> knownFinite v
@@ -54,12 +47,12 @@ continuedFracMax passes u2 = memoFix $ \getMaxArg -> \case
           | otherwise -> btwn
 
 continuedFracSearch ::
-  SearchPass ->
+  Breadth ->
   Rational ->
   (Int -> Rational) ->
   STRef s FractionResult ->
   SearchIntFn (ST s) (Projective Rational) ()
-continuedFracSearch pass u2 fracMax maxRef =
+continuedFracSearch breadth u2 fracMax maxRef =
   SearchIntFn
     { fnInduct = inductive $ continuedFracInd u2,
       getBounds = getBounds,
@@ -69,8 +62,6 @@ continuedFracSearch pass u2 fracMax maxRef =
           $ (void . Fold.find $ \(Arg curMax _) -> curMax == Infinity)
     }
  where
-  narrowSearchRadius = fromIntegral $ denominator u2
-
   -- len = k here
   getBounds g_L k i = do
     let vG_L = knownFinite g_L.value
@@ -82,9 +73,9 @@ continuedFracSearch pass u2 fracMax maxRef =
           Finite cmax -> (cmax + maxG_R_1) / (cmax - maxG_R)
           Infinity -> 1
         boundRadius = maxG_R * boundMultiple
-        checkRadius = case pass of
-          Narrow -> min narrowSearchRadius boundRadius
-          Complete -> boundRadius
+        checkRadius = case breadth of
+          Indefinite -> boundRadius
+          MaxBr n -> min (fromIntegral n) boundRadius
 
     let minBnd = max (ceiling $ vG_L - checkRadius) (floor $ vG_L - maxG_R)
         maxBnd = min (floor $ vG_L + checkRadius) (ceiling $ vG_L + maxG_R)
@@ -103,5 +94,5 @@ continuedFracSearch pass u2 fracMax maxRef =
 -- 7: 17/6, 23/6
 -- 8: 23/8, 31/8
 
-chebyZero :: (Monad m) => [SearchPass] -> Rational -> Stream.Stream m (Either Int (V.Vector Integer))
+chebyZero :: (Monad m) => Breadth -> Rational -> Stream.Stream m (Either Int (V.Vector Integer))
 chebyZero passes u2 = findInftyStream (continuedFracMax passes u2)

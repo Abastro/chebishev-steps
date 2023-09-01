@@ -27,8 +27,8 @@ import Util
 
 data Method
   = Linear
-  | Fraction Fraction.SearchPass
-  | TFun Fraction.SearchPass
+  | Fraction
+  | TFun
   | TTilde
   | THat
   deriving (Show)
@@ -36,10 +36,8 @@ data Method
 readMethod :: String -> Maybe Method
 readMethod = \case
   "linear" -> Just Linear
-  "fraction" -> Just (Fraction Fraction.Complete)
-  "fraction-narrow" -> Just (Fraction Fraction.Narrow)
-  "tfun" -> Just (TFun Fraction.Complete)
-  "tfun-narrow" -> Just (TFun Fraction.Narrow)
+  "fraction" -> Just Fraction
+  "tfun" -> Just TFun
   "ttilde" -> Just TTilde
   "that" -> Just THat
   _ -> Nothing
@@ -49,6 +47,7 @@ data Opts = Opts
   { command :: !Command,
     method :: !Method,
     convention :: !RootConvention,
+    breadth :: Breadth,
     timeOut :: Maybe Int
   }
 
@@ -86,15 +85,16 @@ parseCommands =
       ]
 
 parseOptions :: ParserInfo Opts
-parseOptions = info (helper <*> (Opts <$> parseCommands <*> methodOpt <*> conventionFlag <*> timeoutOpt)) fullDesc
+parseOptions = info (helper <*> (Opts <$> parseCommands <*> methodOpt <*> conventionFlag <*> breadthOpt <*> timeoutOpt)) fullDesc
  where
   methodOpt =
     option (maybeReader readMethod)
-      $ value (Fraction Fraction.Complete)
+      $ value Fraction
       <> long "method"
       <> short 'm'
       <> help "evaluation method"
   conventionFlag = flag NegU2 U2 (long "u2-conv" <> help "use u2 as passed root, instead of -u2")
+  breadthOpt = option (MaxBr <$> auto) $ value Indefinite <> long "breadth" <> short 'b' <> help "specify restriction on search breadth"
   timeoutOpt = optional . option auto $ long "timeout" <> short 't' <> help "timeout deadline for evaluation"
 
 main :: IO ()
@@ -103,10 +103,11 @@ main = do
   opts <- execParser parseOptions
   printf "Method: %s\n" (show opts.method)
   printf "Convention: %s\n" (show opts.convention)
+  printf "Breadth: %s\n" (show opts.breadth)
   case opts.command of
     -- "compute MAX_K ROOT"
     ComputeFor maxK root -> do
-      Just result <- takeResult maxK opts.timeOut $ finder opts.method (convertRoot root opts.convention)
+      Just result <- takeResult maxK opts.timeOut $ finder opts.breadth opts.method (convertRoot root opts.convention)
       printResult stdout root result
 
     -- "exhaust MAX_K DENOMINATOR"
@@ -122,7 +123,7 @@ main = do
         & Stream.fold Fold.drain
      where
       evaluateAndPrint remaining root = handle (\(ErrorCall _) -> pure (root, Left (-1))) $ do
-        Just res <- takeResult maxK opts.timeOut $ finder opts.method (convertRoot root opts.convention)
+        Just res <- takeResult maxK opts.timeOut $ finder opts.breadth opts.method (convertRoot root opts.convention)
         result <- evaluate res
         withMVar consoleLock $ \_ -> do
           clearFromCursorToScreenEnd
@@ -160,19 +161,18 @@ main = do
           & Stream.drop 1 -- First is always 0
           & Stream.fold (Fold.mapMaybe checkAndReturn Fold.one)
 
-      evaluateAndPrint root = printResult stdout root $ do
-        maybe (Left maxK) Right . runIdentity $ findN root
+      evaluateAndPrint root = printResult stdout root $ maybe (Left maxK) Right . runIdentity $ findN root
  where
   withFileMay = \case
     Nothing -> \act -> act Nothing
     Just path -> \act -> withFile path WriteMode (act . Just)
 
-  finder = \case
+  finder breadth = \case
     Linear -> Linear.chebyZero
-    Fraction pass -> Fraction.chebyZero [pass]
-    TFun pass -> TFun.tfunZero [pass]
-    TTilde -> Composite.findJustStream . Composite.tildeZero [Fraction.Narrow]
-    THat -> Composite.findJustStream . Composite.hatZero [Fraction.Narrow]
+    Fraction -> Fraction.chebyZero breadth
+    TFun -> TFun.tfunZero breadth
+    TTilde -> Composite.findJustStream . Composite.tildeZero breadth
+    THat -> Composite.findJustStream . Composite.hatZero breadth
   takeResult maxK = \case
     Nothing -> Stream.fold Fold.latest . Stream.take maxK
     Just timeout ->

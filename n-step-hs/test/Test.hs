@@ -2,7 +2,6 @@ module Main (main) where
 
 import Chebyshev.Base
 import Chebyshev.Composite qualified as Composite
-import Chebyshev.Fraction (SearchPass (..))
 import Chebyshev.Fraction qualified as Fraction
 import Chebyshev.Linear qualified as Linear
 import Chebyshev.TFun qualified as TFun
@@ -81,20 +80,20 @@ chebyshevFraction =
         $ mapSize (`div` 3)
         $ \(NonZero u2) ->
           discardAfter 200000
-            $ case findUntilCutoff 100 (Fraction.chebyZero [Complete] u2) of
+            $ case findUntilCutoff 100 (Fraction.chebyZero Indefinite u2) of
               Just n_ -> chebyNormal u2 (V.toList n_) == 0
               Nothing -> discard,
       testProperty "chebyZero must give s_3 for roots of s_3"
         $ \(NonZero (Small q)) ->
           let u2 = 1 % q
-           in maybe (-1) length (findUntilCutoff 5 $ Fraction.chebyZero [Complete] u2) == 2,
+           in maybe (-1) length (findUntilCutoff 5 $ Fraction.chebyZero Indefinite u2) == 2,
       testProperty "Fraction.chebyZero should give equal length to Linear.chebyZero"
         $ withMaxSuccess 20
         $ mapSize (`div` 3)
         $ \(NonZero u2) ->
           discardAfter 200000
             $ let linearSol = findUntilCutoff 100 (Linear.chebyZero u2)
-                  fractionSol = findUntilCutoff 100 (Fraction.chebyZero [Complete] u2)
+                  fractionSol = findUntilCutoff 100 (Fraction.chebyZero Indefinite u2)
                in fmap length linearSol == fmap length fractionSol
     ]
 
@@ -105,15 +104,11 @@ chebyshevFractionNaive =
     [ testProperty "chebyZero must give a root"
         $ withMaxSuccess 20
         $ mapSize (`div` 3)
-        $ \(NonZero u2) ->
+        $ \(NonZero u2) (Positive m) ->
           discardAfter 200000
-            $ case findUntilCutoff 100 (Fraction.chebyZero [Narrow] u2) of
+            $ case findUntilCutoff 100 (Fraction.chebyZero (MaxBr m) u2) of
               Just n_ -> chebyNormal u2 (V.toList n_) == 0
-              Nothing -> discard,
-      testProperty "chebyZero must give s_3 for roots of s_3"
-        $ \(NonZero (Small q)) ->
-          let u2 = 1 % q
-           in maybe (-1) length (findUntilCutoff 5 $ Fraction.chebyZero [Narrow] u2) == 2
+              Nothing -> discard
     ]
 
 chebyshevComposite :: TestTree
@@ -133,7 +128,7 @@ chebyshevComposite =
         $ mapSize (`div` 3)
         $ \(NonZero u2) ->
           discardAfter 200000
-            $ let fractionSol = findUntilCutoff 100 (Fraction.chebyZero [Complete] u2)
+            $ let fractionSol = findUntilCutoff 100 (Fraction.chebyZero Indefinite u2)
                   compositeSol = findUntilCutoff 100 (findZeroStream $ Composite.chebyNormalMin u2)
                in fmap length fractionSol == fmap length compositeSol
     ]
@@ -147,7 +142,7 @@ tfunZero =
         $ mapSize (`div` 3)
         $ \(NonZero u2) ->
           discardAfter 200000
-            $ case findUntilCutoff 100 (TFun.tfunZero [Complete] u2) of
+            $ case findUntilCutoff 100 (TFun.tfunZero Indefinite u2) of
               Just n_ -> TFun.tfunNormal u2 (V.toList n_) == 0
               Nothing -> discard
     ]

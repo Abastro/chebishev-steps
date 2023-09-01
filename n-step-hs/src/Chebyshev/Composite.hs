@@ -35,7 +35,7 @@ chebyNormalMin u2 = memoFix $ \getChebyMin -> \case
   2 -> Arg 1 (V.singleton 1) -- normalized s2 = 1
   k -> searchMinWith (chebyNormalMinSearch u2 getFracMax getChebyMin) (k - 1)
  where
-  getFracMax = continuedFracMax [Complete] u2
+  getFracMax = continuedFracMax Indefinite u2
 
 chebyNormalMinSearch ::
   Rational ->
@@ -100,12 +100,12 @@ tildeFromShifted u2 ss_k = s_k - shift_k / (u2 * fromIntegral (n_1 * n_k))
 -- Just [1,1,2]
 
 -- | Finds zero of tilde.
-tildeZero :: [SearchPass] -> Rational -> Int -> Maybe (V.Vector Integer)
-tildeZero passes u2 = memo $ \case
+tildeZero :: Breadth -> Rational -> Int -> Maybe (V.Vector Integer)
+tildeZero breadth u2 = memo $ \case
   1 -> Nothing -- s_2 - s_0 = 1, normalized
   k -> runIdentity $ searchRanges (tildeZeroSearch u2 getFracMax) k
  where
-  getFracMax = continuedFracMax passes u2
+  getFracMax = continuedFracMax breadth u2
 
 tildeZeroSearch ::
   Rational ->
@@ -154,12 +154,12 @@ findJustStream fn =
 -- Nothing
 
 -- | Finds zero of T-hat.
-hatZero :: [SearchPass] -> Rational -> Int -> Maybe (V.Vector Integer)
-hatZero passes u2 = memo $ \case
+hatZero :: Breadth -> Rational -> Int -> Maybe (V.Vector Integer)
+hatZero breadth u2 = memo $ \case
   1 -> Nothing -- s_2 - s_0 = 1, normalized
   k -> runIdentity $ searchRanges (hatZeroSearch u2 getFracMax) k
  where
-  getFracMax = continuedFracMax passes u2
+  getFracMax = continuedFracMax breadth u2
 
 hatZeroSearch ::
   Rational ->

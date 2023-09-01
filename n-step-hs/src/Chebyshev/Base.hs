@@ -6,6 +6,7 @@ module Chebyshev.Base (
   initContinuedFrac,
   continuedFraction,
   untilCond,
+  Breadth (..),
   IntFnInd,
   RatioResult,
   findZeroStream,
@@ -75,6 +76,9 @@ continuedFraction u2 n_ = (nexts (initContinuedFrac u2) n_).value
 -- | Folds latest until certain condition is encountered.
 untilCond :: (Monad m) => (r -> Bool) -> Fold.Fold m r (Maybe r)
 untilCond cond = Fold.takeEndBy cond Fold.latest
+
+data Breadth = Indefinite | MaxBr Int
+  deriving (Show)
 
 type RatioResult = Arg Rational (V.Vector Integer)
 

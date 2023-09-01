@@ -22,4 +22,4 @@ findInftyStream getMax =
  where
   argInfinite = \case
     (_, Arg Infinity arg) -> Right arg
-    (k, _) -> Left (k + 1) -- Related with s_(k+1)
+    (k, _) -> Left k
