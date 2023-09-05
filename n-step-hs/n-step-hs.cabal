@@ -34,6 +34,7 @@ library
     Chebyshev.TFun
 
     Chebyshev.Fraction.Prefixed
+    Chebyshev.Fraction.ChooseOne
   default-extensions:
     LambdaCase
     OverloadedRecordDot

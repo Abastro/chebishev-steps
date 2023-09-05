@@ -1,4 +1,5 @@
 module Util (
+  argValue,
   Projective (..),
   knownFinite,
   closestToInv,
@@ -6,6 +7,9 @@ module Util (
 
 import Data.Semigroup (Arg (..))
 import GHC.Stack
+
+argValue :: Arg v a -> v
+argValue (Arg v _) = v
 
 -- | Describes a projective space over a number field.
 --

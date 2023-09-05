@@ -1,7 +1,6 @@
 -- | Composite chebyshevs.
 module Chebyshev.Composite (
   chebyNormalMin,
-  findJustStream,
   tildeZero,
   hatZero,
 ) where
@@ -9,15 +8,12 @@ module Chebyshev.Composite (
 import Chebyshev.Base
 import Chebyshev.Fraction
 import Control.Monad.Identity
-import Data.Function ((&))
 import Data.MemoTrie
 import Data.Semigroup (Arg (..))
 import Data.Vector qualified as V
 import Inductive
 import Streamly.Data.Fold qualified as Fold
-import Streamly.Data.Stream qualified as Stream
 import Util
-import Data.Maybe
 
 -- >>> chebyNormalMin (7/3) 6
 -- Arg (0 % 1) [3,1,1,1,3]
@@ -138,17 +134,6 @@ hatFromShifted u2 ss_k = s_k + shift_k / (u2 * fromIntegral (n_1 * n_k))
   shift_k = case ss_k.previous of
     Nothing -> 0
     Just (_, ss_k_1) -> snd ss_k_1.value
-
-findJustStream :: (Monad m) => (Int -> Maybe a) -> Stream.Stream m (Either Int a)
-findJustStream fn =
-  Stream.enumerateFrom 1
-    & fmap (\k -> (k, fn k))
-    & Stream.scanMaybe (untilCond $ \(_, m) -> isJust m)
-    & fmap mapper
- where
-  mapper = \case
-    (_, Just v) -> Right v
-    (k, _) -> Left k
 
 -- >>> hatZero 2 3
 -- Nothing

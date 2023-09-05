@@ -171,8 +171,8 @@ main = do
     Linear -> Linear.chebyZero
     Fraction -> Fraction.chebyZero breadth
     TFun -> TFun.tfunZero breadth
-    TTilde -> Composite.findJustStream . Composite.tildeZero breadth
-    THat -> Composite.findJustStream . Composite.hatZero breadth
+    TTilde -> findJustStream . Composite.tildeZero breadth
+    THat -> findJustStream . Composite.hatZero breadth
   takeResult maxK = \case
     Nothing -> Stream.fold Fold.latest . Stream.take maxK
     Just timeout ->

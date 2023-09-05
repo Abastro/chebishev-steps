@@ -10,6 +10,7 @@ module Chebyshev.Base (
   IntFnInd,
   RatioResult,
   findZeroStream,
+  findJustStream,
   findUntilCutoff,
   MinSearch (..),
   searchMinWith,
@@ -94,6 +95,17 @@ findZeroStream getMin =
  where
   argZero = \case
     (_, Arg m arg) | m == 0 -> Right arg
+    (k, _) -> Left k
+
+findJustStream :: (Monad m) => (Int -> Maybe a) -> Stream.Stream m (Either Int a)
+findJustStream fn =
+  Stream.enumerateFrom 1
+    & fmap (\k -> (k, fn k))
+    & Stream.scanMaybe (untilCond $ \(_, m) -> isJust m)
+    & fmap mapper
+ where
+  mapper = \case
+    (_, Just v) -> Right v
     (k, _) -> Left k
 
 -- | Finds in stream until cutoff is reached.
