@@ -153,11 +153,9 @@ searchMinWith minSearch len = runST $ do
               maxB = minSearch.maxBwith v_L len_
           Arg curMin _ <- readSTRef minRef
           let boundRadius = maxB / (1 - curMin / minA)
-              depBound = innerInt $ deltaFrom 0 boundRadius
-              indepBound = outerInt $ deltaFrom 0 maxB -- can be slightly bigger
-              -- minBnd = max (ceiling (-boundRadius)) (floor (-maxB))
-              -- maxBnd = min (floor boundRadius) (ceiling maxB)
-          pure (depBound `intersect` indepBound),
+              depBounds = innerInt $ deltaFrom 0 boundRadius
+              indepBounds = outerInt $ deltaFrom 0 maxB -- can be slightly bigger
+          pure (depBounds `intersect` indepBounds),
         summarize =
           Fold.lmap (\ev -> Arg (minSearch.representative ev) (V.fromList $ inputs ev))
             . Fold.lmapM (updateAndGetMin minRef)

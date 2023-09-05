@@ -50,18 +50,15 @@ naiveContinuedFracSearch depth u2 fracMax =
   getBounds g_L k i = do
     let vG_L = knownFinite g_L.value
         maxG_R = fracMax (k - i)
-    let radius = maxG_R
-
-    let minBnd = ceiling $ vG_L - radius
-        maxBnd = floor $ vG_L + radius
+    let bounds = innerInt $ deltaFrom vG_L maxG_R
     -- when (i <= 1 && i < k) $ traceShowM (k, i, depth, inputs g_L, minBnd, maxBnd)
 
     pure $ case i of
       _ | i == k -> let n_k = round vG_L in Range n_k n_k
       -- Over the select depth
       _ | i > depth -> let n_k = roundExceptZero vG_L in Range n_k n_k
-      1 -> Range 1 maxBnd -- Only check positive values (vG_L = 0 here)
-      _ -> Range minBnd maxBnd
+      1 -> higherThan 1 bounds -- Only check positive values (vG_L = 0 here)
+      _ -> bounds
 
   emitWhenInfty = \case
     Arg Infinity n -> Just n

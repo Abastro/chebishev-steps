@@ -15,10 +15,10 @@ import Data.STRef
 import Data.Semigroup (Arg (..))
 import Data.Vector qualified as V
 import Inductive
+import Range
 import Streamly.Data.Fold qualified as Fold
 import Streamly.Data.Stream qualified as Stream
 import Util
-import Range
 
 -- | Compute the normalized Reverse-T function.
 tfunNormal :: Rational -> [Integer] -> Rational
@@ -100,18 +100,18 @@ tfunFracSearch breadth u2 fracMax maxRef =
         checkRadius = case breadth of
           Indefinite -> boundRadius
           MaxBr n -> min (fromIntegral n) boundRadius
-
-    let minBnd = max (ceiling $ vH_L - checkRadius) (floor $ vH_L - maxG_R)
-        maxBnd = min (floor $ vH_L + checkRadius) (ceiling $ vH_L + maxG_R)
+        depBounds = innerInt $ deltaFrom vH_L checkRadius
+        indepBounds = outerInt $ deltaFrom vH_L maxG_R
+        bounds = depBounds `intersect` indepBounds
 
     -- when (i < k) $ traceShowM (k, i, inputs h_L, checkRadius, minBnd, maxBnd)
 
     pure $ case i of
-      -- Only check positive values. (vH_L = 0 here)
-      -- In addition, effectively we are using n_1 / 2 here.
-      1 -> Range 1 $ min (ceiling $ vH_L + 2 * checkRadius) (floor $ vH_L + 2 * maxG_R)
-      _ | i == k -> let n_k = round . knownFinite $ h_L.value in Range  n_k n_k
-      _ -> Range minBnd maxBnd
+      -- Effectively we are using n_1 / 2 here, so this one needs to be doubled.
+      -- Also only check the positive values.
+      1 -> higherThan 1 $ (2 *) <$> bounds
+      _ | i == k -> let n_k = round . knownFinite $ h_L.value in Range n_k n_k
+      _ -> bounds
 
   updateAndGetMax new = do
     old <- readSTRef maxRef

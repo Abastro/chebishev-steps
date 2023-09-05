@@ -53,16 +53,12 @@ prefixedFracSearch pass prefix u2 fracMax maxRef =
   getBounds g_L k i = do
     let vG_L = knownFinite g_L.value
         maxG_R = fracMax (k - i)
-
     let checkRadius = case pass of
           Indefinite -> maxG_R
           MaxBr n -> min (fromIntegral n) maxG_R
-
-    let minBnd = ceiling $ vG_L - checkRadius
-        maxBnd = floor $ vG_L + checkRadius
     pure $ case i of
       _ | i == k -> let n_k = round . knownFinite $ g_L.value in Range n_k n_k
-      _ -> Range minBnd maxBnd
+      _ -> innerInt $ deltaFrom vG_L checkRadius
 
   updateAndGetMax new = do
     old <- readSTRef maxRef

@@ -14,10 +14,10 @@ import Data.STRef
 import Data.Semigroup (Arg (..))
 import Data.Vector qualified as V
 import Inductive
+import Range
 import Streamly.Data.Fold qualified as Fold
 import Streamly.Data.Stream qualified as Stream
 import Util
-import Range
 
 -- | Maximum of continued fraction given u^2.
 continuedFracMax :: Breadth -> Rational -> Int -> FractionResult
@@ -77,13 +77,14 @@ continuedFracSearch breadth u2 fracMax maxRef =
         checkRadius = case breadth of
           Indefinite -> boundRadius
           MaxBr n -> min (fromIntegral n) boundRadius
+        depBounds = innerInt $ deltaFrom vG_L checkRadius
+        indepBounds = outerInt $ deltaFrom vG_L maxG_R
+        bounds = depBounds `intersect` indepBounds
 
-    let minBnd = max (ceiling $ vG_L - checkRadius) (floor $ vG_L - maxG_R)
-        maxBnd = min (floor $ vG_L + checkRadius) (ceiling $ vG_L + maxG_R)
     pure $ case i of
-      1 -> Range 1 maxBnd -- Only check positive values (vG_L = 0 here)
       _ | i == k -> let n_k = round . knownFinite $ g_L.value in Range n_k n_k
-      _ -> Range minBnd maxBnd
+      1 -> higherThan 1 bounds -- Only check positive values (vG_L = 0 here)
+      _ -> bounds
 
   updateAndGetMax new = do
     old <- readSTRef maxRef
