@@ -14,6 +14,7 @@ import Data.Vector qualified as V
 import Inductive
 import Streamly.Data.Fold qualified as Fold
 import Util
+import Range
 
 -- >>> chebyNormalMin (7/3) 6
 -- Arg (0 % 1) [3,1,1,1,3]
@@ -114,7 +115,7 @@ tildeZeroSearch u2 fracMax =
         Identity
           $ let Arg maxB _ = fracMax (k - 1)
                 boundRadius = knownFinite (2 * maxB)
-             in (ceiling (-boundRadius), floor boundRadius),
+             in innerInt $ deltaFrom 0 boundRadius,
       summarize =
         Fold.lmap (\ind -> Arg (tildeFromShifted u2 ind) (V.fromList $ inputs ind))
           $ Fold.mapMaybe emitWhenZero Fold.one
@@ -157,7 +158,7 @@ hatZeroSearch u2 fracMax =
         Identity
           $ let Arg maxB _ = fracMax (k - 1)
                 boundRadius = knownFinite (2 * maxB)
-             in (ceiling (-boundRadius), floor boundRadius),
+             in innerInt $ deltaFrom 0 boundRadius,
       summarize =
         Fold.lmap (\ind -> Arg (hatFromShifted u2 ind) (V.fromList $ inputs ind))
           $ Fold.mapMaybe emitWhenZero Fold.one

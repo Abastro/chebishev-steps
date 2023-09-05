@@ -25,6 +25,7 @@ library
     Util
     MultilinPoly
     Inductive
+    Range
 
     Chebyshev.Base
     Chebyshev.Linear

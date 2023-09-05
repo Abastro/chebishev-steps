@@ -17,6 +17,7 @@ import Inductive
 import Streamly.Data.Fold qualified as Fold
 import Streamly.Data.Stream qualified as Stream
 import Util
+import Range
 
 -- | Maximum of continued fraction given u^2.
 continuedFracMax :: Breadth -> Rational -> Int -> FractionResult
@@ -80,9 +81,9 @@ continuedFracSearch breadth u2 fracMax maxRef =
     let minBnd = max (ceiling $ vG_L - checkRadius) (floor $ vG_L - maxG_R)
         maxBnd = min (floor $ vG_L + checkRadius) (ceiling $ vG_L + maxG_R)
     pure $ case i of
-      1 -> (1, maxBnd) -- Only check positive values (vG_L = 0 here)
-      _ | i == k -> let n_k = round . knownFinite $ g_L.value in (n_k, n_k)
-      _ -> (minBnd, maxBnd)
+      1 -> Range 1 maxBnd -- Only check positive values (vG_L = 0 here)
+      _ | i == k -> let n_k = round . knownFinite $ g_L.value in Range n_k n_k
+      _ -> Range minBnd maxBnd
 
   updateAndGetMax new = do
     old <- readSTRef maxRef

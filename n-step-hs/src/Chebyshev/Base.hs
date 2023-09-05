@@ -27,6 +27,7 @@ import Data.STRef
 import Data.Semigroup (Arg (..))
 import Data.Vector qualified as V
 import Inductive
+import Range
 import Streamly.Data.Fold qualified as Fold
 import Streamly.Data.Stream qualified as Stream
 import Streamly.Data.StreamK qualified as StreamK
@@ -152,9 +153,11 @@ searchMinWith minSearch len = runST $ do
               maxB = minSearch.maxBwith v_L len_
           Arg curMin _ <- readSTRef minRef
           let boundRadius = maxB / (1 - curMin / minA)
-              minBnd = max (ceiling (-boundRadius)) (floor (-maxB))
-              maxBnd = min (floor boundRadius) (ceiling maxB)
-          pure (minBnd, maxBnd),
+              depBound = innerInt $ deltaFrom 0 boundRadius
+              indepBound = outerInt $ deltaFrom 0 maxB -- can be slightly bigger
+              -- minBnd = max (ceiling (-boundRadius)) (floor (-maxB))
+              -- maxBnd = min (floor boundRadius) (ceiling maxB)
+          pure (depBound `intersect` indepBound),
         summarize =
           Fold.lmap (\ev -> Arg (minSearch.representative ev) (V.fromList $ inputs ev))
             . Fold.lmapM (updateAndGetMin minRef)
@@ -178,7 +181,7 @@ searchMinWith minSearch len = runST $ do
 
 data SearchIntFn m v a = SearchIntFn
   { fnInduct :: Inductive Integer v,
-    getBounds :: IntFnInd v -> Int -> Int -> m (Integer, Integer),
+    getBounds :: IntFnInd v -> Int -> Int -> m (Range Integer),
     summarize :: Fold.Fold m (IntFnInd v) a
   }
 
@@ -191,7 +194,7 @@ searchRanges search len =
  where
   selectN_i :: IntFnInd v -> Int -> StreamK.CrossStreamK m (IntFnInd v)
   selectN_i v_L i = StreamK.mkCross . StreamK.concatEffect $ do
-    (minBnd, maxBnd) <- search.getBounds v_L len i
+    Range minBnd maxBnd <- search.getBounds v_L len i
     let positives = Stream.takeWhile (<= maxBnd) $ Stream.enumerateFromStepIntegral (max 1 minBnd) 1
         negatives = Stream.takeWhile (>= minBnd) $ Stream.enumerateFromStepIntegral (min (-1) maxBnd) (-1)
         selected = StreamK.fromStream positives `StreamK.interleave` StreamK.fromStream negatives

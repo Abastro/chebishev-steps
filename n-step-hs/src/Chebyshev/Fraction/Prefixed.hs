@@ -13,6 +13,7 @@ import Data.STRef
 import Data.Semigroup (Arg (..))
 import Data.Vector qualified as V
 import Inductive
+import Range
 import Streamly.Data.Fold qualified as Fold
 import Streamly.Data.Stream qualified as Stream
 import Util
@@ -60,8 +61,8 @@ prefixedFracSearch pass prefix u2 fracMax maxRef =
     let minBnd = ceiling $ vG_L - checkRadius
         maxBnd = floor $ vG_L + checkRadius
     pure $ case i of
-      _ | i == k -> let n_k = round . knownFinite $ g_L.value in (n_k, n_k)
-      _ -> (minBnd, maxBnd)
+      _ | i == k -> let n_k = round . knownFinite $ g_L.value in Range n_k n_k
+      _ -> Range minBnd maxBnd
 
   updateAndGetMax new = do
     old <- readSTRef maxRef

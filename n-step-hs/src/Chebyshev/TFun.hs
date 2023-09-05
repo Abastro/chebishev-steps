@@ -18,6 +18,7 @@ import Inductive
 import Streamly.Data.Fold qualified as Fold
 import Streamly.Data.Stream qualified as Stream
 import Util
+import Range
 
 -- | Compute the normalized Reverse-T function.
 tfunNormal :: Rational -> [Integer] -> Rational
@@ -108,9 +109,9 @@ tfunFracSearch breadth u2 fracMax maxRef =
     pure $ case i of
       -- Only check positive values. (vH_L = 0 here)
       -- In addition, effectively we are using n_1 / 2 here.
-      1 -> (1, min (ceiling $ vH_L + 2 * checkRadius) (floor $ vH_L + 2 * maxG_R))
-      _ | i == k -> let n_k = round . knownFinite $ h_L.value in (n_k, n_k)
-      _ -> (minBnd, maxBnd)
+      1 -> Range 1 $ min (ceiling $ vH_L + 2 * checkRadius) (floor $ vH_L + 2 * maxG_R)
+      _ | i == k -> let n_k = round . knownFinite $ h_L.value in Range  n_k n_k
+      _ -> Range minBnd maxBnd
 
   updateAndGetMax new = do
     old <- readSTRef maxRef

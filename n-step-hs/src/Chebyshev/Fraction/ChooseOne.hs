@@ -13,6 +13,7 @@ import Inductive
 import Streamly.Data.Fold qualified as Fold
 import Streamly.Data.Stream qualified as Stream
 import Util
+import Range
 
 -- | Infinity of continued fraction given u^2.
 -- Snd of the second parameter is the depth limit to apply selection.
@@ -56,11 +57,11 @@ naiveContinuedFracSearch depth u2 fracMax =
     -- when (i <= 1 && i < k) $ traceShowM (k, i, depth, inputs g_L, minBnd, maxBnd)
 
     pure $ case i of
-      _ | i == k -> let n_k = round vG_L in (n_k, n_k)
+      _ | i == k -> let n_k = round vG_L in Range n_k n_k
       -- Over the select depth
-      _ | i > depth -> let n_k = roundExceptZero vG_L in (n_k, n_k)
-      1 -> (1, maxBnd) -- Only check positive values (vG_L = 0 here)
-      _ -> (minBnd, maxBnd)
+      _ | i > depth -> let n_k = roundExceptZero vG_L in Range n_k n_k
+      1 -> Range 1 maxBnd -- Only check positive values (vG_L = 0 here)
+      _ -> Range minBnd maxBnd
 
   emitWhenInfty = \case
     Arg Infinity n -> Just n
