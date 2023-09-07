@@ -12,9 +12,9 @@ import Data.MemoTrie
 import Data.Semigroup (Arg (..))
 import Data.Vector qualified as V
 import Inductive
+import Range
 import Streamly.Data.Fold qualified as Fold
 import Util
-import Range
 
 -- >>> chebyNormalMin (7/3) 6
 -- Arg (0 % 1) [3,1,1,1,3]
@@ -111,7 +111,7 @@ tildeZeroSearch ::
 tildeZeroSearch u2 fracMax =
   SearchIntFn
     { fnInduct = inductive $ chebyWithShiftedInd u2,
-      getBounds = \_ k _ ->
+      selectNext = selectFromBounds $ \_ k _ ->
         Identity
           $ let Arg maxB _ = fracMax (k - 1)
                 boundRadius = knownFinite (2 * maxB)
@@ -154,7 +154,7 @@ hatZeroSearch ::
 hatZeroSearch u2 fracMax =
   SearchIntFn
     { fnInduct = inductive $ chebyWithShiftedInd u2,
-      getBounds = \_ k _ ->
+      selectNext = selectFromBounds $ \_ k _ ->
         Identity
           $ let Arg maxB _ = fracMax (k - 1)
                 boundRadius = knownFinite (2 * maxB)

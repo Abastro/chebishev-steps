@@ -56,7 +56,7 @@ continuedFracSearch ::
 continuedFracSearch breadth u2 fracMax maxRef =
   SearchIntFn
     { fnInduct = inductive $ continuedFracInd u2,
-      getBounds = getBounds,
+      selectNext = selectFromBounds getBounds,
       summarize =
         Fold.lmap (\g_k -> Arg (abs g_k.value) (V.fromList $ inputs g_k))
           . Fold.lmapM updateAndGetMax

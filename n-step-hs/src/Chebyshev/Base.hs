@@ -16,6 +16,8 @@ module Chebyshev.Base (
   searchMinWith,
   SearchIntFn (..),
   searchRanges,
+  selectFromBounds,
+  rangeNonzeroStream,
 ) where
 
 import Control.Monad.Identity
@@ -148,7 +150,7 @@ searchMinWith minSearch len = runST $ do
   minSearcher minRef =
     SearchIntFn
       { fnInduct = inductive minSearch.computeInd,
-        getBounds = \v_L len_ _i -> do
+        selectNext = selectFromBounds $ \v_L len_ _i -> do
           let minA = minSearch.minAwith v_L len_
               maxB = minSearch.maxBwith v_L len_
           Arg curMin _ <- readSTRef minRef
@@ -179,7 +181,7 @@ searchMinWith minSearch len = runST $ do
 
 data SearchIntFn m v a = SearchIntFn
   { fnInduct :: Inductive Integer v,
-    getBounds :: IntFnInd v -> Int -> Int -> m (Range Integer),
+    selectNext :: IntFnInd v -> Int -> Int -> StreamK.CrossStreamK m (IntFnInd v),
     summarize :: Fold.Fold m (IntFnInd v) a
   }
 
@@ -190,10 +192,23 @@ searchRanges search len =
     & (StreamK.toStream . StreamK.unCross)
     & Stream.fold search.summarize
  where
-  selectN_i :: IntFnInd v -> Int -> StreamK.CrossStreamK m (IntFnInd v)
-  selectN_i v_L i = StreamK.mkCross . StreamK.concatEffect $ do
-    Range minBnd maxBnd <- search.getBounds v_L len i
-    let positives = Stream.takeWhile (<= maxBnd) $ Stream.enumerateFromStepIntegral (max 1 minBnd) 1
-        negatives = Stream.takeWhile (>= minBnd) $ Stream.enumerateFromStepIntegral (min (-1) maxBnd) (-1)
-        selected = StreamK.fromStream positives `StreamK.interleave` StreamK.fromStream negatives
-    pure (v_L.next <$> selected)
+  selectN_i v_L = search.selectNext v_L len
+
+-- | Select nonzero integer and feed it in the given range.
+selectFromBounds ::
+  (Monad m) =>
+  (IntFnInd v -> Int -> Int -> m (Range Integer)) ->
+  IntFnInd v ->
+  Int ->
+  Int ->
+  StreamK.CrossStreamK m (IntFnInd v)
+selectFromBounds getBnds v_L len i = StreamK.mkCross . StreamK.concatEffect $ do
+  selection <- rangeNonzeroStream <$> getBnds v_L len i
+  pure (v_L.next <$> selection)
+
+rangeNonzeroStream :: (Monad m, Integral a) => Range a -> StreamK.StreamK m a
+rangeNonzeroStream (Range minBnd maxBnd) =
+  StreamK.fromStream positives `StreamK.interleave` StreamK.fromStream negatives
+ where
+  positives = Stream.takeWhile (<= maxBnd) $ Stream.enumerateFromStepIntegral (max 1 minBnd) 1
+  negatives = Stream.takeWhile (>= minBnd) $ Stream.enumerateFromStepIntegral (min (-1) maxBnd) (-1)

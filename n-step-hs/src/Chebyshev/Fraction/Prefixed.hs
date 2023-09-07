@@ -42,7 +42,7 @@ prefixedFracSearch ::
 prefixedFracSearch pass prefix u2 fracMax maxRef =
   SearchIntFn
     { fnInduct = nexts (inductive $ continuedFracInd u2) prefix,
-      getBounds = getBounds,
+      selectNext = selectFromBounds getBounds,
       summarize =
         Fold.lmap (\g_k -> Arg (abs g_k.value) (V.fromList $ inputs g_k))
           . Fold.lmapM updateAndGetMax
