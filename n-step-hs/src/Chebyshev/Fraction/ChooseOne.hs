@@ -1,26 +1,28 @@
 module Chebyshev.Fraction.ChooseOne (
   naiveContinuedFracInfty,
-  chebyZero,
 ) where
 
 import Chebyshev.Base
 import Chebyshev.Fraction qualified as Fraction
 import Control.Monad.Identity (Identity (..))
+import Data.Function ((&))
 import Data.MemoTrie
 import Data.Semigroup (Arg (..))
 import Data.Vector qualified as V
 import Inductive
+import Range
 import Streamly.Data.Fold qualified as Fold
 import Streamly.Data.Stream qualified as Stream
+import Streamly.Data.StreamK qualified as StreamK
+import Streamly.Internal.Data.Stream.StreamK qualified as StreamK
 import Util
-import Range
 
 -- | Infinity of continued fraction given u^2.
 -- Snd of the second parameter is the depth limit to apply selection.
-naiveContinuedFracInfty :: Breadth -> Rational -> (Int, Int) -> Maybe (V.Vector Integer)
-naiveContinuedFracInfty breadth u2 = memo $ \case
-  (0, _) -> Nothing -- G0 = 0
-  (k, depth) -> runIdentity $ searchRanges (naiveContinuedFracSearch depth u2 fracMax) k
+naiveContinuedFracInfty :: Breadth -> Rational -> Int -> Int -> Maybe (V.Vector Integer)
+naiveContinuedFracInfty breadth u2 = memo2 $ \maxK depth ->
+  -- Select until depth, then search in stream in next phase.
+  runIdentity $ searchRanges (naiveContinuedFracSearch maxK u2 fracMax) (depth + 1)
  where
   fracMaxArg = Fraction.continuedFracMax breadth u2
   -- Cutoff max when it is bigger than search breadth.
@@ -32,31 +34,35 @@ naiveContinuedFracInfty breadth u2 = memo $ \case
      where
       maxes = V.fromList . takeWhile (<= fromIntegral br) $ argValue . fracMaxArg <$> [0 ..]
 
+-- TODO Terminate when 1/2
 naiveContinuedFracSearch ::
   Int ->
   Rational ->
   (Int -> Rational) ->
   SearchIntFn Identity (Projective Rational) (Maybe (V.Vector Integer))
-naiveContinuedFracSearch depth u2 fracMax =
+naiveContinuedFracSearch maxK u2 fracMax =
   SearchIntFn
     { fnInduct = inductive $ continuedFracInd u2,
-      selectNext = selectFromBounds getBounds,
+      selectNext,
       summarize =
         Fold.lmap (\g_k -> Arg (abs g_k.value) (V.fromList $ inputs g_k))
           $ Fold.mapMaybe emitWhenInfty Fold.one
     }
  where
+  -- Meaningful select until len is reached
+  -- ? Perhaps this should be in summarize phase
+  selectNext g_L len i = case i `compare` len of
+    EQ -> StreamK.mkCross . StreamK.fromStream $ diveFracInfty maxK g_L i
+    _ -> selectFromBounds getBounds g_L len i
+
   -- len = k here
-  getBounds g_L k i = do
+  getBounds g_L _len i = do
     let vG_L = knownFinite g_L.value
-        maxG_R = fracMax (k - i)
+        maxG_R = fracMax (maxK - i)
     let bounds = innerInt $ deltaFrom vG_L maxG_R
     -- when (i <= 1 && i < k) $ traceShowM (k, i, depth, inputs g_L, minBnd, maxBnd)
 
     pure $ case i of
-      _ | i == k -> let n_k = round vG_L in Range n_k n_k
-      -- Over the select depth
-      _ | i > depth -> let n_k = roundExceptZero vG_L in Range n_k n_k
       1 -> higherThan 1 bounds -- Only check positive values (vG_L = 0 here)
       _ -> bounds
 
@@ -64,16 +70,17 @@ naiveContinuedFracSearch depth u2 fracMax =
     Arg Infinity n -> Just n
     _ -> Nothing
 
+-- | "Dive" into the potential infinity by selecting only the rounding value.
+diveFracInfty ::
+  Int ->
+  IntFnInd (Projective Rational) ->
+  Int ->
+  Stream.Stream Identity (IntFnInd (Projective Rational))
+diveFracInfty cutoff g_L i =
+  Stream.iterate (\g_k -> g_k.next $ roundExceptZero (knownFinite g_k.value)) g_L
+    & Stream.take (cutoff - i)
+ where
   roundExceptZero v = case (round v, floor $ signum v) of
     (0, 0) -> 1
     (0, sign) -> sign
     (n, _) -> n
-
--- Slow numbers:
--- 7: 17/6, 23/6
--- 8: 23/8, 31/8
-
-chebyZero :: (Monad m) => Breadth -> Int -> Rational -> Stream.Stream m (Either Int (V.Vector Integer))
-chebyZero breadth depth u2 = findJustStream (\k -> compute (k, depth))
- where
-  compute = naiveContinuedFracInfty breadth u2
