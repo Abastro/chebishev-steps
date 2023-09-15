@@ -37,10 +37,10 @@
 % commands
 \newcommand{\contra}{\Rightarrow\!\Leftarrow}
 
-\newcommand{\integer}{\mathbb{Z}}
-\newcommand{\ratio}{\mathbb{Q}}
-\newcommand{\real}{\mathbb{R}}
-\newcommand{\complex}{\mathbb{C}}
+\newcommand{\bZ}{\mathbb{Z}}
+\newcommand{\bQ}{\mathbb{Q}}
+\newcommand{\bR}{\mathbb{R}}
+\newcommand{\bC}{\mathbb{C}}
 
 \newcommand{\rangewith}[4]{{#2}#1{#3}, \cdots, {#2}#1{#4}}
 \newcommand{\funtyp}[3]{#1: & #2 & \rightarrow & #3 \\ }
@@ -65,12 +65,12 @@ This write-up suggests multiple decision algoirthms achieving this goal.
 \section{Problem Definition}
 
 Given $u$, we are to find the minimal $k$ where $u$ is the root of $s^{\mathbf{n}}_k$.
-For this purpose, it helps to consider $s^{\mathbf{n}}_k(u)$ as a function of $\mathbf{n} \in \integer^{k-1}$.
+For this purpose, it helps to consider $s^{\mathbf{n}}_k(u)$ as a function of $\mathbf{n} \in \bZ^{k-1}$.
 Hence, we will fix $u$ and denote the chebyshev polynomial as $s_k(\mathbf{n})$ or $s(\mathbf{n})$.
-To check for the common cases, we will assume $u^2 \in \real$.
+To check for the common cases, we will assume $u^2 \in \bR$.
 
 Under this setting, we are tasked to determine if a multivariate polynomial $s_k(\mathbf{n})$
-has a zero within $\integer^{k-1}$.
+has a zero within $\bZ^{k-1}$.
 
 \subsection{Prior consideration}
 
@@ -93,7 +93,7 @@ This implies the following properties.
 \end{fact}
 
 The first property implies that we do not need to check $n_i = 0$ case for a minimal polynomial,
-so our search is reduced to finding a root in $\integer^{k-1} \setminus \{0\}$.
+so our search is reduced to finding a root in $\bZ^{k-1} \setminus \{0\}$.
 
 On the other hand, the latter property means the "normalized" term
 \[
@@ -103,53 +103,71 @@ converges to the product of $\tilde{s}_i$ and $\tilde{s}_{k-i}$ as $n_i \to \inf
 This indicates that this "Normalized Chebyshev" has a limiting behavior
 based on chebyshev polynomials of lower degree.
 
-\section{Recursive computation of minimum of $\tilde{s}_k$}
+\newpage
 
-\subsection{Limit points of range of $\tilde{s}_k$}
+\section{Limiting properties of functions on integer domain}
 
-First, we capture the general behavior of a function with domain $\integer^{k-1} \setminus \{0\}$.
-To simplify the logic, we may reparameterize $\tilde{s}_k(\mathbf{n})$
-by $\mathbf{x}$ where $x_i = 1 / n_i$.
-Under this terms, $\mathbf{x} \in T^{k-1}$ and $\tilde{s} : T^{k-1} \to \real$
-where $T := \{ 1 / k \mid k \in \integer - \{ 0 \} \}$.
-Since $\tilde{s}$ is a polynomial in terms of $\mathbf{x}$,
-it is a continuous function.
-Furthermore, it is easy to see that $\tilde{s}$ is defined on the case where some $x_i$'s are 0.
-Hence, we may regard $\tilde{s} \in C(\bar{T}^{k-1})$.
+Let $\bar \bC$ be the extended complex plane.
+We may identify $\bZ$ as subset of this plane, which gives its closure $\bar \bZ = \bZ \cup \{\infty\}$.
+Since $\bar \bC$ is compact, a closed set $\bar \bZ$ in it is compact as well.
+We have the following property for a function with domain $\bar \bZ^k$.
 
-Then, we have the following property, which holds for any function in $C(\bar{T}^{k-1})$.
-\begin{proposition}
-  Suppose there is a sequence $\{ \mathbf{x}^\alpha \} \subset \bar{T}^{k-1}$
-  where each $\mathbf{x}_\alpha$ is distinct
-  and $\tilde{s}(\mathbf{x}^\alpha)$ converges to some $c \in \real$.
-  Then, $c$ is in the limit point $\tilde{s}(\lim T^{k-1})$.
-\end{proposition}
+\begin{theorem}
+  Suppose $f: \bar \bZ^k \to \bar \bC$ is a continuous map.
+  Then, $\abs{f}$ attains a maximum,
+  i.e. $\max_{\mathbf{n} \in \bar \bZ^k} \abs{f(\mathbf{n})} \in \bar \bR$ exists.
+\end{theorem}
 \begin{proof}
-  Notice that $\bar{T} = T \cup \{ 0 \}$ is a closed subset of compact interval $[-1, 1]$,
-  so $\bar{T}$ should be compact. Then, $T^{k-1}$ should be compact as its product.
-  Thus, for the given sequence $\{ \mathbf{x}^\alpha \}$,
-  there is a subsequence $\{ \mathbf{y}^\beta \}$ which converges to some $\mathbf{y} \in \bar{T}^{k-1}$.
-  As each $\mathbf{y}_\beta$ should be distinct as well, one has $\mathbf{y} \in \lim T^{k-1}$.
-  Then, by continuity of $\tilde{s}$ we get $\tilde{s}(\mathbf{y}^\beta) \to \tilde{s}(\mathbf{y})$.
-  Therefore, $c = \tilde{s}(\mathbf{y}) \in \tilde{s}(\lim T^{k-1})$.
+  As a (finite) product of compact sets, $\bar \bZ^k$ is compact, so image of it is compact as well.
+  Thus, $\abs{f(\bar \bZ^k)}$ is a compact set in $\bar \bR$.
+  Consequently, the set $\abs{f(\bar \bZ^k)}$ has a maximum, as desired.
 \end{proof}
+Note that minimum exists in a similar sense.
 
 \begin{corollary}
-  There are finitely many distinct $\mathbf{x}$ where $\tilde{s}(\mathbf{x}) = c$ holds.
-  Specifically for $c = 0$, $\tilde{s}$ has finitely many distinct zeros.
-\end{corollary}
-
-\begin{corollary}\label{image_compact}
-  The image $\tilde{s}(\bar{T}^{k-1})$ is closed and compact.
+  For any rational function $f$ on $\bC$ defined on and restricted to $\bar \bZ^k$ attains such a maximum.
 \end{corollary}
 \begin{proof}
-  This follows from $\bar{T}^{k-1}$ being compact.
+  It is known that a polynomial $\bC^k \to \bC$ is continuous,
+  which still holds if we extend it to $\bar \bC^k \to \bar \bC$.
+  Idenfitying $\bar \bC$ as a complex projective place $\bC P^1$,
+  a rational function is continuous in a subset of $\bar \bC^k$ where it is defined.
+  Therefore, its restriction to $\bar \bZ^k$ should be continuous as well.
 \end{proof}
 
-By Corollary \ref{image_compact}, one can find a $\mathbf{x} \in \bar{T}^{k-1}$
-which achieves the minimal distance between $\tilde{s}(\bar{T}^{k-1})$ and $0$.
-In particular, the zeros are obtained as such $\mathbf{x}$ if and only if this distance $\abs{\tilde{s}}$ is $0$.
-This gives us an idea on how to find zeros of $\tilde{s}$.
+Since the functions we are to deal with are rational,
+they all are continuous, so we can apply this theorem to prove the existence of maximum.
+Be cautious that the maximum could be attained at $\partial \bZ^k$;
+since such points are limit points where values congregate, this can inhibit the termination of the computation.
+That this cannot happen should be verified individually.
+
+\begin{definition}
+  Weighted continued fraction is given as
+  \[
+    F_\lambda(n_1, n_2, \cdots, n_k)
+    := \frac{s_k(n_1, \cdots, n_k)}{u \cdot s_{k+1}(n_1, \cdots, n_k)}
+    = \cfrac{1}{-\lambda (n_k - \cfrac{1}{-\lambda (n_{k-1} - \cfrac{1}{\ddots \frac{1}{-\lambda n_1}})})}.
+  \]
+\end{definition}
+
+From this definition, it is obvious that
+\begin{enumerate}
+  \item $F_\lambda(\mathbf{n})$ is a rational function in $(n_1, \cdots, n_k)$.
+  \item $F_\lambda(\mathbf{n}) = \infty$ if and only if $s_k(\mathbf{n}) = \infty$.
+\end{enumerate}
+Hence, this function fits in the desired condition.
+
+\begin{definition}
+  Normalized chebyshev polynomial is given as
+  \[
+    ns^\mathbf{n}(u) := \frac{s^\mathbf{n}_k (u)}{n_1 \cdots n_{k-1}},
+  \]
+  which is a monic polynomial in $u$.
+\end{definition}
+
+This function is also a rational function in $\mathbf{n}$ and it is zero iff $s^\mathbf{n}_k (u) = 0$.
+
+\section{Recursive computation of minimum of $\tilde{s}_k$}
 
 \subsection{Overview of the algorithm}
 
@@ -312,7 +330,7 @@ This concludes the logical basis of the algorithm.
       \For{$i \in [1, k-1]$}
         \State $(A_i, \mathbf{n}^i_L, \mathbf{n}^i_R) \gets$ \Call{ConstMin}{$u^2$, $k$, $i$}
         \State $B_i \gets B(\mathbf{n}^i_L, \mathbf{n}^i_R)$
-        \State $\delta_i \gets \min_{n_i \in \integer \setminus \{0\}} (\abs{A_i - B_i / n_i})$
+        \State $\delta_i \gets \min_{n_i \in \bZ \setminus \{0\}} (\abs{A_i - B_i / n_i})$
         \State $\delta \gets \min(\delta, \delta_i)$
       \EndFor
       \State \textbf{return} $\delta$
@@ -370,7 +388,7 @@ i.e. $r(n_1, \mathbf{n}) = \mathbf{n}$.
 \end{definition}
 
 \begin{remark}
-  Assuming $u^2 \in \real$, $G(\mathbf{n}) \in \real$ whenever defined.
+  Assuming $u^2 \in \bR$, $G(\mathbf{n}) \in \bR$ whenever defined.
 \end{remark}
 
 \begin{remark}
@@ -459,8 +477,8 @@ which gives the following recurrence relation on $G$.
 Notice that similar to $\tilde{s}_k$,
 $G_k$ could also be parametrized in terms of $x_i = 1 / n_i$.
 As such, we may view $\abs{G_k}$ as a continuous function
-from $\bar{T}^{k}$ to the compactification $\real_{+}^\infty = \real_{+} \cup \{ \infty \}$,
-which gives the concrete maximum $\abs{G(\mathbf{m})} \in \real_{+}^\infty$.
+from $\bar{T}^{k}$ to the compactification $\bR_{+}^\infty = \bR_{+} \cup \{ \infty \}$,
+which gives the concrete maximum $\abs{G(\mathbf{m})} \in \bR_{+}^\infty$.
 We will demonstrate that this maximum could be computed.
 
 \begin{proposition}\label{fraction_max_increase}
@@ -509,7 +527,7 @@ We will demonstrate that this maximum could be computed.
   By above proposition, $\abs{G_{k-i}} < \max \abs{G_k}$, so $G_k(\mathbf{x})$ cannot attain the maximum.
 \end{proof}
 
-Consequently, there is a sequence $\mathbf{m} \in (\integer \setminus \{ 0 \})^k$
+Consequently, there is a sequence $\mathbf{m} \in (\bZ \setminus \{ 0 \})^k$
 where $K = G(\mathbf{m})$ attains the aforementioned maximum.
 We will demonstrate how this could be computed.
 
@@ -566,7 +584,7 @@ First, we find the maximum candidate $\max \abs{G_{k-1}} < M \leq K$.
 
 \begin{proposition}
   Suppose $\mathbf{p}$ attains the maximum for $G_{k-1}$.
-  Then, there is $n_1 \in \integer \setminus \{ 0 \}$ where $\abs{G(n_1, \mathbf{p})} > \max \abs{G_{k-1}}$.
+  Then, there is $n_1 \in \bZ \setminus \{ 0 \}$ where $\abs{G(n_1, \mathbf{p})} > \max \abs{G_{k-1}}$.
 \end{proposition}
 \begin{proof}
   In the proof of Proposition \ref{fraction_max_increase},
