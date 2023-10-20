@@ -9,6 +9,7 @@ benchmark.*
 *.prof
 
 results
+result-pdf
 
 *.code-workspace
 
