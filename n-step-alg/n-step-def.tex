@@ -1,0 +1,91 @@
+\documentclass{article}
+\usepackage{xcolor}
+\usepackage{tikz-cd}
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage{amsthm}
+\usepackage{enumitem}
+\usepackage{mathtools}
+\usepackage{graphicx}
+\usepackage{wrapfig}
+\usepackage[a4paper, total={6in, 8in}]{geometry}
+
+% environments
+\theoremstyle{definition}
+\newtheorem*{definition}{Definition}
+\newtheorem*{example}{Example}
+\newtheorem{exercise}{Exercise}
+
+\theoremstyle{plain}
+\newtheorem{theorem}{Theorem}[section]
+\newtheorem{corollary}[theorem]{Corollary}
+\newtheorem{proposition}{Proposition}[section]
+\newtheorem{lemma}{Lemma}[section]
+
+\theoremstyle{remark}
+\newtheorem*{remark}{Remark}
+\newtheorem*{fact}{Fact}
+
+\newenvironment{claim}[1]{\par\underline{Claim:}\space#1}{\par\smallskip}
+\newenvironment{acase}[1]{\par\underline{Case\space#1:}\space}{\par\smallskip}
+\newcommand{\astep}[2]{\par\textbf{Step #1: #2}\par\smallskip}
+
+\numberwithin{equation}{section}
+% commands
+\newcommand{\contra}{\Rightarrow\!\Leftarrow}
+
+\newcommand{\bZ}{\mathbb{Z}}
+\newcommand{\bQ}{\mathbb{Q}}
+\newcommand{\bR}{\mathbb{R}}
+\newcommand{\bC}{\mathbb{C}}
+
+\newcommand{\rangewith}[4]{{#2}#1{#3}, \cdots, {#2}#1{#4}}
+\newcommand{\funtyp}[3]{#1: & #2 & \rightarrow & #3 \\ }
+\newcommand{\fundecl}[2]{& #1 & \mapsto & #2 \\ }
+
+\title{N-step def}
+\author{Junho Lee}
+
+\begin{document}
+\maketitle
+
+\def\ms{\mathbf{m}}
+\def\ns{\mathbf{n}}
+\def\nsL{\mathbf{n}_L}
+\def\nsR{\mathbf{n}_R}
+
+\begin{lemma}
+  Let $D_k \subset \bar{\bZ}^k$ be the set of sequences $\ns = (n_k, \cdots, n_1)$
+  where any consecutive proper subsequence of finite integers $\ms = (n_{i+j}, \cdots, n_{i+1})$ satisfy $[\ms] \neq \infty$.
+  Then, such $D_k$ is compact, and $n \mapsto [n]$ is contiuously well-defined on $D_k$.
+  Furthermore, we have $[\nsL, \infty, \nsR] = [\nsL]$.
+\end{lemma}
+\begin{proof}
+  First, observe that $W_j = \{ \ms \in \bZ^j \mid [\ms] = \infty \}$ is open in $\bar{\bZ}^j$:
+  It is open in $\bZ^j$ by discrete topology, which itself is an open set in $\bar{\bZ}^j$.
+  Since
+  \[ D_k = \bigcap_{j < k, \, i + j \leq k} \bZ^{k-i-j} \times (\bZ^j \setminus W_j) \times \bZ^i, \]
+  $D_k$ is closed in compact set $\bZ^k$, so $D_k$ is compact.
+
+  Now, we show the well-definedness on $D_k$ along with $[\nsL, \infty, \nsR] = [\nsL]$ by induction on $k$.
+  This is clear for $k = 1$.
+  For $k > 1$, let $n = (n_1, \nsR) \in D_k$.
+  Note that $\nsR \in D_{k-1}$ by definition, so we may write
+  \[
+    [\ns] = [n_k, \nsR] = [n_k + [\nsR]].
+  \]
+  Suffices to show $[\nsR] \neq \infty$.
+  If $\nsR$ does not contain $\infty$, this is clear by $n \in D_k$.
+  Otherwise, write $\nsR = (\mathbf{n}_{RL}, \infty, \mathbf{n}_{RR})$ where $\mathbf{n}_{RL}$ does not contain $\infty$.
+  Then, $[\nsR] = [\mathbf{n}_{RL}, \infty, \mathbf{n}_{RR}] = [\mathbf{n}_{RL}] \neq \infty$
+  by $\nsR \in D_{k-1}$ and induction hypothesis.
+  Consequently, such $[\ns]$ well-defined on $D_k$.
+
+  Finally, we can check by computation that
+  \[
+    [\nsL, \infty, \nsR] = [\nsL + [\infty + [\nsR]]] = [\nsL + [\infty]] = [\nsL]
+  \]
+  holds.
+\end{proof}
+
+\end{document}
