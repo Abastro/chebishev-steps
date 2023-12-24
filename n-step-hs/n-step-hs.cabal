@@ -33,6 +33,7 @@ library
     Chebyshev.Fraction
     Chebyshev.Composite
     Chebyshev.TFun
+    Chebyshev.Enumerative
 
     Chebyshev.Fraction.Prefixed
     Chebyshev.Fraction.ChooseOne

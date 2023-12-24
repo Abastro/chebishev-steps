@@ -132,7 +132,6 @@ main = do
       remaining <- newMVar fracts
       for_ outHandle $ \out -> hPutStrLn out "rel #, k, seq n"
 
-      -- Why do they make me do this
       StreamK.toStream (StreamK.fromFoldable fracts)
         & Stream.parConcatMap (Stream.ordered True) (Stream.fromEffect . evaluateAndPrint remaining)
         & Stream.mapM (`emitToFile` outHandle)

@@ -31,7 +31,6 @@ continuedFracMax breadth u2 = memoFix $ \getMaxArg -> \case
    where
     getMax i = case getMaxArg i of Arg v _ -> knownFinite v
 
-    -- Setup: F(x) = F(x_L, x_i, x_R), |x| = k, |x_L| = i-1, |x_R| = k-i
     -- Initial max candidate.
     maxCandidate :: FractionResult
     maxCandidate = Arg (abs . continuedFraction u2 $ V.toList n) n

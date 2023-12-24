@@ -1,0 +1,292 @@
+\documentclass{article}
+\usepackage{xcolor}
+\usepackage{tikz-cd}
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage{amsthm}
+\usepackage{enumitem}
+\usepackage{mathtools}
+\usepackage{graphicx}
+\usepackage{wrapfig}
+\usepackage[a4paper, total={6in, 8in}]{geometry}
+
+% environments
+\theoremstyle{definition}
+\newtheorem*{definition}{Definition}
+\newtheorem*{example}{Example}
+\newtheorem{exercise}{Exercise}
+
+\theoremstyle{plain}
+\newtheorem{theorem}{Theorem}
+\newtheorem{corollary}[theorem]{Corollary}
+\newtheorem{proposition}{Proposition}
+\newtheorem{lemma}{Lemma}
+
+\theoremstyle{remark}
+\newtheorem*{remark}{Remark}
+\newtheorem*{fact}{Fact}
+
+\newenvironment{claim}[1]{\par\underline{Claim:}\space#1}{\par\smallskip}
+\newenvironment{acase}[1]{\par\underline{Case\space#1:}\space}{\par\smallskip}
+\newcommand{\astep}[2]{\par\textbf{Step #1: #2}\par\smallskip}
+
+\numberwithin{equation}{section}
+% commands
+\newcommand{\contra}{\Rightarrow\!\Leftarrow}
+
+\newcommand{\bZ}{\mathbb{Z}}
+\newcommand{\bQ}{\mathbb{Q}}
+\newcommand{\bR}{\mathbb{R}}
+\newcommand{\bC}{\mathbb{C}}
+
+\newcommand{\rangewith}[4]{{#2}#1{#3}, \cdots, {#2}#1{#4}}
+\newcommand{\funtyp}[3]{#1: & #2 & \rightarrow & #3 \\ }
+\newcommand{\fundecl}[2]{& #1 & \mapsto & #2 \\ }
+
+\newcommand{\abs}[1]{\left| {#1} \right|}
+\newcommand{\inprod}[2]{\langle {#1}, {#2} \rangle}
+
+\newcommand{\im}{{\sqrt{-1}}}
+
+\DeclareMathOperator{\sgn}{sgn}
+
+\def\ns{{\mathbf{n}}}
+\def\nsL{{\mathbf{n}_L}}
+\def\nsR{{\mathbf{n}_R}}
+
+\title{Sketch of $u$-degree finder algorithm on $\bC$}
+\author{Junho Lee}
+
+\begin{document}
+\maketitle
+
+Fix $\lambda \in \bC$, and denote
+\[
+  \ns = (\nsL, n_i, \nsR) = (\nsL', n_{i-1}, n_i, n_{i+1}, \nsR').
+\]
+sequences of $\bar{\bZ} \setminus \{0\}$.
+We assume length of $\ns$ is no more than the minimal $u$-degree of $\lambda$.
+We are interested with computing
+\[
+  M_k := \max_{\ns \in (\bar{\bZ} \setminus \{0\})^k} \abs{[\ns]},
+\]
+which should exist by compactness of $\bar{\bZ} \setminus \{0\}$.
+As an intermediate step, we will compute
+\[ M^{\nsL} := \max_{n_i, \nsR} \abs{[\nsL, n_i, \nsR]}. \]
+where $M_k = M^{()}$.
+
+Recall that
+\begin{align*}
+  [\ns] & = [\nsL] \cdot \frac{n_i + [\overleftarrow{\nsL}'] + [\nsR]}{n_i + [\overleftarrow{\nsL}] + [\nsR]} \\
+  & = [\nsL] \left( 1 - \frac{[\overleftarrow{\nsL}] - [\overleftarrow{\nsL}']}{n_i + [\nsL] + [\nsR]} \right).
+\end{align*}
+
+Denote the singular point as $N_i = - ([\overleftarrow{\nsL}] + [\nsR])$,
+and define \textit{discriminant} $D := [\overleftarrow{\nsL}] - [\overleftarrow{\nsL}']$ to write
+\[
+  [\ns] = [\nsL] \left( 1 - \frac{D}{n_i - N_i} \right).
+\]
+and so for fixed $\nsL$,
+\[
+  M^{\nsL} = \max_{n_i, \nsR} \abs{[\ns]} = [\nsL] D \cdot \max_{n_i, \nsR} \left| \frac{1}{D} - \frac{1}{n_i - N_i} \right|.
+\]
+
+First, we estimate $n_i$ in the maximal case by trying different values in its place.
+
+\begin{proposition}
+  Suppose $\frac{D}{2 \Im(N_i) \im} \neq 0, -1$.
+  Let $x_{\max} \in \bar{\bR}$ be the number maximizing $x \mapsto \abs{[\nsL, x, \nsR]}$. Then,
+  \begin{equation*}
+    x_{\max} - a = \begin{dcases}
+      - \frac{\abs{D} \abs{D + 2b \im} - \inprod{D}{D + 2b \im}}{2 \Re(D)}, & \Re(D) \neq 0 \\
+      \infty, & D / (2b \im) \in (-1, 0) \\
+      0, & D / (2b \im) \in (-\infty, -1) \cup (0, \infty)
+    \end{dcases}
+  \end{equation*}
+  where $N_i = a + b \im$, $a, b \in \bR$
+  and $\inprod{-}{-}$ is a $\bR$-bilinear form given by $\inprod{c + d \im}{c' + d' \im} = cc' + dd'$.
+  Furthermore, $x = x_{\max}$ is the only local maximum.
+\end{proposition}
+\begin{proof}
+  Consider that the M\"{o}bius transformation $\varphi(z) = z^{-1}$ sends $\bR - N_i$ to a line or a circle.
+  When it is mapped to a line, it passes through the origin,
+  so $x_{\max} = N_i \in \bR$ obtains the maximum $\infty$; one can check this matches the desired conclusion.
+  Hence, enough to check the general case where $\varphi(\bR - N_i)$ is a circle passing through origin.
+
+  Note we can identify the circle's center $C \in \bC$ as follows.
+  Let $M = - \Im(N_i) \im$, an intersection of the imaginary line $\im \bR$ and $\bR - N_i$.
+  $\varphi$ sends $M$ to an intersection of the imaginary line and $\varphi(\bR - N_i)$,
+  where the two meets orthogonally.
+  Hence, $C$ is the midpoint of $M^{-1}$ and $0$, i.e. $C = M^{-1}/2$,
+  and so $C^{-1} = 2M = - 2 \Im(N_i) \im$.
+
+  Now, observe that
+  \[
+    \abs{[\nsL, x, \nsR]} = \abs{D^{-1} - (x - N_i)^{-1}}
+  \]
+  is maximal when $(x - N_i)^{-1} \in \varphi(\bR - N_i)$ is the farthest from $D^{-1}$,
+  and minimal when it is the nearest.
+  Thus, for $X = x_{\max} - N_i$ and $Y = x_{\min} - N_i$,
+  $X^{-1}, C, Y^{-1}, D^{-1}$ are colinear in this order.
+  Hence, the cross ratio is given by
+  \[
+    (\infty, C; D^{-1}, X^{-1}) = \frac{X^{-1} - C}{D^{-1} - C} = \gamma_X \in \bR_{< 0},
+    \quad
+    (\infty, C; D^{-1}, Y^{-1}) = \gamma_Y \in \bR_{> 0}.
+  \]
+  and taking $\varphi^{-1}$,
+  \[
+    \gamma_X = (0, C^{-1}; D, X) = \frac{D - 0}{D - C^{-1}} \cdot \frac{X - 0}{X - C^{-1}},
+    \quad
+    \gamma_Y = (0, C^{-1}; D, Y) = \frac{D - 0}{D - C^{-1}} \cdot \frac{Y - 0}{Y - C^{-1}}.
+  \]
+  As $\abs{X - C^{-1}} = \abs{X}$ and $\abs{Y - C^{-1}} = \abs{Y}$,
+  we get $-\gamma_X = \gamma_Y = \frac{\abs{D}}{\abs{D - C^{-1}}}$ from the size. Thus,
+  \[
+    e^{\im \theta} := \frac{X - C^{-1}}{X} = - \frac{Y - C^{-1}}{Y} = - \frac{(D - C^{-1}) / \abs{D - C^{-1}}}{D / \abs{D}}
+    = - \frac{\bar{D} (D - C^{-1})}{\abs{D} \abs{D - C^{-1}}}.
+  \]
+  Remark that $\Re(\bar{D} (D - C^{-1})) = \inprod{D}{D - C^{-1}}$.
+  Using this, one can check $\cos \theta = - \frac{\inprod{D}{D - C^{-1}}}{\abs{D} \abs{D - C^{-1}}}$
+  and $\sin \theta = \frac{\Re(D) \Im(C^{-1})}{\abs{D} \abs{D - C^{-1}}}$.
+  Also, from $M = C^{-1} / 2$ one has
+  $\frac{X - M}{M} = \frac{1 + e^{\im \theta}}{1 - e^{\im \theta}}$,
+  $\frac{Y - M}{M} = \frac{1 - e^{\im \theta}}{1 + e^{\im \theta}}$.
+
+  Note that if $\Re(D) \neq 0$, $\sin \theta \neq 0$, so we get
+  \[
+    X - M = M \frac{1 + \cos \theta}{\sin \theta} = - \frac{|D| |D - C^{-1}| - \inprod{D}{D - C^{-1}}}{2 \Re(D)} \in \bR.
+  \]
+  On the other hand, if $\Re(D) = 0$,
+  one has $e^{\im \theta} = - \sgn(\Im(D) (\Im(D) - \Im(C^{-1}))) = \pm 1$;
+  thus $X - M = 0$ or $\infty$ depending on values of $\Im(D)$ and $\Im(C^{-1})$.
+  In both cases, the conclusion follows by taking the real part of the equation.
+\end{proof}
+
+\begin{remark}
+  $\abs{[\nsL, x, \nsR]}$ is constant in the excluded cases
+  $D = 0$, $D = - 2 \Im(N_i) \im$.
+  Indeed, $[\nsL, x, \nsR] = [\nsL]$ if $D = 0$,
+  and the center $C$ coincides with $D^{-1}$ if $D = -2 \Im(N_i) \im$.
+  In these cases, one can say that every $x \in \bar{\bR}$ is 'maximal' in some sense.
+\end{remark}
+
+\begin{remark}
+  If $x_{\max}$ is finite,
+  Since it is the only local maximum over $\bar{\bR}$,
+  \[ \max_{n_i \in \bZ \setminus \{0\}} \abs{\nsL, n_i, \nsR} \]
+  In particular, we can always characterize such $n_i$ this way if $\Re(D) \neq 0$.
+\end{remark}
+
+\begin{corollary}[Meaning of discriminant]\label{discriminant-meaning}
+  $\abs{[\nsL, x, \nsR]}$ over $x$ is maximized at $x = \infty$
+  if and only if $\Im(N_i) / D(\nsL) \in \im \bR_{\geq \frac{1}{2}}$.
+  In particular, this only happens if $D(\nsL) \in \im \bR$.
+\end{corollary}
+\begin{proof}
+  If $2 \im \cdot \Im(N_i) = -D$, both sides are true.
+  Otherwise, this is clear by
+  \begin{align*}
+    & x - N_i = \infty \\
+    & \Leftrightarrow 1 + \sgn(1 + \frac{2 \im \Im(N_i)}{D}) = 0 \\
+    & \Leftrightarrow 1 + \frac{2 \im \Im(N_i)}{D} \in \bR_{> 0}.
+  \end{align*}
+\end{proof}
+
+\begin{remark}
+  One might expect that the case of $x = \infty$ could pose limitation on the maximum finding.
+  However, it turns out that we can detect if this affects the maximum.
+
+  Consider the case where $\nsL$ is fixed, and one wants to find maximum of $[\ns]$ over $n_i, \nsR$.
+  By Corollary \ref{discriminant-meaning}, the $x = \infty$ case does not occur when $D(\nsL) \notin \im \bR$.
+  When $D(\nsL) \in \im \bR$, we have two possibilities:
+  \begin{itemize}
+    \item There is maximal $\ns$ where $\Im(N_i) / D(\nsL) \in \im \bR_{\geq \frac{1}{2}}$,
+          so that $\abs{[\ns]} = \abs{[\nsL, \infty, \nsR]}$.
+    \item Every maximal $\ns$ satisfies $\Im(N_i) / D(\nsL) \in \im \bR_{< \frac{1}{2}}$,
+          so $x - N_i = 0$ maximizes $\abs{[\nsL, x, \nsR]}$.
+  \end{itemize}
+  One has $\abs{[\ns]} = \abs{[\nsL]}$ in the former case,
+  while $\abs{[\ns]} > \abs{[\nsL]}$ in the latter case,
+  considering $[\nsL, \infty, \mathbf{m}_R] = [\nsL]$ is not a maximum.
+  Consequently, one may assume for the second case and survey $\ns$ with $[\ns] > \abs{[\nsL]}$;
+  If there is no such $\ns$, then it is the first case, i.e. $\abs{[\ns]} = \abs{[\nsL]}$.
+  In particular, one only has to check for the cases $\abs{n_i - N_i} \leq 1$,
+  so $\abs{n_i} \leq \max_{\nsR} \abs{N_i} + 1$.
+\end{remark}
+
+Above remark outlines a process to find $\max_{n_i, \nsR} \abs{[\nsL, n_i, \nsR]}$ when $D(\nsL) \in \im \bR$.
+Now, consider the case $D(\nsL) \notin \im \bR$.
+To better describe RHS of , let
+\[ \Delta(t) := \frac{-t \im}{1 + \sgn(1 + \frac{t \im}{D})} \]
+so that  is $x - N_i = \Delta(2 \Im(N_i))$.
+
+\begin{proposition}
+  Suppose $D \notin \im \bR$.
+  Identify $\bC \simeq \bR^2 = \bR j \oplus \bR k$ with the usual bilinear form $\inprod{-}{-}$.
+  Then,
+  \[
+    \Delta(t) = - \frac{\im}{2} t + \frac{\inprod{D}{D + t k} - |D| |D + t k|}{2 \Re(D)}.
+  \]
+  In particular, $2 \Re(D) \cdot \Re(\Delta(t)) = \inprod{D}{D + t j} - |D| |D + t k| \leq 0$.
+\end{proposition}
+\begin{proof}
+  Substituting $D = \Re(D) + \Im(D) \im$ in the definition, one can show
+  \[
+    \Delta(t) = - \frac{\im}{2} + \frac{|D|^2 + \Im(D) \cdot t - |D + t \im| |D|}{2 \Re(D)}.
+  \]
+  By the identification, $|D|^2 + \Im(D) \cdot t = \inprod{D}{D} + \inprod{D}{t k} = \inprod{D}{D + tk}$,
+  so one has the desired result.
+\end{proof}
+
+\begin{proposition}
+  $\frac{\partial}{\partial t} \Re(D) \cdot \Re(\Delta(t)) \geq 0$ if and only if $t \leq 0$.
+  In particular, $\Re(D) \cdot \Re(\Delta(t))$ is maximal at $t = 0$,
+  and it is the only local extremum.
+\end{proposition}
+\begin{proof}
+  By simple computation,
+  \begin{align*}
+    & \frac{\partial}{\partial t} \left( \inprod{D}{D + tk} - \abs{D} \abs{D+tk} \right) \\
+    & = \inprod{D}{k} - \abs{D} \cdot \frac{1}{2 \abs{D + tk}} \frac{\partial}{\partial t} \inprod{D + tk}{D + tk} \\
+    & = \inprod{D}{k} - \abs{D} \frac{\inprod{D+tk}{k}}{\abs{D + tk}}
+  \end{align*}
+  so that
+  \begin{align*}
+    & \frac{\partial}{\partial t} \Re(D) \cdot \Re(\Delta(t)) \geq 0 \\
+    & \Leftrightarrow \inprod{\frac{D}{\abs{D}}}{k} \geq \inprod{\frac{D + tk}{\abs{D + tk}}}{k}.
+  \end{align*}
+  Since $\inprod{\frac{v+tk}{\abs{v+tk}}}{k}$ is increasing in $t$,
+  the last condition holds if and only if $t \leq 0$.
+  One may replace each inequality with equality as well to check the extremum.
+\end{proof}
+
+\begin{remark}
+  This implies that $\abs{\Re(\Delta(t))}$ has no local maximum.
+  Hence, given a closed interval $I \subset \bR$,
+  maximum of $\abs{\Re(\Delta(t))}$ in $I$ is obtained at endpoints $\partial I$.
+\end{remark}
+
+Lastly, we outline the process of finding $M^{\nsL} := \max_{n_i, \nsR} \abs{[\nsL, n_i, \nsR]}$ when $\nsL$ is given.
+\begin{enumerate}
+  \item Compute $D(\nsL)$, and compute range of $N_i$ (denoted $B$)
+        using $\abs{N_i - [\overleftarrow{\nsL}]} \leq \max \abs{[\nsR]}$.
+  \item If $D(\nsL) \in \im \bR$, survey over $n_i \in \bZ$ with $\abs{n_i - \Re(N_i)} \leq 1$ where $N_i \in B$.
+  \begin{enumerate}
+    \item For each $n_i$ candidate given above, find $M^{(\nsL, n_i)} = \max_{\nsR} \abs{[\nsL, n_i, \nsR]}$ through recursion.
+    \item The maximum is $M^{\nsL} = \max( \max_{n_i} M^{(\nsL, n_i)}, \abs{[\nsL]} )$ in this case.
+  \end{enumerate}
+  \item If $D(\nsL) \notin \im \bR$, compute range of $\Re(\Delta(t))$ using
+        \[ \max_{t \in 2 \Im(B)} \abs{\Re(\Delta(t))} = \max_{t \in \partial [2 \Im(B)]} \abs{\Re(\Delta(t))}. \]
+        Survey over $n_i \in \bZ$ with $\abs{n_i - \Re(N_i) - \Re(\Delta(t))} \leq 1$.
+  \begin{enumerate}
+    \item For each $n_i$ candidate given above, find $M^{(\nsL, n_i)} = \max_{\nsR} \abs{[\nsL, n_i, \nsR]}$ through recursion.
+    \item The maximum is $M^{\nsL} = \max_{n_i} M^{(\nsL, n_i)}$ in this case.
+  \end{enumerate}
+\end{enumerate}
+
+Then, we obtain the maximum over all $\ns$ as $M_k = M^{()}$.
+Furthermore, $k$ is the minimal $u$-degree when we have $M_k = \infty$.
+Therefore, this gives an algorithm for finding the minimal $u$-degree.
+
+\end{document}
