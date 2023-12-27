@@ -1,0 +1,693 @@
+{
+ "cells": [
+  {
+   "kind": 1,
+   "value": "# Basic Definitions",
+   "languageId": "markdown",
+   "outputs": [],
+   "metadata": {},
+   "executionSummary": {}
+  },
+  {
+   "kind": 2,
+   "value": "cFrac[{}] := 0\ncFrac[{n1_}] := 1 / (lam * n1)\ncFrac[{n1_, nR___}] := cFrac[{n1 + cFrac[{nR}]}]\n\ncFrac[{n1, n2, n3}] // Simplify",
+   "languageId": "wolfram",
+   "outputs": [
+    {
+     "items": [
+      {
+       "data": "<div class=\"wexpr\"><wfrac><w><wrow><w></w><w>1</w><w>+</w><wrow><w></w><w>lam</w><w></w><w>n2</w><w></w><w>n3</w></wrow></wrow></w><w><w></w><w><wrow><w></w><w>lam</w><w></w><wrow><w></w><wb>(</wb><wrow><w></w><w>n1</w><w>+</w><w>n3</w><w>+</w><wrow><w></w><w>lam</w><w></w><w>n1</w><w></w><w>n2</w><w></w><w>n3</w></wrow></wrow><wb>)</wb></wrow></wrow></w></w></wfrac></div>",
+       "mime": "x-application/wolfram-language-html"
+      },
+      {
+       "data": "(1 + lam*n2*n3)/(lam*(n1 + n3 + lam*n1*n2*n3))",
+       "mime": "text/plain"
+      }
+     ],
+     "id": "14ff633a-57bf-451d-9a32-416bbd3a93a3",
+     "metadata": {
+      "cellLabel": "Out[24]= ",
+      "isBoxData": false
+     }
+    }
+   ],
+   "metadata": {},
+   "executionSummary": {
+    "timing": {
+     "startTime": 1703675651016,
+     "endTime": 1703675651321
+    },
+    "executionOrder": 21,
+    "success": true
+   }
+  },
+  {
+   "kind": 1,
+   "value": "# Setup",
+   "languageId": "markdown",
+   "outputs": [],
+   "metadata": {},
+   "executionSummary": {}
+  },
+  {
+   "kind": 2,
+   "value": "(* Singular point *)\npNi[nL_, nR_] := - (cFrac[Reverse[nL]] + cFrac[nR])",
+   "languageId": "wolfram",
+   "outputs": [],
+   "metadata": {},
+   "executionSummary": {
+    "timing": {
+     "startTime": 1703676221181,
+     "endTime": 1703676221246
+    },
+    "executionOrder": 31,
+    "success": true
+   }
+  },
+  {
+   "kind": 2,
+   "value": "(* Discriminant *)\ndiscr[{}] := ComplexInfinity\ndiscr[nL_] := With[{k := Length[nL]}, cFrac[nL[[k;;1;;-1]]] - cFrac[nL[[k;;2;;-1]]]]\n\ndiscr[{n1, n2}] // Factor\ndiscr[{n1}]\ndiscr[{}]",
+   "languageId": "wolfram",
+   "outputs": [
+    {
+     "items": [
+      {
+       "data": "<div class=\"wexpr\"><wrow><w></w><w>-</w><wfrac><w><w>1</w></w><w><w></w><w><wrow><w></w><w>lam</w><w></w><w>n2</w><w></w><wrow><w></w><wb>(</wb><wrow><w></w><w>1</w><w>+</w><wrow><w></w><w>lam</w><w></w><w>n1</w><w></w><w>n2</w></wrow></wrow><wb>)</wb></wrow></wrow></w></w></wfrac></wrow></div>",
+       "mime": "x-application/wolfram-language-html"
+      },
+      {
+       "data": "-(1/(lam*n2*(1 + lam*n1*n2)))",
+       "mime": "text/plain"
+      }
+     ],
+     "id": "7e5e3760-0dee-40f4-a778-07c1b551e077",
+     "metadata": {
+      "cellLabel": "Out[118]= ",
+      "isBoxData": false
+     }
+    },
+    {
+     "items": [
+      {
+       "data": "<div class=\"wexpr\"><wfrac><w><w>1</w></w><w><w></w><w><wrow><w></w><w>lam</w><w></w><w>n1</w></wrow></w></w></wfrac></div>",
+       "mime": "x-application/wolfram-language-html"
+      },
+      {
+       "data": "1/(lam*n1)",
+       "mime": "text/plain"
+      }
+     ],
+     "id": "1b1be729-34af-4a65-9bc7-da4e528ed290",
+     "metadata": {
+      "cellLabel": "Out[119]= ",
+      "isBoxData": false
+     }
+    },
+    {
+     "items": [
+      {
+       "data": "<div class=\"wexpr\"><w>ComplexInfinity</w></div>",
+       "mime": "x-application/wolfram-language-html"
+      },
+      {
+       "data": "ComplexInfinity",
+       "mime": "text/plain"
+      }
+     ],
+     "id": "a417cdee-22de-474a-888f-5f28ac81c7a1",
+     "metadata": {
+      "cellLabel": "Out[120]= ",
+      "isBoxData": false
+     }
+    }
+   ],
+   "metadata": {},
+   "executionSummary": {
+    "timing": {
+     "startTime": 1703680320175,
+     "endTime": 1703680320604
+    },
+    "executionOrder": 116,
+    "success": true
+   }
+  },
+  {
+   "kind": 2,
+   "value": "delta[d_, t_] := Abs[d] Abs[d + t I] - Dot[ReIm[d], ReIm[d + t I]]\ndelta[1 + I, 1]",
+   "languageId": "wolfram",
+   "outputs": [
+    {
+     "items": [
+      {
+       "data": "<div class=\"wexpr\"><wrow><w></w><wrow><w></w><w>-</w><w>3</w></wrow><w>+</w><wsqrt><w><w>\\</w></w><w></w><w><w>10</w></w></wsqrt></wrow></div>",
+       "mime": "x-application/wolfram-language-html"
+      },
+      {
+       "data": "-3 + Sqrt[10]",
+       "mime": "text/plain"
+      }
+     ],
+     "id": "9ab85ec2-13a7-437e-8666-8b77b4acde6c",
+     "metadata": {
+      "cellLabel": "Out[58]= ",
+      "isBoxData": false
+     }
+    }
+   ],
+   "metadata": {},
+   "executionSummary": {
+    "timing": {
+     "startTime": 1703676927759,
+     "endTime": 1703676927946
+    },
+    "executionOrder": 57,
+    "success": true
+   }
+  },
+  {
+   "kind": 2,
+   "value": "printIfInfty[ns_, v_] := If[v === ComplexInfinity, (Print[ns]; v), v]\nprintIfInfty[{1, 2}, ComplexInfinity]\nprintIfInfty[{1, 2}, 3]",
+   "languageId": "wolfram",
+   "outputs": [
+    {
+     "items": [
+      {
+       "data": "<pre>{1, 2}\n</pre>",
+       "mime": "x-application/wolfram-language-html"
+      },
+      {
+       "data": "\"{1, 2}\\n\"",
+       "mime": "text/plain"
+      }
+     ],
+     "id": "29b9ac06-6ee6-4e8f-a0c8-e985fc7139ec",
+     "metadata": {
+      "cellLabel": "",
+      "isBoxData": false
+     }
+    },
+    {
+     "items": [
+      {
+       "data": "<div class=\"wexpr\"><w>ComplexInfinity</w></div>",
+       "mime": "x-application/wolfram-language-html"
+      },
+      {
+       "data": "ComplexInfinity",
+       "mime": "text/plain"
+      }
+     ],
+     "id": "64efc4e8-6324-4b82-80bb-5d732f79f719",
+     "metadata": {
+      "cellLabel": "Out[264]= ",
+      "isBoxData": false
+     }
+    },
+    {
+     "items": [
+      {
+       "data": "<div class=\"wexpr\"><w>3</w></div>",
+       "mime": "x-application/wolfram-language-html"
+      },
+      {
+       "data": "3",
+       "mime": "text/plain"
+      }
+     ],
+     "id": "3907ab98-35e1-4cad-bca8-a10e65886e96",
+     "metadata": {
+      "cellLabel": "Out[265]= ",
+      "isBoxData": false
+     }
+    }
+   ],
+   "metadata": {},
+   "executionSummary": {
+    "timing": {
+     "startTime": 1703685193468,
+     "endTime": 1703685193748
+    },
+    "executionOrder": 263,
+    "success": true
+   }
+  },
+  {
+   "kind": 2,
+   "value": "contiMaxLFinite[lamV_, k_, nL_] := Module[{i, dc, pNiRange, reRange, imRange, xmaxRange, niMin, niMax},\n  i := Length[nL] + 1;\n  dc := discr[nL] /. {lam :> lamV};\n  pNiRange := CenteredInterval[- cFrac[Reverse[nL]] /. {lam :> lamV}, (1 + I) * contiMax[lamV, k-i]];\n  reRange := Information[Re[pNiRange], \"Bounds\"];\n  imRange := Information[Im[pNiRange], \"Bounds\"];\n  xmaxRange := If[\n    dc === ComplexInfinity || Re[dc] == 0,\n    reRange,\n    With[{delMax := Max[(1.0 * delta[dc, #] &) /@ MinMax[2 * imRange]]},\n      reRange - Interval[{0, delMax}] / (2 * Re[dc])]\n    ];\n  niMin := Floor[Min[xmaxRange]] /. {0 :> (-1)};\n  niMax := Ceiling[Max[xmaxRange]] /. {0 :> 1};\n  Max[Table[contiMaxL[lamV, k, Append[nL, ni]], {ni, DeleteCases[Range[niMin, niMax], 0]}]]\n]\ncontiMaxL[lamV_, k_, nL_] := Max[\n  Abs[printIfInfty[nL, Quiet[cFrac[nL] /. {lam :> lamV}, Power::infy]]],\n  If[Length[nL] == k, 0, contiMaxLFinite[lamV, k, nL]]]\ncontiMax[lamV_, k_] := contiMaxL[lamV, k, {}]",
+   "languageId": "wolfram",
+   "outputs": [],
+   "metadata": {},
+   "executionSummary": {
+    "timing": {
+     "startTime": 1703685705847,
+     "endTime": 1703685706031
+    },
+    "executionOrder": 297,
+    "success": true
+   }
+  },
+  {
+   "kind": 2,
+   "value": "contiMax[1, 2]",
+   "languageId": "wolfram",
+   "outputs": [
+    {
+     "items": [
+      {
+       "data": "<pre>{-1, 1}\n</pre>",
+       "mime": "x-application/wolfram-language-html"
+      },
+      {
+       "data": "\"{-1, 1}\\n\"",
+       "mime": "text/plain"
+      }
+     ],
+     "id": "73a18802-6666-4609-b5da-48ef2b67745d",
+     "metadata": {
+      "cellLabel": "",
+      "isBoxData": false
+     }
+    },
+    {
+     "items": [
+      {
+       "data": "<pre>{1, -1}\n</pre>",
+       "mime": "x-application/wolfram-language-html"
+      },
+      {
+       "data": "\"{1, -1}\\n\"",
+       "mime": "text/plain"
+      }
+     ],
+     "id": "094affd6-d578-4c9c-b8e4-2b1b1f39ab02",
+     "metadata": {
+      "cellLabel": "",
+      "isBoxData": false
+     }
+    },
+    {
+     "items": [
+      {
+       "data": "<div class=\"wexpr\"><w>∞</w></div>",
+       "mime": "x-application/wolfram-language-html"
+      },
+      {
+       "data": "Infinity",
+       "mime": "text/plain"
+      }
+     ],
+     "id": "60fe02c4-2828-4cd7-bf63-3a346479255f",
+     "metadata": {
+      "cellLabel": "Out[279]= ",
+      "isBoxData": false
+     }
+    }
+   ],
+   "metadata": {},
+   "executionSummary": {
+    "timing": {
+     "startTime": 1703685237518,
+     "endTime": 1703685237767
+    },
+    "executionOrder": 279,
+    "success": true
+   }
+  },
+  {
+   "kind": 2,
+   "value": "contiMax[2, 3]",
+   "languageId": "wolfram",
+   "outputs": [
+    {
+     "items": [
+      {
+       "data": "<pre>{-1, 1, -1}\n</pre>",
+       "mime": "x-application/wolfram-language-html"
+      },
+      {
+       "data": "\"{-1, 1, -1}\\n\"",
+       "mime": "text/plain"
+      }
+     ],
+     "id": "209ab0af-51a6-4c76-b0a5-2d9b3f77ed31",
+     "metadata": {
+      "cellLabel": "",
+      "isBoxData": false
+     }
+    },
+    {
+     "items": [
+      {
+       "data": "<pre>{1, -1, 1}\n</pre>",
+       "mime": "x-application/wolfram-language-html"
+      },
+      {
+       "data": "\"{1, -1, 1}\\n\"",
+       "mime": "text/plain"
+      }
+     ],
+     "id": "99b325b8-440a-4457-8ae5-32f909abb5fb",
+     "metadata": {
+      "cellLabel": "",
+      "isBoxData": false
+     }
+    },
+    {
+     "items": [
+      {
+       "data": "<div class=\"wexpr\"><w>∞</w></div>",
+       "mime": "x-application/wolfram-language-html"
+      },
+      {
+       "data": "Infinity",
+       "mime": "text/plain"
+      }
+     ],
+     "id": "7a4ae0e5-285a-4aba-9c77-74192b6dd1b7",
+     "metadata": {
+      "cellLabel": "Out[280]= ",
+      "isBoxData": false
+     }
+    }
+   ],
+   "metadata": {},
+   "executionSummary": {
+    "timing": {
+     "startTime": 1703685243882,
+     "endTime": 1703685244130
+    },
+    "executionOrder": 280,
+    "success": true
+   }
+  },
+  {
+   "kind": 2,
+   "value": "Table[contiMax[I, k], {k, 1, 5}]",
+   "languageId": "wolfram",
+   "outputs": [
+    {
+     "items": [
+      {
+       "data": "<pre>{-1, -1, 1, 1, -1}\n</pre>",
+       "mime": "x-application/wolfram-language-html"
+      },
+      {
+       "data": "\"{-1, -1, 1, 1, -1}\\n\"",
+       "mime": "text/plain"
+      }
+     ],
+     "id": "4196c789-1e7b-41d9-a219-d79127dd4a74",
+     "metadata": {
+      "cellLabel": "",
+      "isBoxData": false
+     }
+    },
+    {
+     "items": [
+      {
+       "data": "<pre>{-1, 1, 1, -1, -1}\n</pre>",
+       "mime": "x-application/wolfram-language-html"
+      },
+      {
+       "data": "\"{-1, 1, 1, -1, -1}\\n\"",
+       "mime": "text/plain"
+      }
+     ],
+     "id": "44d0bae2-f355-447d-9808-188f3e5bc94d",
+     "metadata": {
+      "cellLabel": "",
+      "isBoxData": false
+     }
+    },
+    {
+     "items": [
+      {
+       "data": "<pre>{1, -1, -1, 1, 1}\n</pre>",
+       "mime": "x-application/wolfram-language-html"
+      },
+      {
+       "data": "\"{1, -1, -1, 1, 1}\\n\"",
+       "mime": "text/plain"
+      }
+     ],
+     "id": "e8195c8b-67df-4c64-8207-1db8b6622fed",
+     "metadata": {
+      "cellLabel": "",
+      "isBoxData": false
+     }
+    },
+    {
+     "items": [
+      {
+       "data": "<pre>{1, 1, -1, -1, 1}\n</pre>",
+       "mime": "x-application/wolfram-language-html"
+      },
+      {
+       "data": "\"{1, 1, -1, -1, 1}\\n\"",
+       "mime": "text/plain"
+      }
+     ],
+     "id": "9cbc9b89-cdea-4abe-a991-2aad19001808",
+     "metadata": {
+      "cellLabel": "",
+      "isBoxData": false
+     }
+    },
+    {
+     "items": [
+      {
+       "data": "<div class=\"wexpr\"><wrow><w></w><wb>{</wb><wrow><w></w><w>1</w><w>,</w><w>1</w><w>,</w><wsqrt><w><w>\\</w></w><w></w><w><w>2</w></w></wsqrt><w>,</w><wsqrt><w><w>\\</w></w><w></w><w><wfrac><w><w>13</w></w><w><w></w><w><w>5</w></w></w></wfrac></w></wsqrt><w>,</w><w>∞</w></wrow><wb>}</wb></wrow></div>",
+       "mime": "x-application/wolfram-language-html"
+      },
+      {
+       "data": "{1, 1, Sqrt[2], Sqrt[13/5], Infinity}",
+       "mime": "text/plain"
+      }
+     ],
+     "id": "1f1df05b-9688-4e76-980f-6bb521f9453b",
+     "metadata": {
+      "cellLabel": "Out[300]= ",
+      "isBoxData": false
+     }
+    }
+   ],
+   "metadata": {},
+   "executionSummary": {
+    "timing": {
+     "startTime": 1703685708307,
+     "endTime": 1703685711457
+    },
+    "executionOrder": 300,
+    "success": true
+   }
+  },
+  {
+   "kind": 2,
+   "value": "Table[contiMax[2 + I, k], {k, 1, 5}]",
+   "languageId": "wolfram",
+   "outputs": [
+    {
+     "items": [
+      {
+       "data": "<div class=\"wexpr\"><wrow><w></w><wb>{</wb><wrow><w></w><wfrac><w><w>1</w></w><w><w></w><w><wsqrt><w><w>\\</w></w><w></w><w><w>5</w></w></wsqrt></w></w></wfrac><w>,</w><wfrac><w><w>1</w></w><w><w></w><w><wsqrt><w><w>\\</w></w><w></w><w><w>2</w></w></wsqrt></w></w></wfrac><w>,</w><wsqrt><w><w>\\</w></w><w></w><w><wfrac><w><w>34</w></w><w><w></w><w><w>65</w></w></w></wfrac></w></wsqrt><w>,</w><wfrac><w><wsqrt><w><w>\\</w></w><w></w><w><w>5</w></w></wsqrt></w><w><w></w><w><w>3</w></w></w></wfrac><w>,</w><wfrac><w><wsqrt><w><w>\\</w></w><w></w><w><wfrac class=\"script\"><w><w>13</w></w><w><w></w><w><w>5</w></w></w></wfrac></w></wsqrt></w><w><w></w><w><w>2</w></w></w></wfrac></wrow><wb>}</wb></wrow></div>",
+       "mime": "x-application/wolfram-language-html"
+      },
+      {
+       "data": "{1/Sqrt[5], 1/Sqrt[2], Sqrt[34/65], Sqrt[5]/3, Sqrt[13/5]/2}",
+       "mime": "text/plain"
+      }
+     ],
+     "id": "1f92aac2-59b9-4900-9a8b-2534e86cd03a",
+     "metadata": {
+      "cellLabel": "Out[316]= ",
+      "isBoxData": false
+     }
+    }
+   ],
+   "metadata": {},
+   "executionSummary": {
+    "timing": {
+     "startTime": 1703686085277,
+     "endTime": 1703686093897
+    },
+    "executionOrder": 316,
+    "success": true
+   }
+  },
+  {
+   "kind": 2,
+   "value": "Table[contiMax[1/2 + 1/2 I, k], {k, 1, 4}]",
+   "languageId": "wolfram",
+   "outputs": [
+    {
+     "items": [
+      {
+       "data": "<pre>{-1, 1, 2, -1}\n</pre>",
+       "mime": "x-application/wolfram-language-html"
+      },
+      {
+       "data": "\"{-1, 1, 2, -1}\\n\"",
+       "mime": "text/plain"
+      }
+     ],
+     "id": "99a7aedb-9d35-4b70-bf7d-423f8c48e71e",
+     "metadata": {
+      "cellLabel": "",
+      "isBoxData": false
+     }
+    },
+    {
+     "items": [
+      {
+       "data": "<pre>{-1, 2, 1, -1}\n</pre>",
+       "mime": "x-application/wolfram-language-html"
+      },
+      {
+       "data": "\"{-1, 2, 1, -1}\\n\"",
+       "mime": "text/plain"
+      }
+     ],
+     "id": "db458397-63e8-45d0-aa6e-fefe00e0ca1f",
+     "metadata": {
+      "cellLabel": "",
+      "isBoxData": false
+     }
+    },
+    {
+     "items": [
+      {
+       "data": "<pre>{1, -2, -1, 1}\n</pre>",
+       "mime": "x-application/wolfram-language-html"
+      },
+      {
+       "data": "\"{1, -2, -1, 1}\\n\"",
+       "mime": "text/plain"
+      }
+     ],
+     "id": "4a8ba520-9023-4bb7-85ab-aa21603a4d5d",
+     "metadata": {
+      "cellLabel": "",
+      "isBoxData": false
+     }
+    },
+    {
+     "items": [
+      {
+       "data": "<pre>{1, -1, -2, 1}\n</pre>",
+       "mime": "x-application/wolfram-language-html"
+      },
+      {
+       "data": "\"{1, -1, -2, 1}\\n\"",
+       "mime": "text/plain"
+      }
+     ],
+     "id": "2c34627a-713d-423e-b9d5-9dc0ed8b4eef",
+     "metadata": {
+      "cellLabel": "",
+      "isBoxData": false
+     }
+    },
+    {
+     "items": [
+      {
+       "data": "<div class=\"wexpr\"><wrow><w></w><wb>{</wb><wrow><w></w><wsqrt><w><w>\\</w></w><w></w><w><w>2</w></w></wsqrt><w>,</w><w>2</w><w>,</w><wsqrt><w><w>\\</w></w><w></w><w><w>10</w></w></wsqrt><w>,</w><w>∞</w></wrow><wb>}</wb></wrow></div>",
+       "mime": "x-application/wolfram-language-html"
+      },
+      {
+       "data": "{Sqrt[2], 2, Sqrt[10], Infinity}",
+       "mime": "text/plain"
+      }
+     ],
+     "id": "fb07e300-d112-4a9f-ae20-11cb76917309",
+     "metadata": {
+      "cellLabel": "Out[290]= ",
+      "isBoxData": false
+     }
+    }
+   ],
+   "metadata": {},
+   "executionSummary": {
+    "timing": {
+     "startTime": 1703685442744,
+     "endTime": 1703685454421
+    },
+    "executionOrder": 290,
+    "success": true
+   }
+  },
+  {
+   "kind": 2,
+   "value": "Table[1.0 * contiMax[1/3 + 1/4 I, k], {k, 1, 3}]",
+   "languageId": "wolfram",
+   "outputs": [
+    {
+     "items": [
+      {
+       "data": "<div class=\"wexpr\"><wrow><w></w><wb>{</wb><wrow><w></w><w>2.4</w><w>,</w><w>4.</w><w>,</w><w>7.81383</w></wrow><wb>}</wb></wrow></div>",
+       "mime": "x-application/wolfram-language-html"
+      },
+      {
+       "data": "{2.4, 4., 7.813833886127858}",
+       "mime": "text/plain"
+      }
+     ],
+     "id": "5fe605a2-8c4d-4436-9cba-8361efe19a99",
+     "metadata": {
+      "cellLabel": "Out[304]= ",
+      "isBoxData": false
+     }
+    }
+   ],
+   "metadata": {},
+   "executionSummary": {
+    "timing": {
+     "startTime": 1703685826680,
+     "endTime": 1703685827220
+    },
+    "executionOrder": 304,
+    "success": true
+   }
+  },
+  {
+   "kind": 2,
+   "value": "Table[1.0 * contiMax[1/12 + 1/16 I, k], {k, 1, 3}]",
+   "languageId": "wolfram",
+   "outputs": [
+    {
+     "items": [
+      {
+       "data": "<div class=\"wexpr\"><wrow><w></w><wb>{</wb><wrow><w></w><w>9.6</w><w>,</w><w>16.</w><w>,</w><w>100.006</w></wrow><wb>}</wb></wrow></div>",
+       "mime": "x-application/wolfram-language-html"
+      },
+      {
+       "data": "{9.6, 16., 100.00601581904961}",
+       "mime": "text/plain"
+      }
+     ],
+     "id": "d6b89947-9ab3-4556-ab1e-7e435f3d9377",
+     "metadata": {
+      "cellLabel": "Out[306]= ",
+      "isBoxData": false
+     }
+    }
+   ],
+   "metadata": {},
+   "executionSummary": {
+    "timing": {
+     "startTime": 1703685868916,
+     "endTime": 1703685874858
+    },
+    "executionOrder": 306,
+    "success": true
+   }
+  },
+  {
+   "kind": 2,
+   "value": "",
+   "languageId": "wolfram",
+   "outputs": [],
+   "metadata": {},
+   "executionSummary": {}
+  }
+ ]
+}
