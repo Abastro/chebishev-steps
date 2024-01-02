@@ -70,7 +70,7 @@
 
 Fix $\lambda \in \bC$, and denote
 \[
-  \ns = (\nsL, n_i, \nsR) = (\nsL', n_{i-1}, n_i, n_{i+1}, \nsR').
+  \ns = (\nsL, n_i, \nsR).
 \]
 sequences of $\bar{\bZ} \setminus \{0\}$.
 We assume length of $\ns$ is no more than the minimal $u$-degree of $\lambda$.
@@ -85,12 +85,12 @@ where $M_k$ falls out from $M_k = M^{()}$.
 
 Recall that for $i \geq 2$,
 \begin{align*}
-  [\ns] & = [\nsL] \cdot \frac{n_i + [\overleftarrow{\nsL}'] + [\nsR]}{n_i + [\overleftarrow{\nsL}] + [\nsR]} \\
-  & = [\nsL] \left( 1 - \frac{[\overleftarrow{\nsL}] - [\overleftarrow{\nsL}']}{n_i + [\nsL] + [\nsR]} \right).
+  [\ns] & = [\nsL] \cdot \frac{n_i + [n_{i-1}, \cdots, n_2] + [\nsR]}{n_i + [\overleftarrow{\nsL}] + [\nsR]} \\
+  & = [\nsL] \left( 1 - \frac{[n_{i-1}, \cdots, n_1] - [n_{i-1}, \cdots, n_2]}{n_i + [n_{i-1}, \cdots, n_1] + [\nsR]} \right).
 \end{align*}
 
-Denote the singular point as $N_i = - ([\overleftarrow{\nsL}] + [\nsR])$,
-and define \textit{discriminant} $D := [\overleftarrow{\nsL}] - [\overleftarrow{\nsL}']$ to write
+Denote the singular point as $x_\infty = - ([\overleftarrow{\nsL}] + [\nsR])$,
+and define \textit{discriminant} $D := [n_{i-1}, \cdots, n_1] - [n_{i-1}, \cdots, n_2]$ to write
 \[
   [\ns] = [\nsL] \left( 1 - \frac{D}{n_i - N_i} \right).
 \]
@@ -100,7 +100,7 @@ For fixed $\nsL$,
 \]
 
 Meanwhile, if $i = 1$, $[\ns] = \frac{1 / \lambda}{n_1 + [\nsR]}$.
-Hence, we may take $N_1 = - [\nsR]$ and $D = \infty$ so that
+Hence, we may take $x_{\infty} = - [\nsR]$ and $D = \infty$ so that
 \[
   M^{()} = \frac{1}{\abs{\lambda}} \max_{n_1, \nsR} \abs{\frac{1}{\infty} - \frac{1}{n_1 - N_1}}.
 \]
