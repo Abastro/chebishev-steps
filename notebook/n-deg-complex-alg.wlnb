@@ -24,9 +24,9 @@
        "mime": "text/plain"
       }
      ],
-     "id": "14ff633a-57bf-451d-9a32-416bbd3a93a3",
+     "id": "155126de-2396-4883-8514-9a77b601817c",
      "metadata": {
-      "cellLabel": "Out[24]= ",
+      "cellLabel": "Out[16]= ",
       "isBoxData": false
      }
     }
@@ -34,10 +34,10 @@
    "metadata": {},
    "executionSummary": {
     "timing": {
-     "startTime": 1703675651016,
-     "endTime": 1703675651321
+     "startTime": 1703747317225,
+     "endTime": 1703747317531
     },
-    "executionOrder": 21,
+    "executionOrder": 13,
     "success": true
    }
   },
@@ -55,14 +55,7 @@
    "languageId": "wolfram",
    "outputs": [],
    "metadata": {},
-   "executionSummary": {
-    "timing": {
-     "startTime": 1703676221181,
-     "endTime": 1703676221246
-    },
-    "executionOrder": 31,
-    "success": true
-   }
+   "executionSummary": {}
   },
   {
    "kind": 2,
@@ -80,9 +73,9 @@
        "mime": "text/plain"
       }
      ],
-     "id": "7e5e3760-0dee-40f4-a778-07c1b551e077",
+     "id": "5a53657c-fb2d-4511-a5ca-fad7c458d3f9",
      "metadata": {
-      "cellLabel": "Out[118]= ",
+      "cellLabel": "Out[19]= ",
       "isBoxData": false
      }
     },
@@ -97,9 +90,9 @@
        "mime": "text/plain"
       }
      ],
-     "id": "1b1be729-34af-4a65-9bc7-da4e528ed290",
+     "id": "b575c8c8-ae45-42e2-be3d-83f82c13abb0",
      "metadata": {
-      "cellLabel": "Out[119]= ",
+      "cellLabel": "Out[20]= ",
       "isBoxData": false
      }
     },
@@ -114,9 +107,9 @@
        "mime": "text/plain"
       }
      ],
-     "id": "a417cdee-22de-474a-888f-5f28ac81c7a1",
+     "id": "f8b761e9-a5fc-4a1b-ae3e-6533140cf39c",
      "metadata": {
-      "cellLabel": "Out[120]= ",
+      "cellLabel": "Out[21]= ",
       "isBoxData": false
      }
     }
@@ -124,10 +117,10 @@
    "metadata": {},
    "executionSummary": {
     "timing": {
-     "startTime": 1703680320175,
-     "endTime": 1703680320604
+     "startTime": 1703747320327,
+     "endTime": 1703747320760
     },
-    "executionOrder": 116,
+    "executionOrder": 17,
     "success": true
    }
   },
@@ -147,9 +140,9 @@
        "mime": "text/plain"
       }
      ],
-     "id": "9ab85ec2-13a7-437e-8666-8b77b4acde6c",
+     "id": "36bbc760-2209-49b6-aa02-5fde0b07171d",
      "metadata": {
-      "cellLabel": "Out[58]= ",
+      "cellLabel": "Out[126]= ",
       "isBoxData": false
      }
     }
@@ -157,10 +150,10 @@
    "metadata": {},
    "executionSummary": {
     "timing": {
-     "startTime": 1703676927759,
-     "endTime": 1703676927946
+     "startTime": 1703748412291,
+     "endTime": 1703748412477
     },
-    "executionOrder": 57,
+    "executionOrder": 125,
     "success": true
    }
   },
@@ -180,7 +173,7 @@
        "mime": "text/plain"
       }
      ],
-     "id": "29b9ac06-6ee6-4e8f-a0c8-e985fc7139ec",
+     "id": "938609f6-7a68-45f0-b8bb-cb21be59066a",
      "metadata": {
       "cellLabel": "",
       "isBoxData": false
@@ -197,9 +190,9 @@
        "mime": "text/plain"
       }
      ],
-     "id": "64efc4e8-6324-4b82-80bb-5d732f79f719",
+     "id": "5f2d5bf3-3fdd-4143-a59b-bcba4303ec10",
      "metadata": {
-      "cellLabel": "Out[264]= ",
+      "cellLabel": "Out[23]= ",
       "isBoxData": false
      }
     },
@@ -214,9 +207,9 @@
        "mime": "text/plain"
       }
      ],
-     "id": "3907ab98-35e1-4cad-bca8-a10e65886e96",
+     "id": "c6f9cf92-3a76-45fb-95bc-ed89a2064d35",
      "metadata": {
-      "cellLabel": "Out[265]= ",
+      "cellLabel": "Out[24]= ",
       "isBoxData": false
      }
     }
@@ -224,27 +217,35 @@
    "metadata": {},
    "executionSummary": {
     "timing": {
-     "startTime": 1703685193468,
-     "endTime": 1703685193748
+     "startTime": 1703747325839,
+     "endTime": 1703747326117
     },
-    "executionOrder": 263,
+    "executionOrder": 22,
     "success": true
    }
   },
   {
    "kind": 2,
-   "value": "contiMaxLFinite[lamV_, k_, nL_] := Module[{i, dc, pNiRange, reRange, imRange, xmaxRange, niMin, niMax},\n  i := Length[nL] + 1;\n  dc := discr[nL] /. {lam :> lamV};\n  pNiRange := CenteredInterval[- cFrac[Reverse[nL]] /. {lam :> lamV}, (1 + I) * contiMax[lamV, k-i]];\n  reRange := Information[Re[pNiRange], \"Bounds\"];\n  imRange := Information[Im[pNiRange], \"Bounds\"];\n  xmaxRange := If[\n    dc === ComplexInfinity || Re[dc] == 0,\n    reRange,\n    With[{delMax := Max[(1.0 * delta[dc, #] &) /@ MinMax[2 * imRange]]},\n      reRange - Interval[{0, delMax}] / (2 * Re[dc])]\n    ];\n  niMin := Floor[Min[xmaxRange]] /. {0 :> (-1)};\n  niMax := Ceiling[Max[xmaxRange]] /. {0 :> 1};\n  Max[Table[contiMaxL[lamV, k, Append[nL, ni]], {ni, DeleteCases[Range[niMin, niMax], 0]}]]\n]\ncontiMaxL[lamV_, k_, nL_] := Max[\n  Abs[printIfInfty[nL, Quiet[cFrac[nL] /. {lam :> lamV}, Power::infy]]],\n  If[Length[nL] == k, 0, contiMaxLFinite[lamV, k, nL]]]\ncontiMax[lamV_, k_] := contiMaxL[lamV, k, {}]",
+   "value": "contiMaxLFinite[lamV_, k_, nL_] := Module[{i, dc, pNiRange, reRange, imRange, xmaxRange, niMin, niMax},\n  i := Length[nL] + 1;\n  dc := discr[nL] /. {lam :> lamV};\n  (* Range of N_i *)\n  pNiRange := CenteredInterval[- cFrac[Reverse[nL]] /. {lam :> lamV}, (1 + I) * contiMax[lamV, k-i]];\n  reRange := Information[Re[pNiRange], \"Bounds\"]; (* NOTE: This gives a pair of number *)\n  imRange := Information[Im[pNiRange], \"Bounds\"];\n  (* Range of x_max *)\n  xmaxRange := If[\n    dc === ComplexInfinity || Re[dc] == 0,\n    reRange,\n    With[{\n      delBound := (delta[dc, #] &) /@ (2 * imRange)\n    }, reRange - Interval[{0, Max[delBound]}] / (2 * Re[dc])\n    ]];\n  niMin := Floor[Min[xmaxRange]] /. {0 :> (-1)};\n  niMax := Ceiling[Max[xmaxRange]] /. {0 :> 1};\n  Max[Table[contiMaxL[lamV, k, Append[nL, ni]], {ni, DeleteCases[Range[niMin, niMax], 0]}]]\n]\ncontiMaxL[lamV_, k_, nL_] := Max[\n  Abs[printIfInfty[nL, Quiet[cFrac[nL] /. {lam :> lamV}, Power::infy]]],\n  If[Length[nL] == k, 0, contiMaxLFinite[lamV, k, nL]]]\ncontiMax[lamV_, k_] := contiMaxL[lamV, k, {}]",
    "languageId": "wolfram",
    "outputs": [],
    "metadata": {},
    "executionSummary": {
     "timing": {
-     "startTime": 1703685705847,
-     "endTime": 1703685706031
+     "startTime": 1703748410317,
+     "endTime": 1703748410498
     },
-    "executionOrder": 297,
+    "executionOrder": 122,
     "success": true
    }
+  },
+  {
+   "kind": 1,
+   "value": "# Results",
+   "languageId": "markdown",
+   "outputs": [],
+   "metadata": {},
+   "executionSummary": {}
   },
   {
    "kind": 2,
@@ -304,14 +305,7 @@
     }
    ],
    "metadata": {},
-   "executionSummary": {
-    "timing": {
-     "startTime": 1703685237518,
-     "endTime": 1703685237767
-    },
-    "executionOrder": 279,
-    "success": true
-   }
+   "executionSummary": {}
   },
   {
    "kind": 2,
@@ -329,7 +323,7 @@
        "mime": "text/plain"
       }
      ],
-     "id": "209ab0af-51a6-4c76-b0a5-2d9b3f77ed31",
+     "id": "90a54dda-fc17-4b2c-8fca-2fc2255274d3",
      "metadata": {
       "cellLabel": "",
       "isBoxData": false
@@ -346,7 +340,7 @@
        "mime": "text/plain"
       }
      ],
-     "id": "99b325b8-440a-4457-8ae5-32f909abb5fb",
+     "id": "4950ea1a-ce75-4485-90a0-bffca632b802",
      "metadata": {
       "cellLabel": "",
       "isBoxData": false
@@ -363,22 +357,15 @@
        "mime": "text/plain"
       }
      ],
-     "id": "7a4ae0e5-285a-4aba-9c77-74192b6dd1b7",
+     "id": "5b36d5dd-49fb-478a-890e-a8932f7ababd",
      "metadata": {
-      "cellLabel": "Out[280]= ",
+      "cellLabel": "Out[332]= ",
       "isBoxData": false
      }
     }
    ],
    "metadata": {},
-   "executionSummary": {
-    "timing": {
-     "startTime": 1703685243882,
-     "endTime": 1703685244130
-    },
-    "executionOrder": 280,
-    "success": true
-   }
+   "executionSummary": {}
   },
   {
    "kind": 2,
@@ -396,7 +383,7 @@
        "mime": "text/plain"
       }
      ],
-     "id": "4196c789-1e7b-41d9-a219-d79127dd4a74",
+     "id": "bff58466-6a9b-489e-94e0-f97c8c2fb69a",
      "metadata": {
       "cellLabel": "",
       "isBoxData": false
@@ -413,7 +400,7 @@
        "mime": "text/plain"
       }
      ],
-     "id": "44d0bae2-f355-447d-9808-188f3e5bc94d",
+     "id": "2eb6b0cc-ad2f-40bc-906d-813cef9042eb",
      "metadata": {
       "cellLabel": "",
       "isBoxData": false
@@ -430,7 +417,7 @@
        "mime": "text/plain"
       }
      ],
-     "id": "e8195c8b-67df-4c64-8207-1db8b6622fed",
+     "id": "e45dbce7-d8de-4d3c-9192-88a65990b4e8",
      "metadata": {
       "cellLabel": "",
       "isBoxData": false
@@ -447,7 +434,7 @@
        "mime": "text/plain"
       }
      ],
-     "id": "9cbc9b89-cdea-4abe-a991-2aad19001808",
+     "id": "5fd07e8e-f164-431f-92b6-66f15215f445",
      "metadata": {
       "cellLabel": "",
       "isBoxData": false
@@ -464,9 +451,9 @@
        "mime": "text/plain"
       }
      ],
-     "id": "1f1df05b-9688-4e76-980f-6bb521f9453b",
+     "id": "b6187262-3cd4-4aec-a714-ab9ddd67b4f8",
      "metadata": {
-      "cellLabel": "Out[300]= ",
+      "cellLabel": "Out[152]= ",
       "isBoxData": false
      }
     }
@@ -474,10 +461,10 @@
    "metadata": {},
    "executionSummary": {
     "timing": {
-     "startTime": 1703685708307,
-     "endTime": 1703685711457
+     "startTime": 1703749261965,
+     "endTime": 1703749265009
     },
-    "executionOrder": 300,
+    "executionOrder": 152,
     "success": true
    }
   },
@@ -497,9 +484,9 @@
        "mime": "text/plain"
       }
      ],
-     "id": "1f92aac2-59b9-4900-9a8b-2534e86cd03a",
+     "id": "3c5ec276-99d9-42c4-a143-e90ea3fd77d5",
      "metadata": {
-      "cellLabel": "Out[316]= ",
+      "cellLabel": "Out[127]= ",
       "isBoxData": false
      }
     }
@@ -507,10 +494,10 @@
    "metadata": {},
    "executionSummary": {
     "timing": {
-     "startTime": 1703686085277,
-     "endTime": 1703686093897
+     "startTime": 1703748416584,
+     "endTime": 1703748425205
     },
-    "executionOrder": 316,
+    "executionOrder": 127,
     "success": true
    }
   },
@@ -606,14 +593,7 @@
     }
    ],
    "metadata": {},
-   "executionSummary": {
-    "timing": {
-     "startTime": 1703685442744,
-     "endTime": 1703685454421
-    },
-    "executionOrder": 290,
-    "success": true
-   }
+   "executionSummary": {}
   },
   {
    "kind": 2,
@@ -639,14 +619,7 @@
     }
    ],
    "metadata": {},
-   "executionSummary": {
-    "timing": {
-     "startTime": 1703685826680,
-     "endTime": 1703685827220
-    },
-    "executionOrder": 304,
-    "success": true
-   }
+   "executionSummary": {}
   },
   {
    "kind": 2,
@@ -664,9 +637,92 @@
        "mime": "text/plain"
       }
      ],
-     "id": "d6b89947-9ab3-4556-ab1e-7e435f3d9377",
+     "id": "f9de087e-5c5d-4286-a023-fe2d790123d0",
      "metadata": {
-      "cellLabel": "Out[306]= ",
+      "cellLabel": "Out[338]= ",
+      "isBoxData": false
+     }
+    }
+   ],
+   "metadata": {},
+   "executionSummary": {}
+  },
+  {
+   "kind": 1,
+   "value": "# Another Approach",
+   "languageId": "markdown",
+   "outputs": [],
+   "metadata": {},
+   "executionSummary": {}
+  },
+  {
+   "kind": 2,
+   "value": "DualMax[duals_] := Max /@ Transpose[duals]\n\n(* Computes max of real part and imaginary part individually. *)\ncomplexMaxLFinite[lamV_, k_, nL_] := Module[{i, dc, cnL, slopeZ, slopeFactor, pNiRange, reRange, imRange, xRange, niMin, niMax},\n  i := Length[nL] + 1;\n  dc := discr[nL] /. {lam :> lamV};\n  cnL := cFrac[nL] /. {lam :> lamV};\n  slopeZ := If[i == 1, I / lamV, (cnL * dc) / Abs[cnL * dc]];\n  slopeFactor := Min[Abs[Re[slopeZ]], Abs[Im[slopeZ]]];\n  pNiRange := CenteredInterval[- cFrac[Reverse[nL]] /. {lam :> lamV}, Complex @@ complexMax[lamV, k-i]];\n  reRange := Interval[Information[Re[pNiRange], \"Bounds\"]];\n  imMax := Max[Information[Im[pNiRange], \"Bounds\"]];\n  xRange := If[slopeFactor == 0, reRange + Interval[{-imMax, imMax}], reRange + Interval[{-imMax, imMax}] / slopeFactor];\n  niMin := Floor[Min[xRange]] /. {0 :> (-1)};\n  niMax := Ceiling[Max[xRange]] /. {0 :> 1};\n  (* Print[{k, nL, slopeZ, slopeFactor, pNiRange, xRange, cnL}]; *)\n  DualMax[Table[complexMaxL[lamV, k, Append[nL, ni]], {ni, DeleteCases[Range[niMin, niMax], 0]}]]\n]\ncomplexMaxL[lamV_, k_, nL_] := DualMax[{\n  Abs[ReIm[printIfInfty[nL, Quiet[cFrac[nL] /. {lam :> lamV}, Power::infy]]]],\n  If[Length[nL] == k, {0, 0}, complexMaxLFinite[lamV, k, nL]]}]\ncomplexMax[lamV_, k_] := complexMaxL[lamV, k, {}]",
+   "languageId": "wolfram",
+   "outputs": [],
+   "metadata": {},
+   "executionSummary": {
+    "timing": {
+     "startTime": 1703749864423,
+     "endTime": 1703749864669
+    },
+    "executionOrder": 168,
+    "success": true
+   }
+  },
+  {
+   "kind": 2,
+   "value": "Table[complexMax[1, k], {k, 1, 2}]",
+   "languageId": "wolfram",
+   "outputs": [
+    {
+     "items": [
+      {
+       "data": "<pre>{-1, 1}\n</pre>",
+       "mime": "x-application/wolfram-language-html"
+      },
+      {
+       "data": "\"{-1, 1}\\n\"",
+       "mime": "text/plain"
+      }
+     ],
+     "id": "e68bdcda-a022-4578-ae66-f2fb08293bab",
+     "metadata": {
+      "cellLabel": "",
+      "isBoxData": false
+     }
+    },
+    {
+     "items": [
+      {
+       "data": "<pre>{1, -1}\n</pre>",
+       "mime": "x-application/wolfram-language-html"
+      },
+      {
+       "data": "\"{1, -1}\\n\"",
+       "mime": "text/plain"
+      }
+     ],
+     "id": "aa310444-b6c8-4494-b2c0-1da88abb165d",
+     "metadata": {
+      "cellLabel": "",
+      "isBoxData": false
+     }
+    },
+    {
+     "items": [
+      {
+       "data": "<div class=\"wexpr\"><wrow><w></w><wb>{</wb><wrow><w></w><wrow><w></w><wb>{</wb><wrow><w></w><w>1</w><w>,</w><w>0</w></wrow><wb>}</wb></wrow><w>,</w><wrow><w></w><wb>{</wb><wrow><w></w><w>Indeterminate</w><w>,</w><w>Indeterminate</w></wrow><wb>}</wb></wrow></wrow><wb>}</wb></wrow></div>",
+       "mime": "x-application/wolfram-language-html"
+      },
+      {
+       "data": "{{1, 0}, {Indeterminate, Indeterminate}}",
+       "mime": "text/plain"
+      }
+     ],
+     "id": "8bc2bf36-56f5-41d1-aa63-1d2d69dc7b99",
+     "metadata": {
+      "cellLabel": "Out[172]= ",
       "isBoxData": false
      }
     }
@@ -674,10 +730,312 @@
    "metadata": {},
    "executionSummary": {
     "timing": {
-     "startTime": 1703685868916,
-     "endTime": 1703685874858
+     "startTime": 1703749866619,
+     "endTime": 1703749866870
     },
-    "executionOrder": 306,
+    "executionOrder": 172,
+    "success": true
+   }
+  },
+  {
+   "kind": 2,
+   "value": "Table[complexMax[2, k], {k, 1, 3}]",
+   "languageId": "wolfram",
+   "outputs": [
+    {
+     "items": [
+      {
+       "data": "<pre>{-1, 1, -1}\n</pre>",
+       "mime": "x-application/wolfram-language-html"
+      },
+      {
+       "data": "\"{-1, 1, -1}\\n\"",
+       "mime": "text/plain"
+      }
+     ],
+     "id": "d368e42f-2c1b-450e-941e-b188b9a77d1e",
+     "metadata": {
+      "cellLabel": "",
+      "isBoxData": false
+     }
+    },
+    {
+     "items": [
+      {
+       "data": "<pre>{1, -1, 1}\n</pre>",
+       "mime": "x-application/wolfram-language-html"
+      },
+      {
+       "data": "\"{1, -1, 1}\\n\"",
+       "mime": "text/plain"
+      }
+     ],
+     "id": "a064b8ad-21cd-40b1-bea4-26e2243ddfb2",
+     "metadata": {
+      "cellLabel": "",
+      "isBoxData": false
+     }
+    },
+    {
+     "items": [
+      {
+       "data": "<div class=\"wexpr\"><wrow><w></w><wb>{</wb><wrow><w></w><wrow><w></w><wb>{</wb><wrow><w></w><wfrac><w><w>1</w></w><w><w></w><w><w>2</w></w></w></wfrac><w>,</w><w>0</w></wrow><wb>}</wb></wrow><w>,</w><wrow><w></w><wb>{</wb><wrow><w></w><w>1</w><w>,</w><w>0</w></wrow><wb>}</wb></wrow><w>,</w><wrow><w></w><wb>{</wb><wrow><w></w><w>Indeterminate</w><w>,</w><w>Indeterminate</w></wrow><wb>}</wb></wrow></wrow><wb>}</wb></wrow></div>",
+       "mime": "x-application/wolfram-language-html"
+      },
+      {
+       "data": "{{1/2, 0}, {1, 0}, {Indeterminate, Indeterminate}}",
+       "mime": "text/plain"
+      }
+     ],
+     "id": "ad5ff005-0a4b-440b-8935-859dc2d0dff5",
+     "metadata": {
+      "cellLabel": "Out[173]= ",
+      "isBoxData": false
+     }
+    }
+   ],
+   "metadata": {},
+   "executionSummary": {
+    "timing": {
+     "startTime": 1703749867938,
+     "endTime": 1703749868192
+    },
+    "executionOrder": 173,
+    "success": true
+   }
+  },
+  {
+   "kind": 2,
+   "value": "Table[complexMax[I, k], {k, 1, 5}]",
+   "languageId": "wolfram",
+   "outputs": [
+    {
+     "items": [
+      {
+       "data": "<pre>{-1, -1, 1, 1, -1}\n</pre>",
+       "mime": "x-application/wolfram-language-html"
+      },
+      {
+       "data": "\"{-1, -1, 1, 1, -1}\\n\"",
+       "mime": "text/plain"
+      }
+     ],
+     "id": "5e860e01-ea66-4f5f-b4c2-fe8c2114058b",
+     "metadata": {
+      "cellLabel": "",
+      "isBoxData": false
+     }
+    },
+    {
+     "items": [
+      {
+       "data": "<pre>{-1, 1, 1, -1, -1}\n</pre>",
+       "mime": "x-application/wolfram-language-html"
+      },
+      {
+       "data": "\"{-1, 1, 1, -1, -1}\\n\"",
+       "mime": "text/plain"
+      }
+     ],
+     "id": "58545c97-f571-4849-a3ee-47fcab9a8600",
+     "metadata": {
+      "cellLabel": "",
+      "isBoxData": false
+     }
+    },
+    {
+     "items": [
+      {
+       "data": "<pre>{1, -1, -1, 1, 1}\n</pre>",
+       "mime": "x-application/wolfram-language-html"
+      },
+      {
+       "data": "\"{1, -1, -1, 1, 1}\\n\"",
+       "mime": "text/plain"
+      }
+     ],
+     "id": "c1905942-4705-48ee-a749-04545d51c5f0",
+     "metadata": {
+      "cellLabel": "",
+      "isBoxData": false
+     }
+    },
+    {
+     "items": [
+      {
+       "data": "<pre>{1, 1, -1, -1, 1}\n</pre>",
+       "mime": "x-application/wolfram-language-html"
+      },
+      {
+       "data": "\"{1, 1, -1, -1, 1}\\n\"",
+       "mime": "text/plain"
+      }
+     ],
+     "id": "8af31b3a-89ea-4e2e-98f7-bd7eceeefa5c",
+     "metadata": {
+      "cellLabel": "",
+      "isBoxData": false
+     }
+    },
+    {
+     "items": [
+      {
+       "data": "<div class=\"wexpr\"><wrow><w></w><wb>{</wb><wrow><w></w><wrow><w></w><wb>{</wb><wrow><w></w><w>0</w><w>,</w><w>1</w></wrow><wb>}</wb></wrow><w>,</w><wrow><w></w><wb>{</wb><wrow><w></w><wfrac><w><w>1</w></w><w><w></w><w><w>2</w></w></w></wfrac><w>,</w><w>1</w></wrow><wb>}</wb></wrow><w>,</w><wrow><w></w><wb>{</wb><wrow><w></w><w>1</w><w>,</w><w>1</w></wrow><wb>}</wb></wrow><w>,</w><wrow><w></w><wb>{</wb><wrow><w></w><wfrac><w><w>3</w></w><w><w></w><w><w>2</w></w></w></wfrac><w>,</w><w>1</w></wrow><wb>}</wb></wrow><w>,</w><wrow><w></w><wb>{</wb><wrow><w></w><w>Indeterminate</w><w>,</w><w>Indeterminate</w></wrow><wb>}</wb></wrow></wrow><wb>}</wb></wrow></div>",
+       "mime": "x-application/wolfram-language-html"
+      },
+      {
+       "data": "{{0, 1}, {1/2, 1}, {1, 1}, {3/2, 1}, {Indeterminate, Indeterminate}}",
+       "mime": "text/plain"
+      }
+     ],
+     "id": "5abeca94-f382-4e3b-867a-8bdf4e95c98d",
+     "metadata": {
+      "cellLabel": "Out[174]= ",
+      "isBoxData": false
+     }
+    }
+   ],
+   "metadata": {},
+   "executionSummary": {
+    "timing": {
+     "startTime": 1703749869916,
+     "endTime": 1703749871085
+    },
+    "executionOrder": 174,
+    "success": true
+   }
+  },
+  {
+   "kind": 2,
+   "value": "Table[complexMax[2 + I, k], {k, 1, 5}]",
+   "languageId": "wolfram",
+   "outputs": [
+    {
+     "items": [
+      {
+       "data": "<div class=\"wexpr\"><wrow><w></w><wb>{</wb><wrow><w></w><wrow><w></w><wb>{</wb><wrow><w></w><wfrac><w><w>2</w></w><w><w></w><w><w>5</w></w></w></wfrac><w>,</w><wfrac><w><w>1</w></w><w><w></w><w><w>5</w></w></w></wfrac></wrow><wb>}</wb></wrow><w>,</w><wrow><w></w><wb>{</wb><wrow><w></w><wfrac><w><w>1</w></w><w><w></w><w><w>2</w></w></w></wfrac><w>,</w><wfrac><w><w>1</w></w><w><w></w><w><w>2</w></w></w></wfrac></wrow><wb>}</wb></wrow><w>,</w><wrow><w></w><wb>{</wb><wrow><w></w><wfrac><w><w>13</w></w><w><w></w><w><w>25</w></w></w></wfrac><w>,</w><wfrac><w><w>3</w></w><w><w></w><w><w>5</w></w></w></wfrac></wrow><wb>}</wb></wrow><w>,</w><wrow><w></w><wb>{</wb><wrow><w></w><wfrac><w><w>7</w></w><w><w></w><w><w>13</w></w></w></wfrac><w>,</w><wfrac><w><w>2</w></w><w><w></w><w><w>3</w></w></w></wfrac></wrow><wb>}</wb></wrow><w>,</w><wrow><w></w><wb>{</wb><wrow><w></w><wfrac><w><w>3</w></w><w><w></w><w><w>5</w></w></w></wfrac><w>,</w><wfrac><w><w>7</w></w><w><w></w><w><w>10</w></w></w></wfrac></wrow><wb>}</wb></wrow></wrow><wb>}</wb></wrow></div>",
+       "mime": "x-application/wolfram-language-html"
+      },
+      {
+       "data": "{{2/5, 1/5}, {1/2, 1/2}, {13/25, 3/5}, {7/13, 2/3}, {3/5, 7/10}}",
+       "mime": "text/plain"
+      }
+     ],
+     "id": "8362f878-4412-4bb4-aa0e-93bcb881cdad",
+     "metadata": {
+      "cellLabel": "Out[175]= ",
+      "isBoxData": false
+     }
+    }
+   ],
+   "metadata": {},
+   "executionSummary": {
+    "timing": {
+     "startTime": 1703749871876,
+     "endTime": 1703749872784
+    },
+    "executionOrder": 175,
+    "success": true
+   }
+  },
+  {
+   "kind": 2,
+   "value": "Table[complexMax[1/2 + 1/2 I, k], {k, 1, 4}]",
+   "languageId": "wolfram",
+   "outputs": [
+    {
+     "items": [
+      {
+       "data": "<pre>{-1, 1, 2, -1}\n</pre>",
+       "mime": "x-application/wolfram-language-html"
+      },
+      {
+       "data": "\"{-1, 1, 2, -1}\\n\"",
+       "mime": "text/plain"
+      }
+     ],
+     "id": "6d0dc154-f127-4126-a8d7-af10ec540bbc",
+     "metadata": {
+      "cellLabel": "",
+      "isBoxData": false
+     }
+    },
+    {
+     "items": [
+      {
+       "data": "<pre>{-1, 2, 1, -1}\n</pre>",
+       "mime": "x-application/wolfram-language-html"
+      },
+      {
+       "data": "\"{-1, 2, 1, -1}\\n\"",
+       "mime": "text/plain"
+      }
+     ],
+     "id": "bacba883-0b14-4d7f-983b-65ef0c32b294",
+     "metadata": {
+      "cellLabel": "",
+      "isBoxData": false
+     }
+    },
+    {
+     "items": [
+      {
+       "data": "<pre>{1, -2, -1, 1}\n</pre>",
+       "mime": "x-application/wolfram-language-html"
+      },
+      {
+       "data": "\"{1, -2, -1, 1}\\n\"",
+       "mime": "text/plain"
+      }
+     ],
+     "id": "a2687670-aa44-4021-a785-1447e048d431",
+     "metadata": {
+      "cellLabel": "",
+      "isBoxData": false
+     }
+    },
+    {
+     "items": [
+      {
+       "data": "<pre>{1, -1, -2, 1}\n</pre>",
+       "mime": "x-application/wolfram-language-html"
+      },
+      {
+       "data": "\"{1, -1, -2, 1}\\n\"",
+       "mime": "text/plain"
+      }
+     ],
+     "id": "515c3dcc-3303-4d65-9616-dafad66c5645",
+     "metadata": {
+      "cellLabel": "",
+      "isBoxData": false
+     }
+    },
+    {
+     "items": [
+      {
+       "data": "<div class=\"wexpr\"><wrow><w></w><wb>{</wb><wrow><w></w><wrow><w></w><wb>{</wb><wrow><w></w><w>1</w><w>,</w><w>1</w></wrow><wb>}</wb></wrow><w>,</w><wrow><w></w><wb>{</wb><wrow><w></w><w>1</w><w>,</w><w>2</w></wrow><wb>}</wb></wrow><w>,</w><wrow><w></w><wb>{</wb><wrow><w></w><wfrac><w><w>7</w></w><w><w></w><w><w>5</w></w></w></wfrac><w>,</w><w>3</w></wrow><wb>}</wb></wrow><w>,</w><wrow><w></w><wb>{</wb><wrow><w></w><w>Indeterminate</w><w>,</w><w>Indeterminate</w></wrow><wb>}</wb></wrow></wrow><wb>}</wb></wrow></div>",
+       "mime": "x-application/wolfram-language-html"
+      },
+      {
+       "data": "{{1, 1}, {1, 2}, {7/5, 3}, {Indeterminate, Indeterminate}}",
+       "mime": "text/plain"
+      }
+     ],
+     "id": "c063d4b7-1b71-41dc-ab00-b646f8123274",
+     "metadata": {
+      "cellLabel": "Out[176]= ",
+      "isBoxData": false
+     }
+    }
+   ],
+   "metadata": {},
+   "executionSummary": {
+    "timing": {
+     "startTime": 1703749876847,
+     "endTime": 1703749877306
+    },
+    "executionOrder": 176,
     "success": true
    }
   },
