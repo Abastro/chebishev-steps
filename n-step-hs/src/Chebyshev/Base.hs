@@ -199,12 +199,17 @@ selectFromBounds ::
   Int ->
   Stream (Of (IntFnInd v)) m ()
 selectFromBounds getBnds v_L len i = effect $ do
-  selection <- rangeNonzeroStream <$> getBnds v_L len i
-  pure (Stream.map v_L.next selection)
+  Stream.map v_L.next . rangeNonzeroStream <$> getBnds v_L len i
+
+-- >>> Stream.toList_ $ rangeNonzeroStream (Range (-3) 6)
+-- [1,-1,2,-2,3,-3,4,5,6]
+
+-- >>> Stream.toList_ $ rangeNonzeroStream (Range 3 6)
+-- [3,4,5,6]
 
 rangeNonzeroStream :: (Monad m, Integral a) => Range a -> Stream (Of a) m ()
 rangeNonzeroStream (Range minBnd maxBnd) =
-  flip Stream.for Stream.each $ zipsWith' (\f (a :> x) (b :> y) -> [a, b] :> f x y) positives negatives
+  void $ Stream.mergeOn abs positives negatives
  where
-  positives = Stream.takeWhile (<= maxBnd) $ Stream.enumFromThen (max 1 minBnd) 1
-  negatives = Stream.takeWhile (>= minBnd) $ Stream.enumFromThen (min (-1) maxBnd) (-1)
+  positives = Stream.takeWhile (<= maxBnd) $ Stream.iterate succ (max 1 minBnd)
+  negatives = Stream.takeWhile (>= minBnd) $ Stream.iterate pred (min (-1) maxBnd)
