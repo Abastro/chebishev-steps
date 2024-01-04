@@ -7,7 +7,7 @@ module Chebyshev.Fraction (
 
 import Chebyshev.Base
 import Chebyshev.Fraction.Base
-import Control.Monad
+import Control.Category ((>>>))
 import Control.Monad.ST
 import Data.MemoTrie
 import Data.STRef
@@ -15,8 +15,8 @@ import Data.Semigroup (Arg (..))
 import Data.Vector qualified as V
 import Inductive
 import Range
-import Streamly.Data.Fold qualified as Fold
-import Streamly.Data.Stream qualified as Stream
+import Streaming
+import Streaming.Prelude qualified as Stream
 import Util
 
 -- | Maximum of continued fraction given u^2.
@@ -57,9 +57,10 @@ continuedFracSearch breadth u2 fracMax maxRef =
     { fnInduct = inductive $ continuedFracInd u2,
       selectNext = selectFromBounds getBounds,
       summarize =
-        Fold.lmap (\g_k -> Arg (abs g_k.value) (V.fromList $ inputs g_k))
-          . Fold.lmapM updateAndGetMax
-          $ (void . Fold.find $ \(Arg curMax _) -> curMax == Infinity)
+        Stream.map (\g_k -> Arg (abs g_k.value) (V.fromList $ inputs g_k))
+          >>> Stream.mapM updateAndGetMax
+          >>> Stream.takeWhile (\v -> argValue v /= Infinity)
+          >>> Stream.effects
     }
  where
   -- len = k here
@@ -95,5 +96,5 @@ continuedFracSearch breadth u2 fracMax maxRef =
 -- 7: 17/6, 23/6
 -- 8: 23/8, 31/8
 
-chebyZero :: (Monad m) => Breadth -> Rational -> Stream.Stream m (Either Int (V.Vector Integer))
+chebyZero :: (Monad m) => Breadth -> Rational -> Stream (Of Int) m (Maybe (V.Vector Integer))
 chebyZero passes u2 = findInftyStream (continuedFracMax passes u2)

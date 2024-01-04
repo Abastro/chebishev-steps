@@ -1,5 +1,7 @@
 module Util (
   argValue,
+  purely,
+  impurely,
   Projective (..),
   knownFinite,
   closestToInv,
@@ -7,9 +9,17 @@ module Util (
 
 import Data.Semigroup (Arg (..))
 import GHC.Stack
+import Fold.Pure.Type as Pure
+import Fold.Effectful.Type as Eff
 
 argValue :: Arg v a -> v
 argValue (Arg v _) = v
+
+purely :: (forall x. (x -> a -> x) -> x -> (x -> b) -> r) -> Fold a b -> r
+purely cont (Fold{Pure.initial, Pure.step, Pure.extract}) = cont step initial extract
+
+impurely :: (forall x. (x -> a -> m x) -> m x -> (x -> m b) -> r) -> EffectfulFold m a b -> r
+impurely cont EffectfulFold{Eff.initial, Eff.step, Eff.extract} = cont step initial extract
 
 -- | Describes a projective space over a number field.
 --

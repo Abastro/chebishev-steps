@@ -46,8 +46,8 @@ library
     containers,
     mtl,
     vector,
-    streamly-core ^>=0.1.0,
-    streamly ^>=0.9.0,
+    streaming ^>=0.2.4,
+    gambler ^>= 0.4.1,
     MemoTrie ^>=0.6.11,
     extended-reals ^>=0.2.4.0,
   hs-source-dirs:   src
@@ -67,8 +67,7 @@ executable n-step-hs
     containers,
     mtl,
     vector,
-    streamly-core ^>=0.1.0,
-    streamly ^>=0.9.0,
+    streaming ^>=0.2.4,
     MemoTrie ^>=0.6.11,
     optparse-applicative ^>=0.18.1.0,
     ansi-terminal ^>=1.0,
@@ -102,7 +101,6 @@ benchmark bench-n-step
     containers,
     mtl,
     vector,
-    streamly-core ^>=0.1.0,
     tasty-bench ^>=0.3.4,
     n-step-hs,
   hs-source-dirs:   bench

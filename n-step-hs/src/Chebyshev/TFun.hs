@@ -8,7 +8,7 @@ module Chebyshev.TFun (
 import Chebyshev.Base
 import Chebyshev.Fraction qualified as Fraction
 import Chebyshev.Fraction.Base
-import Control.Monad
+import Control.Category ((>>>))
 import Control.Monad.ST
 import Data.MemoTrie
 import Data.STRef
@@ -16,8 +16,8 @@ import Data.Semigroup (Arg (..))
 import Data.Vector qualified as V
 import Inductive
 import Range
-import Streamly.Data.Fold qualified as Fold
-import Streamly.Data.Stream qualified as Stream
+import Streaming
+import Streaming.Prelude qualified as Stream
 import Util
 
 -- | Compute the normalized Reverse-T function.
@@ -81,9 +81,10 @@ tfunFracSearch breadth u2 fracMax maxRef =
     { fnInduct = inductive $ tfunFracInd u2,
       selectNext = selectFromBounds getBounds,
       summarize =
-        Fold.lmap (\g_k -> Arg (abs g_k.value) (V.fromList $ inputs g_k))
-          . Fold.lmapM updateAndGetMax
-          $ (void . Fold.find $ \(Arg curMax _) -> curMax == Infinity)
+        Stream.map (\g_k -> Arg (abs g_k.value) (V.fromList $ inputs g_k))
+          >>> Stream.mapM updateAndGetMax
+          >>> Stream.takeWhile (\v -> argValue v /= Infinity)
+          >>> Stream.effects
     }
  where
   -- len = k here
@@ -120,7 +121,7 @@ tfunFracSearch breadth u2 fracMax maxRef =
       else new <$ writeSTRef maxRef new
 
 -- | Zeroes of Reverse-T function. (Subtract 1 because it was added..)
-tfunZero :: (Monad m) => Breadth -> Rational -> Stream.Stream m (Either Int (V.Vector Integer))
+tfunZero :: (Monad m) => Breadth -> Rational -> Stream (Of Int) m (Maybe (V.Vector Integer))
 tfunZero breadth u2 = findInftyStream getMax
  where
   getMax = tfunFracMax breadth u2

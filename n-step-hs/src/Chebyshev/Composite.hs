@@ -7,13 +7,14 @@ module Chebyshev.Composite (
 
 import Chebyshev.Base
 import Chebyshev.Fraction
+import Control.Category ((>>>))
 import Control.Monad.Identity
 import Data.MemoTrie
 import Data.Semigroup (Arg (..))
 import Data.Vector qualified as V
 import Inductive
 import Range
-import Streamly.Data.Fold qualified as Fold
+import Streaming.Prelude qualified as Stream
 import Util
 
 -- >>> chebyNormalMin (7/3) 6
@@ -112,17 +113,18 @@ tildeZeroSearch u2 fracMax =
   SearchIntFn
     { fnInduct = inductive $ chebyWithShiftedInd u2,
       selectNext = selectFromBounds $ \_ k _ ->
-        Identity
-          $ let Arg maxB _ = fracMax (k - 1)
-                boundRadius = knownFinite (2 * maxB)
-             in innerInt $ deltaFrom 0 boundRadius,
+        Identity $
+          let Arg maxB _ = fracMax (k - 1)
+              boundRadius = knownFinite (2 * maxB)
+           in innerInt $ deltaFrom 0 boundRadius,
       summarize =
-        Fold.lmap (\ind -> Arg (tildeFromShifted u2 ind) (V.fromList $ inputs ind))
-          $ Fold.mapMaybe emitWhenZero Fold.one
+        Stream.map (\ind -> Arg (tildeFromShifted u2 ind) (V.fromList $ inputs ind))
+          >>> Stream.mapMaybe emitWhenZero
+          >>> Stream.head_
     }
  where
   emitWhenZero = \case
-    Arg v n | v == 0 -> Just n
+    Arg 0 n -> Just n
     _ -> Nothing
 
 -- | Compute T-hat from shifted inductive.
@@ -155,15 +157,16 @@ hatZeroSearch u2 fracMax =
   SearchIntFn
     { fnInduct = inductive $ chebyWithShiftedInd u2,
       selectNext = selectFromBounds $ \_ k _ ->
-        Identity
-          $ let Arg maxB _ = fracMax (k - 1)
-                boundRadius = knownFinite (2 * maxB)
-             in innerInt $ deltaFrom 0 boundRadius,
+        Identity $
+          let Arg maxB _ = fracMax (k - 1)
+              boundRadius = knownFinite (2 * maxB)
+           in innerInt $ deltaFrom 0 boundRadius,
       summarize =
-        Fold.lmap (\ind -> Arg (hatFromShifted u2 ind) (V.fromList $ inputs ind))
-          $ Fold.mapMaybe emitWhenZero Fold.one
+        Stream.map (\ind -> Arg (hatFromShifted u2 ind) (V.fromList $ inputs ind))
+          >>> Stream.mapMaybe emitWhenZero
+          >>> Stream.head_
     }
  where
   emitWhenZero = \case
-    Arg v n | v == 0 -> Just n
+    Arg 0 n -> Just n
     _ -> Nothing

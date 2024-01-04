@@ -5,7 +5,7 @@ module Chebyshev.Base (
   continuedFracInd,
   initContinuedFrac,
   continuedFraction,
-  untilCond,
+  -- untilCond,
   Breadth (..),
   IntFnInd,
   RatioResult,
@@ -20,6 +20,7 @@ module Chebyshev.Base (
   rangeNonzeroStream,
 ) where
 
+import Control.Category ((>>>))
 import Control.Monad.Identity
 import Control.Monad.ST
 import Data.Foldable
@@ -30,11 +31,8 @@ import Data.Semigroup (Arg (..))
 import Data.Vector qualified as V
 import Inductive
 import Range
-import Streamly.Data.Fold qualified as Fold
-import Streamly.Data.Stream qualified as Stream
-import Streamly.Data.StreamK qualified as StreamK
-import Streamly.Internal.Data.Stream qualified as Stream
-import Streamly.Internal.Data.Stream.StreamK qualified as StreamK
+import Streaming
+import Streaming.Prelude qualified as Stream
 import Util
 
 type IntFnInd = Inductive Integer
@@ -78,50 +76,49 @@ continuedFraction :: Rational -> [Integer] -> Projective Rational
 continuedFraction u2 n_ = (nexts (initContinuedFrac u2) n_).value
 
 -- | Folds latest until certain condition is encountered.
-untilCond :: (Monad m) => (r -> Bool) -> Fold.Fold m r (Maybe r)
-untilCond cond = Fold.takeEndBy cond Fold.latest
-
+-- untilCond :: (Monad m) => (r -> Bool) -> Fold.Fold m r (Maybe r)
+-- untilCond cond = Fold.takeEndBy cond Fold.latest
 data Breadth = Indefinite | MaxBr Int
   deriving (Show)
 
 type RatioResult = Arg Rational (V.Vector Integer)
 
--- | Stream of some computation which goes on until zero is found.
+-- | Stream of some computation which goes on until zero is found, and returns the argument if found.
 --
 -- Assumes that it starts from 1.
-findZeroStream :: (Monad m) => (Int -> RatioResult) -> Stream.Stream m (Either Int (V.Vector Integer))
+findZeroStream :: (Monad m) => (Int -> RatioResult) -> Stream (Of Int) m (Maybe (V.Vector Integer))
 findZeroStream getMin =
-  Stream.enumerateFrom 1
-    & fmap (\k -> (k, getMin k))
-    & Stream.scanMaybe (untilCond $ \(_, Arg curMin _) -> curMin == 0)
-    & fmap argZero
+  Stream.enumFrom (1 :: Int)
+    & Stream.map detectZero
+    & Stream.partitionEithers
+    & Stream.head_
  where
-  argZero = \case
-    (_, Arg m arg) | m == 0 -> Right arg
-    (k, _) -> Left k
+  detectZero k = case getMin k of
+    Arg 0 arg -> Left arg
+    _ -> Right k
 
-findJustStream :: (Monad m) => (Int -> Maybe a) -> Stream.Stream m (Either Int a)
+-- | Stream of some computation which goes on until Nothing is found, and returns the argument if found.
+--
+-- Assumes that it starts from 1.
+findJustStream :: (Monad m) => (Int -> Maybe a) -> Stream (Of Int) m (Maybe a)
 findJustStream fn =
-  Stream.enumerateFrom 1
-    & fmap (\k -> (k, fn k))
-    & Stream.scanMaybe (untilCond $ \(_, m) -> isJust m)
-    & fmap mapper
+  Stream.enumFrom (1 :: Int)
+    & Stream.map detectJust
+    & Stream.partitionEithers
+    & Stream.head_
  where
-  mapper = \case
-    (_, Just v) -> Right v
-    (k, _) -> Left k
+  detectJust k = case fn k of
+    Just v -> Left v
+    Nothing -> Right k
 
 -- | Finds in stream until cutoff is reached.
-findUntilCutoff :: Int -> Stream.Stream Identity (Either Int (V.Vector Integer)) -> Maybe (V.Vector Integer)
-findUntilCutoff cutoff stream =
+findUntilCutoff :: Int -> Stream (Of Int) Identity (Maybe (V.Vector Integer)) -> Maybe (V.Vector Integer)
+findUntilCutoff cut stream =
   stream
-    & Stream.fold (Fold.mapMaybe findEnd $ join <$> Fold.one)
+    & Stream.dropWhile (<= cut)
+    & Stream.head
     & runIdentity
- where
-  findEnd = \case
-    Left k | k <= cutoff -> Nothing
-    Left _ -> Just Nothing
-    Right res -> Just (Just res)
+    & Stream.snd'
 
 data MinSearch v = MinSearch
   { computeInd :: Induction Integer v,
@@ -159,9 +156,10 @@ searchMinWith minSearch len = runST $ do
               indepBounds = outerInt $ deltaFrom 0 maxB -- can be slightly bigger
           pure (depBounds `intersect` indepBounds),
         summarize =
-          Fold.lmap (\ev -> Arg (minSearch.representative ev) (V.fromList $ inputs ev))
-            . Fold.lmapM (updateAndGetMin minRef)
-            $ (void . Fold.find $ \(Arg curMin _) -> curMin == 0)
+          Stream.map (\ev -> Arg (minSearch.representative ev) (V.fromList $ inputs ev))
+            >>> Stream.mapM (updateAndGetMin minRef)
+            >>> Stream.takeWhile (\v -> argValue v /= 0)
+            >>> Stream.effects
       }
 
   updateAndGetMin minRef new = do
@@ -171,28 +169,26 @@ searchMinWith minSearch len = runST $ do
       else new <$ writeSTRef minRef new
 
   minCandidate :: Maybe RatioResult
-  minCandidate = runIdentity . StreamK.fold Fold.minimum . StreamK.unCross $ do
-    i <- StreamK.mkCross $ StreamK.fromList [1 .. len]
-    let Arg vA (n_L, n_R) = minSearch.minA len i
-        vB = minSearch.computeB n_L n_R
-    n_i <- StreamK.mkCross . StreamK.filter (/= 0) $ StreamK.fromList [floor vB, ceiling vB]
-    let vV = vA * (1 - vB / fromIntegral n_i)
-    pure $ Arg (abs vV) (n_L <> V.singleton n_i <> n_R)
+  minCandidate =
+    runIdentity . Stream.minimum_ $ Stream.for (Stream.each [1 .. len]) $ \i -> do
+      let Arg vA (n_L, n_R) = minSearch.minA len i
+          vB = minSearch.computeB n_L n_R
+      Stream.for (Stream.filter (/= 0) $ Stream.each [floor vB, ceiling vB]) $ \n_i -> do
+        let vV = vA * (1 - vB / fromIntegral n_i)
+        Stream.yield $ Arg (abs vV) (n_L <> V.singleton n_i <> n_R)
 
 data SearchIntFn m v a = SearchIntFn
   { fnInduct :: Inductive Integer v,
-    selectNext :: IntFnInd v -> Int -> Int -> StreamK.CrossStreamK m (IntFnInd v),
-    summarize :: Fold.Fold m (IntFnInd v) a
+    selectNext :: IntFnInd v -> Int -> Int -> Stream (Of (IntFnInd v)) m (),
+    summarize :: Stream (Of (IntFnInd v)) m () -> m a
   }
 
 -- | Search through integer-valued functions.
 searchRanges :: forall m v a. (Monad m) => SearchIntFn m v a -> Int -> m a
 searchRanges search len =
-  foldlM selectN_i search.fnInduct [1 .. len]
-    & (StreamK.toStream . StreamK.unCross)
-    & Stream.fold search.summarize
+  search.summarize $ foldl' selectN_i (Stream.yield search.fnInduct) [1 .. len]
  where
-  selectN_i v_L = search.selectNext v_L len
+  selectN_i stream_L i = Stream.for stream_L $ \v_L -> search.selectNext v_L len i
 
 -- | Select nonzero integer and feed it in the given range.
 selectFromBounds ::
@@ -201,14 +197,14 @@ selectFromBounds ::
   IntFnInd v ->
   Int ->
   Int ->
-  StreamK.CrossStreamK m (IntFnInd v)
-selectFromBounds getBnds v_L len i = StreamK.mkCross . StreamK.concatEffect $ do
+  Stream (Of (IntFnInd v)) m ()
+selectFromBounds getBnds v_L len i = effect $ do
   selection <- rangeNonzeroStream <$> getBnds v_L len i
-  pure (v_L.next <$> selection)
+  pure (Stream.map v_L.next selection)
 
-rangeNonzeroStream :: (Monad m, Integral a) => Range a -> StreamK.StreamK m a
+rangeNonzeroStream :: (Monad m, Integral a) => Range a -> Stream (Of a) m ()
 rangeNonzeroStream (Range minBnd maxBnd) =
-  StreamK.fromStream positives `StreamK.interleave` StreamK.fromStream negatives
+  flip Stream.for Stream.each $ zipsWith' (\f (a :> x) (b :> y) -> [a, b] :> f x y) positives negatives
  where
-  positives = Stream.takeWhile (<= maxBnd) $ Stream.enumerateFromStepIntegral (max 1 minBnd) 1
-  negatives = Stream.takeWhile (>= minBnd) $ Stream.enumerateFromStepIntegral (min (-1) maxBnd) (-1)
+  positives = Stream.takeWhile (<= maxBnd) $ Stream.enumFromThen (max 1 minBnd) 1
+  negatives = Stream.takeWhile (>= minBnd) $ Stream.enumFromThen (min (-1) maxBnd) (-1)

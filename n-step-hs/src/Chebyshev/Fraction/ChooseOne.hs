@@ -4,18 +4,16 @@ module Chebyshev.Fraction.ChooseOne (
 
 import Chebyshev.Base
 import Chebyshev.Fraction qualified as Fraction
-import Control.Monad.Identity (Identity (..))
 import Data.Function ((&))
 import Data.MemoTrie
 import Data.Semigroup (Arg (..))
 import Data.Vector qualified as V
 import Inductive
 import Range
-import Streamly.Data.Fold qualified as Fold
-import Streamly.Data.Stream qualified as Stream
-import Streamly.Data.StreamK qualified as StreamK
-import Streamly.Internal.Data.Stream.StreamK qualified as StreamK
 import Util
+import Streaming
+import qualified Streaming.Prelude as Stream
+import Control.Category ((>>>))
 
 -- | Infinity of continued fraction given u^2.
 -- Snd of the second parameter is the depth limit to apply selection.
@@ -45,14 +43,15 @@ naiveContinuedFracSearch maxK u2 fracMax =
     { fnInduct = inductive $ continuedFracInd u2,
       selectNext,
       summarize =
-        Fold.lmap (\g_k -> Arg (abs g_k.value) (V.fromList $ inputs g_k))
-          $ Fold.mapMaybe emitWhenInfty Fold.one
+        Stream.map (\g_k -> Arg (abs g_k.value) (V.fromList $ inputs g_k))
+          >>> Stream.mapMaybe emitWhenInfty
+          >>> Stream.head_
     }
  where
   -- Meaningful select until len is reached
   -- ? Perhaps this should be in summarize phase
   selectNext g_L len i = case i `compare` len of
-    EQ -> StreamK.mkCross . StreamK.fromStream $ diveFracInfty maxK g_L i
+    EQ -> diveFracInfty maxK g_L i
     _ -> selectFromBounds getBounds g_L len i
 
   -- len = k here
@@ -75,10 +74,10 @@ diveFracInfty ::
   Int ->
   IntFnInd (Projective Rational) ->
   Int ->
-  Stream.Stream Identity (IntFnInd (Projective Rational))
-diveFracInfty cutoff g_L i =
+  Stream (Of (IntFnInd (Projective Rational))) Identity ()
+diveFracInfty cut g_L i =
   Stream.iterate (\g_k -> g_k.next $ roundExceptZero (knownFinite g_k.value)) g_L
-    & Stream.take (cutoff - i)
+    & Stream.take (cut - i)
  where
   roundExceptZero v = case (round v, floor $ signum v) of
     (0, 0) -> 1

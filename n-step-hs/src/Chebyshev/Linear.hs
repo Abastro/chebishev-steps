@@ -7,13 +7,12 @@ module Chebyshev.Linear (
 ) where
 
 import Chebyshev.Base
-import Data.Function ((&))
 import Data.MemoTrie
 import Data.Semigroup (Arg (..))
 import Data.Vector qualified as V
 import Inductive
-import Streamly.Data.Fold qualified as Fold
-import Streamly.Data.Stream qualified as Stream
+import Streaming
+import Streaming.Prelude qualified as Stream
 
 -- | Constant term in the normalized chebyshev.
 constTerm :: Rational -> V.Vector Integer -> V.Vector Integer -> Rational
@@ -24,7 +23,7 @@ slopeTerm :: Rational -> V.Vector Integer -> V.Vector Integer -> Rational
 slopeTerm u2 n_L n_R = (s_L.value * s_R_1_part + s_L_1_part * s_R.value) / u2
  where
   s_L = nexts (initChebyNormal u2) (V.toList n_L)
-  s_R = nexts (initChebyNormal u2) (V.toList $ V.reverse n_R)  -- Reversed to remove "initial" input
+  s_R = nexts (initChebyNormal u2) (V.toList $ V.reverse n_R) -- Reversed to remove "initial" input
   s_L_1_part = case s_L.previous of
     Nothing -> 0
     Just (n_i_1, s_n_L_1) -> s_n_L_1.value / fromIntegral n_i_1
@@ -84,19 +83,12 @@ chebyNormalMinSearch u2 getMin =
     k -> chebyNormalUB (k - 1) + chebyNormalUB (k - 2) / abs u2
 
 -- Stops when 0 is encountered
-untilZero :: (Monad m, Eq r, Num r) => Fold.Fold m (Arg r b) (Maybe (Arg r b))
-untilZero = Fold.takeEndBy (\(Arg curMin _) -> curMin == 0) Fold.latest
+-- untilZero :: (Monad m, Eq r, Num r) => Fold.Fold m (Arg r b) (Maybe (Arg r b))
+-- untilZero = Fold.takeEndBy (\(Arg curMin _) -> curMin == 0) Fold.latest
 
 -- | Determines if u2 is a s_k's zero.
-chebyZero :: (Monad m) => Rational -> Stream.Stream m (Either Int (V.Vector Integer))
-chebyZero u2 =
-  Stream.enumerateFrom 1
-    & fmap getMin
-    & Stream.scanMaybe untilZero
-    & Stream.indexed
-    & fmap argZero
+-- Note, we needed to add 1 to k.
+chebyZero :: (Monad m) => Rational -> Stream (Of Int) m (Maybe (V.Vector Integer))
+chebyZero u2 = Stream.map (+ 1) $ findZeroStream getMin
  where
   getMin = chebyNormalMin u2
-  argZero = \case
-    (_, Arg m arg) | m == 0 -> Right arg
-    (k_1, _) -> Left (k_1 + 1)

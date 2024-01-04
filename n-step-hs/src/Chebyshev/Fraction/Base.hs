@@ -3,23 +3,23 @@ module Chebyshev.Fraction.Base (
   findInftyStream,
 ) where
 
-import Chebyshev.Base
 import Data.Function ((&))
 import Data.Semigroup (Arg (..))
 import Data.Vector qualified as V
-import Streamly.Data.Stream qualified as Stream
+import Streaming
+import Streaming.Prelude qualified as Stream
 import Util
 
 type FractionResult = Arg (Projective Rational) (V.Vector Integer)
 
 -- | Finds the infinity from the stream.
-findInftyStream :: (Monad m) => (Int -> FractionResult) -> Stream.Stream m (Either Int (V.Vector Integer))
+findInftyStream :: (Monad m) => (Int -> FractionResult) -> Stream (Of Int) m (Maybe (V.Vector Integer))
 findInftyStream getMax =
-  Stream.enumerateFrom 1
-    & fmap (\k -> (k, getMax k))
-    & Stream.scanMaybe (untilCond $ \(_, Arg curMax _) -> curMax == Infinity)
-    & fmap argInfinite
+  Stream.enumFrom (1 :: Int)
+    & Stream.map detectInfty
+    & Stream.partitionEithers
+    & Stream.head_
  where
-  argInfinite = \case
-    (_, Arg Infinity arg) -> Right arg
-    (k, _) -> Left k
+  detectInfty k = case getMax k of
+    Arg Infinity arg -> Left arg
+    _ -> Right k

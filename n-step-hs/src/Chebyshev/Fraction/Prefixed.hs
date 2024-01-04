@@ -6,7 +6,6 @@ module Chebyshev.Fraction.Prefixed (
 import Chebyshev.Base
 import Chebyshev.Fraction qualified as Fraction
 import Chebyshev.Fraction.Base
-import Control.Monad
 import Control.Monad.ST
 import Data.MemoTrie
 import Data.STRef
@@ -14,9 +13,10 @@ import Data.Semigroup (Arg (..))
 import Data.Vector qualified as V
 import Inductive
 import Range
-import Streamly.Data.Fold qualified as Fold
-import Streamly.Data.Stream qualified as Stream
+import Streaming
 import Util
+import qualified Streaming.Prelude as Stream
+import Control.Category ((>>>))
 
 -- | Maximum of prefixed fraction given u^2.
 prefixedFracMax :: Breadth -> [Integer] -> Rational -> Int -> FractionResult
@@ -44,9 +44,10 @@ prefixedFracSearch pass prefix u2 fracMax maxRef =
     { fnInduct = nexts (inductive $ continuedFracInd u2) prefix,
       selectNext = selectFromBounds getBounds,
       summarize =
-        Fold.lmap (\g_k -> Arg (abs g_k.value) (V.fromList $ inputs g_k))
-          . Fold.lmapM updateAndGetMax
-          $ (void . Fold.find $ \(Arg curMax _) -> curMax == Infinity)
+        Stream.map (\g_k -> Arg (abs g_k.value) (V.fromList $ inputs g_k))
+          >>> Stream.mapM updateAndGetMax
+          >>> Stream.dropWhile (\v -> argValue v == Infinity)
+          >>> Stream.effects
     }
  where
   -- len = k here. We only need to find infinity, so we assume infinity.
@@ -66,5 +67,5 @@ prefixedFracSearch pass prefix u2 fracMax maxRef =
       then pure old
       else new <$ writeSTRef maxRef new
 
-chebyZero :: (Monad m) => Breadth -> [Integer] -> Rational -> Stream.Stream m (Either Int (V.Vector Integer))
+chebyZero :: (Monad m) => Breadth -> [Integer] -> Rational -> Stream (Of Int) m (Maybe (V.Vector Integer))
 chebyZero passes prefix u2 = findInftyStream (prefixedFracMax passes prefix u2)
