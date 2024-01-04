@@ -16,17 +16,13 @@ import Data.Maybe
 import Data.Ratio
 import Data.Set qualified as S
 import Data.Vector qualified as V
-import Inductive qualified
 import Options.Applicative
-import Streamly.Data.Fold qualified as Fold
-import Streamly.Data.Stream qualified as Stream
-import Streamly.Data.Stream.Prelude qualified as Stream
-import Streamly.Data.StreamK qualified as StreamK
+import Streaming.Prelude qualified as Stream
 import System.Console.ANSI
 import System.IO
 import Text.Printf
 import Text.Read
-import Util
+import Streaming
 
 data Method
   = Linear
@@ -59,14 +55,11 @@ data Opts = Opts
 data Command
   = ComputeFor !Int !Rational
   | ExhaustDenominator !Int !Integer !(Maybe FilePath)
-  | AfterOnes !Int !Integer
-  -- TODO Remove naive_for
-  | NaiveFor !Int !Int !Rational
 
 parseCommands :: Parser Command
 parseCommands =
-  subparser
-    $ mconcat
+  subparser $
+    mconcat
       [ command "compute"
           $ info
             ( ComputeFor
@@ -81,33 +74,18 @@ parseCommands =
                 <*> argument auto (metavar "DENOMINATOR")
                 <*> optional (strOption (long "output" <> short 'o' <> metavar "FILE"))
             )
-          $ progDesc "exhaustively compute for given denominator",
-        command "after-ones"
-          $ info
-            ( AfterOnes
-                <$> argument auto (metavar "MAX_K")
-                <*> argument auto (metavar "MAX_DENOMINATOR")
-            )
-          $ progDesc "compute cases after consecutive ones",
-        command "naive"
-          $ info
-            ( NaiveFor
-                <$> argument auto (metavar "MAX_K")
-                <*> argument auto (metavar "DEPTH")
-                <*> argument auto (metavar "u^2")
-            )
-          $ progDesc "naively find out the root"
+          $ progDesc "exhaustively compute for given denominator"
       ]
 
 parseOptions :: ParserInfo Opts
 parseOptions = info (helper <*> (Opts <$> parseCommands <*> methodOpt <*> conventionFlag <*> breadthOpt <*> timeoutOpt)) fullDesc
  where
   methodOpt =
-    option (maybeReader readMethod)
-      $ value Fraction
-      <> long "method"
-      <> short 'm'
-      <> help "evaluation method"
+    option (maybeReader readMethod) $
+      value Fraction
+        <> long "method"
+        <> short 'm'
+        <> help "evaluation method"
   conventionFlag = flag NegU2 U2 (long "u2-conv" <> help "use u2 as passed root, instead of -u2")
   breadthOpt = option (MaxBr <$> auto) $ value Indefinite <> long "breadth" <> short 'b' <> help "specify restriction on search breadth"
   timeoutOpt = optional . option auto $ long "timeout" <> short 't' <> help "timeout deadline for evaluation"
@@ -122,9 +100,9 @@ main = do
   case opts.command of
     -- "compute MAX_K ROOT"
     ComputeFor maxK root -> do
-      Just result <- takeResult maxK opts.timeOut $ do
+      Just k :> ns <- takeResult maxK opts.timeOut $ do
         finder opts.breadth maxK opts.method (convertRoot root opts.convention)
-      printResult stdout root result
+      printResult stdout root (maybe (Left k) Right ns)
 
     -- "exhaust MAX_K DENOMINATOR"
     ExhaustDenominator maxK denom outFile -> withFileMay outFile $ \outHandle -> do
@@ -132,15 +110,16 @@ main = do
       remaining <- newMVar fracts
       for_ outHandle $ \out -> hPutStrLn out "rel #, k, seq n"
 
-      StreamK.toStream (StreamK.fromFoldable fracts)
-        & Stream.parConcatMap (Stream.ordered True) (Stream.fromEffect . evaluateAndPrint remaining)
+      -- TODO Parallel execution
+      Stream.each fracts
+        & Stream.mapM (evaluateAndPrint remaining)
         & Stream.mapM (`emitToFile` outHandle)
-        & Stream.fold Fold.drain
+        & Stream.effects
      where
       evaluateAndPrint remaining root = handle (\(ErrorCall _) -> pure (root, Left (-1))) $ do
-        Just res <- takeResult maxK opts.timeOut $ do
+        Just k :> ns <- takeResult maxK opts.timeOut $ do
           finder opts.breadth maxK opts.method (convertRoot root opts.convention)
-        result <- evaluate res
+        result <- evaluate $ maybe (Left k) Right ns
         withMVar consoleLock $ \_ -> do
           clearFromCursorToScreenEnd
           printResult stdout root result
@@ -153,34 +132,6 @@ main = do
       emitToFile (root, result) = traverse_ $ \out -> do
         printResult out root result
         hFlush out
-
-    -- "after-ones MAX_K MAX_DENOMINATOR"
-    AfterOnes maxK maxDenom -> do
-      let fractsFor denom = fractions denom <> S.map negate (fractions denom)
-      Stream.enumerateFromTo 1 maxDenom
-        & Stream.concatMap (StreamK.toStream . StreamK.fromFoldable . fractsFor)
-        & Stream.concatMap (Stream.fromEffect . evaluateAndPrint)
-        & Stream.fold Fold.drain
-     where
-      asInteger x = if denominator x == 1 then Just $ numerator x else Nothing
-      checkAndReturn ev = case asInteger (knownFinite ev.value) of
-        Just n -> Just (V.fromList $ Inductive.inputs ev <> [n])
-        Nothing -> Nothing
-
-      findN root =
-        Stream.replicate (fromIntegral maxK - 2) (1 :: Integer)
-          & Stream.scan
-            ( Fold.foldl'
-                (\ev -> ev.next)
-                (initContinuedFrac $ convertRoot root opts.convention)
-            )
-          & Stream.drop 1 -- First is always 0
-          & Stream.fold (Fold.mapMaybe checkAndReturn Fold.one)
-
-      evaluateAndPrint root = printResult stdout root $ maybe (Left maxK) Right . runIdentity $ findN root
-    NaiveFor maxK depth root -> do
-      let found = ChooseOne.naiveContinuedFracInfty opts.breadth (convertRoot root opts.convention) maxK depth
-      printResult stdout root $ maybe (Left maxK) Right found
  where
   withFileMay = \case
     Nothing -> \act -> act Nothing
@@ -194,13 +145,10 @@ main = do
     THat -> findJustStream . Composite.hatZero breadth
     Naive depth -> \u2 ->
       let found = ChooseOne.naiveContinuedFracInfty breadth u2 maxK depth
-       in Stream.fromList [maybe (Left maxK) Right found]
+       in maybe (Nothing <$ Stream.yield maxK) (pure . Just) found
   takeResult maxK = \case
-    Nothing -> Stream.fold Fold.latest . Stream.take maxK
-    Just timeout ->
-      Stream.fold Fold.one
-        . Stream.sampleIntervalEnd (fromIntegral timeout)
-        . Stream.take maxK
+    Nothing -> Stream.last . fmap join . cutoff maxK
+    Just _ -> Stream.last . fmap join . cutoff maxK -- TODO Implement timeout
 
   convertRoot root = \case
     U2 -> root

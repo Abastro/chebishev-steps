@@ -75,7 +75,8 @@ enumerateChebyZeros =
       & Stream.mapM decision
       & (`evalStateT` Infinity) . distribute
       & Stream.partitionEithers
-      & Stream.foldrM (\elt out -> Stream.cons elt <$> out)
+      & Stream.toList
+      & fmap (\(left :> out) -> Stream.each left <> out)
 
   condition ((_, compute, k), b) = compute k <= b
 
