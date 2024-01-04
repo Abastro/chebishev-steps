@@ -2,6 +2,7 @@ module Main (main) where
 
 import Chebyshev.Base
 import Chebyshev.Composite qualified as Composite
+import Chebyshev.Enumerative qualified as Enumerative
 import Chebyshev.Fraction qualified as Fraction
 import Chebyshev.Fraction.ChooseOne qualified as ChooseOne
 import Chebyshev.Linear qualified as Linear
@@ -17,12 +18,12 @@ import Data.Ratio
 import Data.Set qualified as S
 import Data.Vector qualified as V
 import Options.Applicative
+import Streaming
 import Streaming.Prelude qualified as Stream
 import System.Console.ANSI
 import System.IO
 import Text.Printf
 import Text.Read
-import Streaming
 
 data Method
   = Linear
@@ -55,6 +56,7 @@ data Opts = Opts
 data Command
   = ComputeFor !Int !Rational
   | ExhaustDenominator !Int !Integer !(Maybe FilePath)
+  | EnumerateRoots
 
 parseCommands :: Parser Command
 parseCommands =
@@ -74,7 +76,11 @@ parseCommands =
                 <*> argument auto (metavar "DENOMINATOR")
                 <*> optional (strOption (long "output" <> short 'o' <> metavar "FILE"))
             )
-          $ progDesc "exhaustively compute for given denominator"
+          $ progDesc "exhaustively compute for given denominator",
+        command "enumerate"
+          $ info
+            (pure EnumerateRoots)
+          $ progDesc "enumerate chebyshev's roots"
       ]
 
 parseOptions :: ParserInfo Opts
@@ -132,6 +138,8 @@ main = do
       emitToFile (root, result) = traverse_ $ \out -> do
         printResult out root result
         hFlush out
+    EnumerateRoots -> do
+      Stream.print $ hoist (\(Identity v) -> pure v) Enumerative.enumerateChebyZeros
  where
   withFileMay = \case
     Nothing -> \act -> act Nothing
@@ -149,7 +157,6 @@ main = do
   takeResult maxK = \case
     Nothing -> Stream.last . fmap join . cutoff maxK
     Just _ -> Stream.last . fmap join . cutoff maxK -- TODO Implement timeout
-
   convertRoot root = \case
     U2 -> root
     NegU2 -> -root
