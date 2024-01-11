@@ -24,9 +24,9 @@
        "mime": "text/plain"
       }
      ],
-     "id": "ddd35bb4-23ff-425c-a4a9-70148132c4c3",
+     "id": "1ab037f2-5198-4cc9-b363-58b25048df16",
      "metadata": {
-      "cellLabel": "Out[4]= ",
+      "cellLabel": "Out[5]= ",
       "isBoxData": false
      }
     }
@@ -34,10 +34,10 @@
    "metadata": {},
    "executionSummary": {
     "timing": {
-     "startTime": 1704189825277,
-     "endTime": 1704189825626
+     "startTime": 1704981553328,
+     "endTime": 1704981553635
     },
-    "executionOrder": 1,
+    "executionOrder": 2,
     "success": true
    }
   },
@@ -57,10 +57,10 @@
    "metadata": {},
    "executionSummary": {
     "timing": {
-     "startTime": 1704189825626,
-     "endTime": 1704189825689
+     "startTime": 1704981553636,
+     "endTime": 1704981553700
     },
-    "executionOrder": 5,
+    "executionOrder": 6,
     "success": true
    }
   },
@@ -80,9 +80,9 @@
        "mime": "text/plain"
       }
      ],
-     "id": "61e6237a-2fda-4ab7-87f0-d54f5a38494f",
+     "id": "92e51eaf-49c4-43d3-bbe0-42ffc5452fd6",
      "metadata": {
-      "cellLabel": "Out[8]= ",
+      "cellLabel": "Out[9]= ",
       "isBoxData": false
      }
     },
@@ -97,9 +97,9 @@
        "mime": "text/plain"
       }
      ],
-     "id": "e16c4e46-c70c-4350-855a-6190c99cb895",
+     "id": "fb1d64c3-846a-43ec-a932-2b4a6945bb07",
      "metadata": {
-      "cellLabel": "Out[9]= ",
+      "cellLabel": "Out[10]= ",
       "isBoxData": false
      }
     },
@@ -114,9 +114,9 @@
        "mime": "text/plain"
       }
      ],
-     "id": "3b80c0a1-70c3-4eda-92dc-a2bb0955d77b",
+     "id": "5167f57e-d8ef-44fc-82fa-e6dc9db0556e",
      "metadata": {
-      "cellLabel": "Out[10]= ",
+      "cellLabel": "Out[11]= ",
       "isBoxData": false
      }
     }
@@ -124,10 +124,10 @@
    "metadata": {},
    "executionSummary": {
     "timing": {
-     "startTime": 1704189825690,
-     "endTime": 1704189826118
+     "startTime": 1704981553700,
+     "endTime": 1704981554132
     },
-    "executionOrder": 6,
+    "executionOrder": 7,
     "success": true
    }
   },
@@ -147,9 +147,9 @@
        "mime": "text/plain"
       }
      ],
-     "id": "f93d808e-36b8-4fd1-83d9-413cbe38e337",
+     "id": "f70c2326-a877-4685-b7e3-418949ff3b34",
      "metadata": {
-      "cellLabel": "Out[12]= ",
+      "cellLabel": "Out[13]= ",
       "isBoxData": false
      }
     }
@@ -157,10 +157,10 @@
    "metadata": {},
    "executionSummary": {
     "timing": {
-     "startTime": 1704189826119,
-     "endTime": 1704189826304
+     "startTime": 1704981554132,
+     "endTime": 1704981554318
     },
-    "executionOrder": 11,
+    "executionOrder": 12,
     "success": true
    }
   },
@@ -180,7 +180,7 @@
        "mime": "text/plain"
       }
      ],
-     "id": "44d6ccf4-2c9b-4523-b47f-92f56f662f43",
+     "id": "cba435a8-4838-4cd0-b132-75bbfe7de061",
      "metadata": {
       "cellLabel": "",
       "isBoxData": false
@@ -197,9 +197,9 @@
        "mime": "text/plain"
       }
      ],
-     "id": "7079d909-8607-4062-a9d8-fbbfb8661808",
+     "id": "c418f6cb-f08a-43f8-880b-8ef73fa9877c",
      "metadata": {
-      "cellLabel": "Out[14]= ",
+      "cellLabel": "Out[15]= ",
       "isBoxData": false
      }
     },
@@ -214,9 +214,9 @@
        "mime": "text/plain"
       }
      ],
-     "id": "c3acd591-2724-4288-9330-abca63d444cb",
+     "id": "3e35ec2c-7af2-4313-9757-f96b3dbd8b51",
      "metadata": {
-      "cellLabel": "Out[15]= ",
+      "cellLabel": "Out[16]= ",
       "isBoxData": false
      }
     }
@@ -224,25 +224,25 @@
    "metadata": {},
    "executionSummary": {
     "timing": {
-     "startTime": 1704189826304,
-     "endTime": 1704189826582
+     "startTime": 1704981554319,
+     "endTime": 1704981554595
     },
-    "executionOrder": 13,
+    "executionOrder": 14,
     "success": true
    }
   },
   {
    "kind": 2,
-   "value": "contiMaxLFinite[lamV_, k_, nL_] := Module[{i, dc, pNiRange, reRange, imRange, xmaxRange, niMin, niMax},\n  i := Length[nL] + 1;\n  dc := discr[nL] /. {lam :> lamV};\n  (* Range of N_i *)\n  pNiRange := CenteredInterval[- cFrac[Reverse[nL]] /. {lam :> lamV}, (1 + I) * contiMax[lamV, k-i]];\n  reRange := Information[Re[pNiRange], \"Bounds\"]; (* NOTE: This gives a pair of number *)\n  imRange := Information[Im[pNiRange], \"Bounds\"];\n  (* Range of x_max *)\n  xmaxRange := If[\n    dc === ComplexInfinity || Re[dc] == 0,\n    reRange,\n    With[{\n      delBound := (delta[dc, #] &) /@ (2 * imRange)\n    }, reRange - Interval[{0, Max[delBound]}] / (2 * Re[dc])\n    ]];\n  niMin := Floor[Min[xmaxRange]] /. {0 :> (-1)};\n  niMax := Ceiling[Max[xmaxRange]] /. {0 :> 1};\n  Max[Table[contiMaxL[lamV, k, Append[nL, ni]], {ni, DeleteCases[Range[niMin, niMax], 0]}]]\n]\ncontiMaxL[lamV_, k_, nL_] := Max[\n  Abs[printIfInfty[nL, Quiet[cFrac[nL] /. {lam :> lamV}, Power::infy]]],\n  If[Length[nL] == k, 0, contiMaxLFinite[lamV, k, nL]]]\ncontiMax[lamV_, k_] := contiMaxL[lamV, k, {}]",
+   "value": "contiMaxLFinite[lamV_, k_, nL_] := Module[{i, dc, pNiRange, reRange, imRange, xmaxRange, niMin, niMax},\n  i := Length[nL] + 1;\n  dc := Simplify[discr[nL] /. {lam :> lamV}] // ComplexExpand;\n  (* Range of N_i *)\n  pNiRange := CenteredInterval[- Simplify[cFrac[Reverse[nL]] /. {lam :> lamV}], (1 + I) * contiMax[lamV, k-i]] // N;\n  reRange := Information[Re[pNiRange], \"Bounds\"];\n  imRange := Information[Im[pNiRange], \"Bounds\"];\n  (* Range of x_max *)\n  xmaxRange := If[\n    dc === ComplexInfinity || Re[dc] == 0,\n    reRange,\n    With[{\n      delBound := (delta[dc, #] &) /@ (2 * imRange)\n    }, reRange - Interval[{0, Max[delBound]}] / (2 * Re[dc])\n    ]] // N;\n  niMin := Floor[Min[xmaxRange]] /. {0 :> (-1)};\n  niMax := Ceiling[Max[xmaxRange]] /. {0 :> 1};\n  Max[Table[contiMaxL[lamV, k, Append[nL, ni]], {ni, DeleteCases[Range[niMin, niMax], 0]}]]\n]\ncontiMaxL[lamV_, k_, nL_] := Max[\n  Abs[printIfInfty[nL, Quiet[Simplify[cFrac[nL] /. {lam :> lamV}], Power::infy]]] // N,\n  If[Length[nL] == k, 0, contiMaxLFinite[lamV, k, nL]]]\ncontiMax[lamV_, k_] := Quiet[contiMaxL[lamV, k, {}], {Simplify::infd, General::munfl}]",
    "languageId": "wolfram",
    "outputs": [],
    "metadata": {},
    "executionSummary": {
     "timing": {
-     "startTime": 1704189826583,
-     "endTime": 1704189826767
+     "startTime": 1704986010047,
+     "endTime": 1704986010233
     },
-    "executionOrder": 16,
+    "executionOrder": 291,
     "success": true
    }
   },
@@ -253,6 +253,140 @@
    "outputs": [],
    "metadata": {},
    "executionSummary": {}
+  },
+  {
+   "kind": 2,
+   "value": "Table[contiMax[1/2 + Sqrt[3]/2 I, k], {k, 1, 4}]",
+   "languageId": "wolfram",
+   "outputs": [
+    {
+     "items": [
+      {
+       "data": "<pre>{-1, 1, 1, -1}\n</pre>",
+       "mime": "x-application/wolfram-language-html"
+      },
+      {
+       "data": "\"{-1, 1, 1, -1}\\n\"",
+       "mime": "text/plain"
+      }
+     ],
+     "id": "b5024030-315f-4b82-a3d7-c7380d6f19c1",
+     "metadata": {
+      "cellLabel": "",
+      "isBoxData": false
+     }
+    },
+    {
+     "items": [
+      {
+       "data": "<pre>{1, -1, -1, 1}\n</pre>",
+       "mime": "x-application/wolfram-language-html"
+      },
+      {
+       "data": "\"{1, -1, -1, 1}\\n\"",
+       "mime": "text/plain"
+      }
+     ],
+     "id": "9dc27c18-8a32-44cc-8304-d6159fb1bd07",
+     "metadata": {
+      "cellLabel": "",
+      "isBoxData": false
+     }
+    },
+    {
+     "items": [
+      {
+       "data": "<div class=\"wexpr\"><wrow><w></w><wb>{</wb><wrow><w></w><w>1.</w><w>,</w><w>1.1547</w><w>,</w><w>1.73205</w><w>,</w><w>∞</w></wrow><wb>}</wb></wrow></div>",
+       "mime": "x-application/wolfram-language-html"
+      },
+      {
+       "data": "{1., 1.1547005383792517, 1.7320508075688772, Infinity}",
+       "mime": "text/plain"
+      }
+     ],
+     "id": "a98157e9-8d83-4423-97bc-c2c3781cad3b",
+     "metadata": {
+      "cellLabel": "Out[294]= ",
+      "isBoxData": false
+     }
+    }
+   ],
+   "metadata": {},
+   "executionSummary": {
+    "timing": {
+     "startTime": 1704986011546,
+     "endTime": 1704986017276
+    },
+    "executionOrder": 294,
+    "success": true
+   }
+  },
+  {
+   "kind": 2,
+   "value": "Table[contiMax[-1/2 + Sqrt[3]/2 I, k], {k, 1, 4}]",
+   "languageId": "wolfram",
+   "outputs": [
+    {
+     "items": [
+      {
+       "data": "<pre>{-1, -1, 1, 1}\n</pre>",
+       "mime": "x-application/wolfram-language-html"
+      },
+      {
+       "data": "\"{-1, -1, 1, 1}\\n\"",
+       "mime": "text/plain"
+      }
+     ],
+     "id": "009ea728-70ca-48fc-bcde-74c85c158d9a",
+     "metadata": {
+      "cellLabel": "",
+      "isBoxData": false
+     }
+    },
+    {
+     "items": [
+      {
+       "data": "<pre>{1, 1, -1, -1}\n</pre>",
+       "mime": "x-application/wolfram-language-html"
+      },
+      {
+       "data": "\"{1, 1, -1, -1}\\n\"",
+       "mime": "text/plain"
+      }
+     ],
+     "id": "0b2afab9-f0cb-4603-9544-1d43713cb500",
+     "metadata": {
+      "cellLabel": "",
+      "isBoxData": false
+     }
+    },
+    {
+     "items": [
+      {
+       "data": "<div class=\"wexpr\"><wrow><w></w><wb>{</wb><wrow><w></w><w>1.</w><w>,</w><w>1.1547</w><w>,</w><w>1.73205</w><w>,</w><w>∞</w></wrow><wb>}</wb></wrow></div>",
+       "mime": "x-application/wolfram-language-html"
+      },
+      {
+       "data": "{1., 1.1547005383792517, 1.7320508075688772, Infinity}",
+       "mime": "text/plain"
+      }
+     ],
+     "id": "943fddef-190d-4df0-897a-36ccc52c9264",
+     "metadata": {
+      "cellLabel": "Out[295]= ",
+      "isBoxData": false
+     }
+    }
+   ],
+   "metadata": {},
+   "executionSummary": {
+    "timing": {
+     "startTime": 1704986022743,
+     "endTime": 1704986029079
+    },
+    "executionOrder": 295,
+    "success": true
+   }
   },
   {
    "kind": 2,
@@ -270,7 +404,7 @@
        "mime": "text/plain"
       }
      ],
-     "id": "356c011c-f34b-4549-b2c3-d0edcad0967b",
+     "id": "2048be79-81c5-4d73-b2c2-9986ba90e803",
      "metadata": {
       "cellLabel": "",
       "isBoxData": false
@@ -287,7 +421,7 @@
        "mime": "text/plain"
       }
      ],
-     "id": "0f4673e4-199a-4540-8927-701df7b0daa0",
+     "id": "17cf81e8-4115-4363-a116-01cdbd794919",
      "metadata": {
       "cellLabel": "",
       "isBoxData": false
@@ -304,9 +438,9 @@
        "mime": "text/plain"
       }
      ],
-     "id": "6002c9ac-29bc-4422-ab21-534d5fe4548e",
+     "id": "a920d161-0161-4e19-828d-e84476d170fe",
      "metadata": {
-      "cellLabel": "Out[19]= ",
+      "cellLabel": "Out[195]= ",
       "isBoxData": false
      }
     }
@@ -314,10 +448,10 @@
    "metadata": {},
    "executionSummary": {
     "timing": {
-     "startTime": 1704189826768,
-     "endTime": 1704189827045
+     "startTime": 1704983854207,
+     "endTime": 1704983854457
     },
-    "executionOrder": 19,
+    "executionOrder": 195,
     "success": true
    }
   },
@@ -337,7 +471,7 @@
        "mime": "text/plain"
       }
      ],
-     "id": "94b2dfa1-76de-44fd-b073-a2f9cb8b8691",
+     "id": "81b86141-1590-437e-a215-0f19aa075323",
      "metadata": {
       "cellLabel": "",
       "isBoxData": false
@@ -354,7 +488,7 @@
        "mime": "text/plain"
       }
      ],
-     "id": "accbe88e-86ac-4e75-8d74-a0e79919eaa4",
+     "id": "a3f1f9e1-0e82-4e16-bdf1-cd56f52cdfc0",
      "metadata": {
       "cellLabel": "",
       "isBoxData": false
@@ -371,22 +505,15 @@
        "mime": "text/plain"
       }
      ],
-     "id": "39136f0b-43a0-4c68-96c5-fd354f41c741",
+     "id": "b1fe9029-fef5-4960-8c0c-792a0ced8b4c",
      "metadata": {
-      "cellLabel": "Out[20]= ",
+      "cellLabel": "Out[52]= ",
       "isBoxData": false
      }
     }
    ],
    "metadata": {},
-   "executionSummary": {
-    "timing": {
-     "startTime": 1704189827046,
-     "endTime": 1704189827295
-    },
-    "executionOrder": 20,
-    "success": true
-   }
+   "executionSummary": {}
   },
   {
    "kind": 2,
@@ -404,7 +531,7 @@
        "mime": "text/plain"
       }
      ],
-     "id": "8dee6c96-7ca5-48e7-9366-62809ef48aa0",
+     "id": "4c96a113-f9c5-4f28-8d61-d6121bd01b45",
      "metadata": {
       "cellLabel": "",
       "isBoxData": false
@@ -421,7 +548,7 @@
        "mime": "text/plain"
       }
      ],
-     "id": "9c35f27c-7804-4af4-b6b5-81163b8f6583",
+     "id": "0807bcf9-1b2d-4821-968f-70f4f0e1bd45",
      "metadata": {
       "cellLabel": "",
       "isBoxData": false
@@ -438,7 +565,7 @@
        "mime": "text/plain"
       }
      ],
-     "id": "63aa774a-c6cf-4859-9c9a-2111ba6af994",
+     "id": "1967c567-fec6-4106-8560-b05af47806c0",
      "metadata": {
       "cellLabel": "",
       "isBoxData": false
@@ -455,7 +582,7 @@
        "mime": "text/plain"
       }
      ],
-     "id": "567b110e-c118-489a-94fe-6793c64327a9",
+     "id": "dd959653-8a75-40d8-a153-055de9c3987e",
      "metadata": {
       "cellLabel": "",
       "isBoxData": false
@@ -472,22 +599,15 @@
        "mime": "text/plain"
       }
      ],
-     "id": "9221e0a5-93da-47dc-b330-2f814525077e",
+     "id": "163a496f-fb89-42c5-ad87-8d64783242c6",
      "metadata": {
-      "cellLabel": "Out[21]= ",
+      "cellLabel": "Out[53]= ",
       "isBoxData": false
      }
     }
    ],
    "metadata": {},
-   "executionSummary": {
-    "timing": {
-     "startTime": 1704189827295,
-     "endTime": 1704189830237
-    },
-    "executionOrder": 21,
-    "success": true
-   }
+   "executionSummary": {}
   },
   {
    "kind": 2,
@@ -505,22 +625,15 @@
        "mime": "text/plain"
       }
      ],
-     "id": "3301a325-5f00-45b9-b442-d1c47948fb35",
+     "id": "efb8f310-8f63-4679-8296-d1f891c66a77",
      "metadata": {
-      "cellLabel": "Out[38]= ",
+      "cellLabel": "Out[54]= ",
       "isBoxData": false
      }
     }
    ],
    "metadata": {},
-   "executionSummary": {
-    "timing": {
-     "startTime": 1704189963954,
-     "endTime": 1704189966280
-    },
-    "executionOrder": 38,
-    "success": true
-   }
+   "executionSummary": {}
   },
   {
    "kind": 2,
@@ -538,22 +651,15 @@
        "mime": "text/plain"
       }
      ],
-     "id": "4e5c2b56-6728-45b4-94a2-8be68f18f991",
+     "id": "f24da7a9-545b-4b42-a7e9-1328ae1a1070",
      "metadata": {
-      "cellLabel": "Out[40]= ",
+      "cellLabel": "Out[55]= ",
       "isBoxData": false
      }
     }
    ],
    "metadata": {},
-   "executionSummary": {
-    "timing": {
-     "startTime": 1704190055541,
-     "endTime": 1704190060868
-    },
-    "executionOrder": 40,
-    "success": true
-   }
+   "executionSummary": {}
   },
   {
    "kind": 2,
@@ -571,22 +677,15 @@
        "mime": "text/plain"
       }
      ],
-     "id": "2bf3e8ab-3699-4e41-b2da-d2eb1fdcff52",
+     "id": "a8dabc5c-56eb-4fa5-b177-2e31c9c63b5c",
      "metadata": {
-      "cellLabel": "Out[44]= ",
+      "cellLabel": "Out[56]= ",
       "isBoxData": false
      }
     }
    ],
    "metadata": {},
-   "executionSummary": {
-    "timing": {
-     "startTime": 1704190128203,
-     "endTime": 1704190134091
-    },
-    "executionOrder": 44,
-    "success": true
-   }
+   "executionSummary": {}
   },
   {
    "kind": 2,
@@ -604,22 +703,15 @@
        "mime": "text/plain"
       }
      ],
-     "id": "174f7477-e12c-45e6-ab83-245b73238dd8",
+     "id": "9ed0f3b2-8e30-4f30-9bff-4895eff62d5a",
      "metadata": {
-      "cellLabel": "Out[22]= ",
+      "cellLabel": "Out[57]= ",
       "isBoxData": false
      }
     }
    ],
    "metadata": {},
-   "executionSummary": {
-    "timing": {
-     "startTime": 1704189830238,
-     "endTime": 1704189838987
-    },
-    "executionOrder": 22,
-    "success": true
-   }
+   "executionSummary": {}
   },
   {
    "kind": 2,
@@ -637,7 +729,7 @@
        "mime": "text/plain"
       }
      ],
-     "id": "3a80e321-7768-46c3-97a2-1644182cc597",
+     "id": "9728b765-734f-4b8c-b0d0-a2235a6ab923",
      "metadata": {
       "cellLabel": "",
       "isBoxData": false
@@ -654,7 +746,7 @@
        "mime": "text/plain"
       }
      ],
-     "id": "d6b2367b-c0d8-4279-96e8-8213788a5ae0",
+     "id": "339cdd5a-7bda-4d9f-9591-d1fc2f6ecd1d",
      "metadata": {
       "cellLabel": "",
       "isBoxData": false
@@ -671,7 +763,7 @@
        "mime": "text/plain"
       }
      ],
-     "id": "6a149ce5-1eef-4a69-ab1d-4e5caacd7e88",
+     "id": "b70be667-af32-4547-a2b2-d11abce091d5",
      "metadata": {
       "cellLabel": "",
       "isBoxData": false
@@ -688,7 +780,7 @@
        "mime": "text/plain"
       }
      ],
-     "id": "7ec64f50-4619-4358-a4d7-c5fc38b3778e",
+     "id": "42a0adc7-2805-4c8c-bff6-0ca3a13f1e86",
      "metadata": {
       "cellLabel": "",
       "isBoxData": false
@@ -705,22 +797,15 @@
        "mime": "text/plain"
       }
      ],
-     "id": "52eeddc1-4ba6-4c81-8142-7c1375844cc5",
+     "id": "45765f03-581b-4e0f-a50c-9dda20079236",
      "metadata": {
-      "cellLabel": "Out[23]= ",
+      "cellLabel": "Out[58]= ",
       "isBoxData": false
      }
     }
    ],
    "metadata": {},
-   "executionSummary": {
-    "timing": {
-     "startTime": 1704189838988,
-     "endTime": 1704189850545
-    },
-    "executionOrder": 23,
-    "success": true
-   }
+   "executionSummary": {}
   },
   {
    "kind": 2,
@@ -738,22 +823,15 @@
        "mime": "text/plain"
       }
      ],
-     "id": "33836234-7103-4f15-9098-49073f9db200",
+     "id": "4c4a3969-8fe8-471e-8eea-93925afb0889",
      "metadata": {
-      "cellLabel": "Out[24]= ",
+      "cellLabel": "Out[59]= ",
       "isBoxData": false
      }
     }
    ],
    "metadata": {},
-   "executionSummary": {
-    "timing": {
-     "startTime": 1704189850545,
-     "endTime": 1704189851027
-    },
-    "executionOrder": 24,
-    "success": true
-   }
+   "executionSummary": {}
   },
   {
    "kind": 2,
@@ -771,22 +849,15 @@
        "mime": "text/plain"
       }
      ],
-     "id": "2b840106-1eb7-4b6b-9750-711667388baf",
+     "id": "52fd3dc4-d632-4adc-bc6c-c54705f71d68",
      "metadata": {
-      "cellLabel": "Out[25]= ",
+      "cellLabel": "Out[60]= ",
       "isBoxData": false
      }
     }
    ],
    "metadata": {},
-   "executionSummary": {
-    "timing": {
-     "startTime": 1704189851027,
-     "endTime": 1704189857238
-    },
-    "executionOrder": 25,
-    "success": true
-   }
+   "executionSummary": {}
   },
   {
    "kind": 1,
@@ -798,16 +869,16 @@
   },
   {
    "kind": 2,
-   "value": "DualMax[duals_] := Max /@ Transpose[duals]\n\n(* Computes max of real part and imaginary part individually. *)\ncomplexMaxLFinite[lamV_, k_, nL_] := Module[{i, dc, cnL, slopeZ, slopeFactor, pNiRange, reRange, imRange, xRange, niMin, niMax},\n  i := Length[nL] + 1;\n  dc := discr[nL] /. {lam :> lamV};\n  cnL := cFrac[nL] /. {lam :> lamV};\n  slopeZ := If[i == 1, I / lamV, (cnL * dc) / Abs[cnL * dc]];\n  slopeFactor := Min[Abs[Re[slopeZ]], Abs[Im[slopeZ]]];\n  pNiRange := CenteredInterval[- cFrac[Reverse[nL]] /. {lam :> lamV}, Complex @@ complexMax[lamV, k-i]];\n  reRange := Interval[Information[Re[pNiRange], \"Bounds\"]];\n  imMax := Max[Information[Im[pNiRange], \"Bounds\"]];\n  xRange := If[slopeFactor == 0, reRange + Interval[{-imMax, imMax}], reRange + Interval[{-imMax, imMax}] / slopeFactor];\n  niMin := Floor[Min[xRange]] /. {0 :> (-1)};\n  niMax := Ceiling[Max[xRange]] /. {0 :> 1};\n  (* Print[{k, nL, slopeZ, slopeFactor, pNiRange, xRange, cnL}]; *)\n  DualMax[Table[complexMaxL[lamV, k, Append[nL, ni]], {ni, DeleteCases[Range[niMin, niMax], 0]}]]\n]\ncomplexMaxL[lamV_, k_, nL_] := DualMax[{\n  Abs[ReIm[printIfInfty[nL, Quiet[cFrac[nL] /. {lam :> lamV}, Power::infy]]]],\n  If[Length[nL] == k, {0, 0}, complexMaxLFinite[lamV, k, nL]]}]\ncomplexMax[lamV_, k_] := complexMaxL[lamV, k, {}]",
+   "value": "DualMax[duals_] := Max /@ Transpose[duals]\n\n(* Computes max of real part and imaginary part individually. *)\ncomplexMaxLFinite[lamV_, k_, nL_] := Module[{i, dc, cnL, slopeZ, slopeFactor, pNiRange, reRange, imRange, xRange, niMin, niMax},\n  i := Length[nL] + 1;\n  dc := Simplify[discr[nL] /. {lam :> lamV}];\n  cnL := Simplify[cFrac[nL] /. {lam :> lamV}];\n  slopeZ := If[i == 1, I / lamV, (cnL * dc) / Abs[cnL * dc]] // Simplify // N;\n  (* Print[{k, nL, dc, cnL, slopeZ}]; *)\n  slopeFactor := Min[Abs[Re[slopeZ]], Abs[Im[slopeZ]]];\n  pNiRange := CenteredInterval[- Simplify[cFrac[Reverse[nL]] /. {lam :> lamV}], Complex @@ complexMax[lamV, k-i]] // N;\n  reRange := Interval[Information[Re[pNiRange], \"Bounds\"]];\n  imMax := Max[Information[Im[pNiRange], \"Bounds\"]];\n  xRange := If[slopeFactor == 0, reRange + Interval[{-imMax, imMax}], reRange + Interval[{-imMax, imMax}] / slopeFactor];\n  niMin := Floor[Min[xRange]] /. {0 :> (-1)};\n  niMax := Ceiling[Max[xRange]] /. {0 :> 1};\n  DualMax[Table[complexMaxL[lamV, k, Append[nL, ni]], {ni, DeleteCases[Range[niMin, niMax], 0]}]]\n]\ncomplexMaxL[lamV_, k_, nL_] := DualMax[{\n  Abs[ReIm[printIfInfty[nL, Quiet[Simplify[cFrac[nL] /. {lam :> lamV}], {Power::infy}]]]] // N,\n  If[Length[nL] == k, {0, 0}, complexMaxLFinite[lamV, k, nL]]}]\ncomplexMax[lamV_, k_] := Quiet[complexMaxL[lamV, k, {}], {Simplify::infd}]",
    "languageId": "wolfram",
    "outputs": [],
    "metadata": {},
    "executionSummary": {
     "timing": {
-     "startTime": 1704189857238,
-     "endTime": 1704189857481
+     "startTime": 1704983178466,
+     "endTime": 1704983178709
     },
-    "executionOrder": 26,
+    "executionOrder": 150,
     "success": true
    }
   },
@@ -827,7 +898,7 @@
        "mime": "text/plain"
       }
      ],
-     "id": "c3756855-1d8b-4b7b-aa0d-a2bf86d5c8e4",
+     "id": "bbc4b5e1-2358-4562-8737-c07ce88eb90a",
      "metadata": {
       "cellLabel": "",
       "isBoxData": false
@@ -844,7 +915,7 @@
        "mime": "text/plain"
       }
      ],
-     "id": "851bb145-9d39-4ee3-8abb-e9dea338a97b",
+     "id": "d9ad5d76-1622-4567-ae4a-0ce41b715919",
      "metadata": {
       "cellLabel": "",
       "isBoxData": false
@@ -853,30 +924,23 @@
     {
      "items": [
       {
-       "data": "<div class=\"wexpr\"><wrow><w></w><wb>{</wb><wrow><w></w><wrow><w></w><wb>{</wb><wrow><w></w><w>1</w><w>,</w><w>0</w></wrow><wb>}</wb></wrow><w>,</w><wrow><w></w><wb>{</wb><wrow><w></w><w>Indeterminate</w><w>,</w><w>Indeterminate</w></wrow><wb>}</wb></wrow></wrow><wb>}</wb></wrow></div>",
+       "data": "<div class=\"wexpr\"><wrow><w></w><wb>{</wb><wrow><w></w><wrow><w></w><wb>{</wb><wrow><w></w><w>1.</w><w>,</w><w>0.</w></wrow><wb>}</wb></wrow><w>,</w><wrow><w></w><wb>{</wb><wrow><w></w><w>Indeterminate</w><w>,</w><w>Indeterminate</w></wrow><wb>}</wb></wrow></wrow><wb>}</wb></wrow></div>",
        "mime": "x-application/wolfram-language-html"
       },
       {
-       "data": "{{1, 0}, {Indeterminate, Indeterminate}}",
+       "data": "{{1., 0.}, {Indeterminate, Indeterminate}}",
        "mime": "text/plain"
       }
      ],
-     "id": "5335155e-9b44-4cbf-adb0-1b63f65c33e6",
+     "id": "21c72150-e5a1-44da-902a-c124be4f4a6e",
      "metadata": {
-      "cellLabel": "Out[30]= ",
+      "cellLabel": "Out[102]= ",
       "isBoxData": false
      }
     }
    ],
    "metadata": {},
-   "executionSummary": {
-    "timing": {
-     "startTime": 1704189857481,
-     "endTime": 1704189857730
-    },
-    "executionOrder": 30,
-    "success": true
-   }
+   "executionSummary": {}
   },
   {
    "kind": 2,
@@ -894,7 +958,7 @@
        "mime": "text/plain"
       }
      ],
-     "id": "ec24b56b-fb81-494a-b54c-d5a8ff024a10",
+     "id": "a108405b-9441-485d-bf52-6ea965e39e71",
      "metadata": {
       "cellLabel": "",
       "isBoxData": false
@@ -911,7 +975,7 @@
        "mime": "text/plain"
       }
      ],
-     "id": "cb6d4906-ea38-4f74-8598-3c1af6b82f75",
+     "id": "34525179-d579-45ac-8ad9-543805d8956f",
      "metadata": {
       "cellLabel": "",
       "isBoxData": false
@@ -920,30 +984,23 @@
     {
      "items": [
       {
-       "data": "<div class=\"wexpr\"><wrow><w></w><wb>{</wb><wrow><w></w><wrow><w></w><wb>{</wb><wrow><w></w><wfrac><w><w>1</w></w><w><w></w><w><w>2</w></w></w></wfrac><w>,</w><w>0</w></wrow><wb>}</wb></wrow><w>,</w><wrow><w></w><wb>{</wb><wrow><w></w><w>1</w><w>,</w><w>0</w></wrow><wb>}</wb></wrow><w>,</w><wrow><w></w><wb>{</wb><wrow><w></w><w>Indeterminate</w><w>,</w><w>Indeterminate</w></wrow><wb>}</wb></wrow></wrow><wb>}</wb></wrow></div>",
+       "data": "<div class=\"wexpr\"><wrow><w></w><wb>{</wb><wrow><w></w><wrow><w></w><wb>{</wb><wrow><w></w><w>0.5</w><w>,</w><w>0.</w></wrow><wb>}</wb></wrow><w>,</w><wrow><w></w><wb>{</wb><wrow><w></w><w>1.</w><w>,</w><w>0.</w></wrow><wb>}</wb></wrow><w>,</w><wrow><w></w><wb>{</wb><wrow><w></w><w>Indeterminate</w><w>,</w><w>Indeterminate</w></wrow><wb>}</wb></wrow></wrow><wb>}</wb></wrow></div>",
        "mime": "x-application/wolfram-language-html"
       },
       {
-       "data": "{{1/2, 0}, {1, 0}, {Indeterminate, Indeterminate}}",
+       "data": "{{0.5, 0.}, {1., 0.}, {Indeterminate, Indeterminate}}",
        "mime": "text/plain"
       }
      ],
-     "id": "2049f5b3-a7fd-4aa5-983a-8fb4edaeac5d",
+     "id": "b060f2ff-3ab2-42c2-82cb-76b37195ead0",
      "metadata": {
-      "cellLabel": "Out[31]= ",
+      "cellLabel": "Out[103]= ",
       "isBoxData": false
      }
     }
    ],
    "metadata": {},
-   "executionSummary": {
-    "timing": {
-     "startTime": 1704189857731,
-     "endTime": 1704189857982
-    },
-    "executionOrder": 31,
-    "success": true
-   }
+   "executionSummary": {}
   },
   {
    "kind": 2,
@@ -961,7 +1018,7 @@
        "mime": "text/plain"
       }
      ],
-     "id": "5d51422e-a5bb-43f9-9b97-c14376abc28a",
+     "id": "00cfe263-0060-4a7e-ae84-932144b224ed",
      "metadata": {
       "cellLabel": "",
       "isBoxData": false
@@ -978,7 +1035,7 @@
        "mime": "text/plain"
       }
      ],
-     "id": "770b82f8-20f7-45bf-aa55-b04d350b279e",
+     "id": "c2c86367-8baf-4ef6-af74-9cce46200d66",
      "metadata": {
       "cellLabel": "",
       "isBoxData": false
@@ -995,7 +1052,7 @@
        "mime": "text/plain"
       }
      ],
-     "id": "640185e0-2133-43ce-b872-1e28761e10eb",
+     "id": "fb0f13df-a719-44d5-95f1-62f78b9f6b57",
      "metadata": {
       "cellLabel": "",
       "isBoxData": false
@@ -1012,7 +1069,7 @@
        "mime": "text/plain"
       }
      ],
-     "id": "c2fe166e-43a1-4b86-8de8-127a0208a907",
+     "id": "48b2357f-33cc-4613-8708-2e83eb23569b",
      "metadata": {
       "cellLabel": "",
       "isBoxData": false
@@ -1021,63 +1078,49 @@
     {
      "items": [
       {
-       "data": "<div class=\"wexpr\"><wrow><w></w><wb>{</wb><wrow><w></w><wrow><w></w><wb>{</wb><wrow><w></w><w>0</w><w>,</w><w>1</w></wrow><wb>}</wb></wrow><w>,</w><wrow><w></w><wb>{</wb><wrow><w></w><wfrac><w><w>1</w></w><w><w></w><w><w>2</w></w></w></wfrac><w>,</w><w>1</w></wrow><wb>}</wb></wrow><w>,</w><wrow><w></w><wb>{</wb><wrow><w></w><w>1</w><w>,</w><w>1</w></wrow><wb>}</wb></wrow><w>,</w><wrow><w></w><wb>{</wb><wrow><w></w><wfrac><w><w>3</w></w><w><w></w><w><w>2</w></w></w></wfrac><w>,</w><w>1</w></wrow><wb>}</wb></wrow><w>,</w><wrow><w></w><wb>{</wb><wrow><w></w><w>Indeterminate</w><w>,</w><w>Indeterminate</w></wrow><wb>}</wb></wrow></wrow><wb>}</wb></wrow></div>",
+       "data": "<div class=\"wexpr\"><wrow><w></w><wb>{</wb><wrow><w></w><wrow><w></w><wb>{</wb><wrow><w></w><w>0.</w><w>,</w><w>1.</w></wrow><wb>}</wb></wrow><w>,</w><wrow><w></w><wb>{</wb><wrow><w></w><w>0.5</w><w>,</w><w>1.</w></wrow><wb>}</wb></wrow><w>,</w><wrow><w></w><wb>{</wb><wrow><w></w><w>1.</w><w>,</w><w>1.</w></wrow><wb>}</wb></wrow><w>,</w><wrow><w></w><wb>{</wb><wrow><w></w><w>1.5</w><w>,</w><w>1.</w></wrow><wb>}</wb></wrow><w>,</w><wrow><w></w><wb>{</wb><wrow><w></w><w>Indeterminate</w><w>,</w><w>Indeterminate</w></wrow><wb>}</wb></wrow></wrow><wb>}</wb></wrow></div>",
        "mime": "x-application/wolfram-language-html"
       },
       {
-       "data": "{{0, 1}, {1/2, 1}, {1, 1}, {3/2, 1}, {Indeterminate, Indeterminate}}",
+       "data": "{{0., 1.}, {0.5, 1.}, {1., 1.}, {1.5, 1.}, {Indeterminate, Indeterminate}}",
        "mime": "text/plain"
       }
      ],
-     "id": "09c02520-e8d8-47fa-a4b2-2636a7fe687a",
+     "id": "bbce36f2-f041-49fb-88c6-5855468db9b0",
      "metadata": {
-      "cellLabel": "Out[32]= ",
+      "cellLabel": "Out[186]= ",
       "isBoxData": false
      }
     }
    ],
    "metadata": {},
-   "executionSummary": {
-    "timing": {
-     "startTime": 1704189857982,
-     "endTime": 1704189859149
-    },
-    "executionOrder": 32,
-    "success": true
-   }
+   "executionSummary": {}
   },
   {
    "kind": 2,
-   "value": "Table[complexMax[2I, k], {k, 1, 7}]",
+   "value": "Table[complexMax[2I, k], {k, 1, 6}]",
    "languageId": "wolfram",
    "outputs": [
     {
      "items": [
       {
-       "data": "<div class=\"wexpr\"><wrow><w></w><wb>{</wb><wrow><w></w><wrow><w></w><wb>{</wb><wrow><w></w><w>0</w><w>,</w><wfrac><w><w>1</w></w><w><w></w><w><w>2</w></w></w></wfrac></wrow><wb>}</wb></wrow><w>,</w><wrow><w></w><wb>{</wb><wrow><w></w><wfrac><w><w>1</w></w><w><w></w><w><w>5</w></w></w></wfrac><w>,</w><wfrac><w><w>1</w></w><w><w></w><w><w>2</w></w></w></wfrac></wrow><wb>}</wb></wrow><w>,</w><wrow><w></w><wb>{</wb><wrow><w></w><wfrac><w><w>1</w></w><w><w></w><w><w>4</w></w></w></wfrac><w>,</w><wfrac><w><w>1</w></w><w><w></w><w><w>2</w></w></w></wfrac></wrow><wb>}</wb></wrow><w>,</w><wrow><w></w><wb>{</wb><wrow><w></w><wfrac><w><w>4</w></w><w><w></w><w><w>13</w></w></w></wfrac><w>,</w><wfrac><w><w>1</w></w><w><w></w><w><w>2</w></w></w></wfrac></wrow><wb>}</wb></wrow><w>,</w><wrow><w></w><wb>{</wb><wrow><w></w><wfrac><w><w>1</w></w><w><w></w><w><w>3</w></w></w></wfrac><w>,</w><wfrac><w><w>1</w></w><w><w></w><w><w>2</w></w></w></wfrac></wrow><wb>}</wb></wrow><w>,</w><wrow><w></w><wb>{</wb><wrow><w></w><wfrac><w><w>9</w></w><w><w></w><w><w>25</w></w></w></wfrac><w>,</w><wfrac><w><w>1</w></w><w><w></w><w><w>2</w></w></w></wfrac></wrow><wb>}</wb></wrow><w>,</w><wrow><w></w><wb>{</wb><wrow><w></w><wfrac><w><w>3</w></w><w><w></w><w><w>8</w></w></w></wfrac><w>,</w><wfrac><w><w>1</w></w><w><w></w><w><w>2</w></w></w></wfrac></wrow><wb>}</wb></wrow></wrow><wb>}</wb></wrow></div>",
+       "data": "<div class=\"wexpr\"><wrow><w></w><wb>{</wb><wrow><w></w><wrow><w></w><wb>{</wb><wrow><w></w><w>0.</w><w>,</w><w>0.5</w></wrow><wb>}</wb></wrow><w>,</w><wrow><w></w><wb>{</wb><wrow><w></w><w>0.2</w><w>,</w><w>0.5</w></wrow><wb>}</wb></wrow><w>,</w><wrow><w></w><wb>{</wb><wrow><w></w><w>0.25</w><w>,</w><w>0.5</w></wrow><wb>}</wb></wrow><w>,</w><wrow><w></w><wb>{</wb><wrow><w></w><w>0.307692</w><w>,</w><w>0.5</w></wrow><wb>}</wb></wrow><w>,</w><wrow><w></w><wb>{</wb><wrow><w></w><w>0.333333</w><w>,</w><w>0.5</w></wrow><wb>}</wb></wrow><w>,</w><wrow><w></w><wb>{</wb><wrow><w></w><w>0.36</w><w>,</w><w>0.5</w></wrow><wb>}</wb></wrow></wrow><wb>}</wb></wrow></div>",
        "mime": "x-application/wolfram-language-html"
       },
       {
-       "data": "{{0, 1/2}, {1/5, 1/2}, {1/4, 1/2}, {4/13, 1/2}, {1/3, 1/2}, {9/25, 1/2}, {3/8, 1/2}}",
+       "data": "{{0., 0.5}, {0.2, 0.5}, {0.25, 0.5}, {0.3076923076923077, 0.5}, {0.3333333333333333, 0.5}, {0.36, 0.5}}",
        "mime": "text/plain"
       }
      ],
-     "id": "9e04c340-72eb-4b96-8729-68179f6c74ef",
+     "id": "87b7ac5c-2451-48d2-9dc7-a9b43e7bf500",
      "metadata": {
-      "cellLabel": "Out[61]= ",
+      "cellLabel": "Out[107]= ",
       "isBoxData": false
      }
     }
    ],
    "metadata": {},
-   "executionSummary": {
-    "timing": {
-     "startTime": 1704190475300,
-     "endTime": 1704190479624
-    },
-    "executionOrder": 61,
-    "success": true
-   }
+   "executionSummary": {}
   },
   {
    "kind": 2,
@@ -1087,30 +1130,23 @@
     {
      "items": [
       {
-       "data": "<div class=\"wexpr\"><wrow><w></w><wb>{</wb><wrow><w></w><wrow><w></w><wb>{</wb><wrow><w></w><w>0</w><w>,</w><wfrac><w><w>2</w></w><w><w></w><w><w>3</w></w></w></wfrac></wrow><wb>}</wb></wrow><w>,</w><wrow><w></w><wb>{</wb><wrow><w></w><wfrac><w><w>4</w></w><w><w></w><w><w>13</w></w></w></wfrac><w>,</w><wfrac><w><w>2</w></w><w><w></w><w><w>3</w></w></w></wfrac></wrow><wb>}</wb></wrow><w>,</w><wrow><w></w><wb>{</wb><wrow><w></w><wfrac><w><w>4</w></w><w><w></w><w><w>9</w></w></w></wfrac><w>,</w><wfrac><w><w>2</w></w><w><w></w><w><w>3</w></w></w></wfrac></wrow><wb>}</wb></wrow><w>,</w><wrow><w></w><wb>{</wb><wrow><w></w><wfrac><w><w>36</w></w><w><w></w><w><w>61</w></w></w></wfrac><w>,</w><wfrac><w><w>2</w></w><w><w></w><w><w>3</w></w></w></wfrac></wrow><wb>}</wb></wrow><w>,</w><wrow><w></w><wb>{</wb><wrow><w></w><wfrac><w><w>4</w></w><w><w></w><w><w>5</w></w></w></wfrac><w>,</w><wfrac><w><w>2</w></w><w><w></w><w><w>3</w></w></w></wfrac></wrow><wb>}</wb></wrow><w>,</w><wrow><w></w><wb>{</wb><wrow><w></w><wfrac><w><w>52</w></w><w><w></w><w><w>53</w></w></w></wfrac><w>,</w><wfrac><w><w>2</w></w><w><w></w><w><w>3</w></w></w></wfrac></wrow><wb>}</wb></wrow></wrow><wb>}</wb></wrow></div>",
+       "data": "<div class=\"wexpr\"><wrow><w></w><wb>{</wb><wrow><w></w><wrow><w></w><wb>{</wb><wrow><w></w><w>0.</w><w>,</w><w>0.666667</w></wrow><wb>}</wb></wrow><w>,</w><wrow><w></w><wb>{</wb><wrow><w></w><w>0.307692</w><w>,</w><w>0.666667</w></wrow><wb>}</wb></wrow><w>,</w><wrow><w></w><wb>{</wb><wrow><w></w><w>0.444444</w><w>,</w><w>0.666667</w></wrow><wb>}</wb></wrow><w>,</w><wrow><w></w><wb>{</wb><wrow><w></w><w>0.590164</w><w>,</w><w>0.666667</w></wrow><wb>}</wb></wrow><w>,</w><wrow><w></w><wb>{</wb><wrow><w></w><w>0.8</w><w>,</w><w>0.666667</w></wrow><wb>}</wb></wrow><w>,</w><wrow><w></w><wb>{</wb><wrow><w></w><w>0.981132</w><w>,</w><w>0.666667</w></wrow><wb>}</wb></wrow></wrow><wb>}</wb></wrow></div>",
        "mime": "x-application/wolfram-language-html"
       },
       {
-       "data": "{{0, 2/3}, {4/13, 2/3}, {4/9, 2/3}, {36/61, 2/3}, {4/5, 2/3}, {52/53, 2/3}}",
+       "data": "{{0., 0.6666666666666666}, {0.3076923076923077, 0.6666666666666666}, {0.4444444444444444, 0.6666666666666666}, {0.5901639344262295, 0.6666666666666666}, {0.8, 0.6666666666666666}, {0.9811320754716981, 0.6666666666666666}}",
        "mime": "text/plain"
       }
      ],
-     "id": "3237b1e2-dfa2-4e5b-aa13-417c573d853a",
+     "id": "debfeefd-1056-449f-b220-b9d7b1e2fe66",
      "metadata": {
-      "cellLabel": "Out[63]= ",
+      "cellLabel": "Out[187]= ",
       "isBoxData": false
      }
     }
    ],
    "metadata": {},
-   "executionSummary": {
-    "timing": {
-     "startTime": 1704190506289,
-     "endTime": 1704190509823
-    },
-    "executionOrder": 63,
-    "success": true
-   }
+   "executionSummary": {}
   },
   {
    "kind": 2,
@@ -1120,30 +1156,23 @@
     {
      "items": [
       {
-       "data": "<div class=\"wexpr\"><wrow><w></w><wb>{</wb><wrow><w></w><wrow><w></w><wb>{</wb><wrow><w></w><w>0</w><w>,</w><wfrac><w><w>1</w></w><w><w></w><w><w>3</w></w></w></wfrac></wrow><wb>}</wb></wrow><w>,</w><wrow><w></w><wb>{</wb><wrow><w></w><wfrac><w><w>1</w></w><w><w></w><w><w>10</w></w></w></wfrac><w>,</w><wfrac><w><w>1</w></w><w><w></w><w><w>3</w></w></w></wfrac></wrow><wb>}</wb></wrow><w>,</w><wrow><w></w><wb>{</wb><wrow><w></w><wfrac><w><w>1</w></w><w><w></w><w><w>9</w></w></w></wfrac><w>,</w><wfrac><w><w>1</w></w><w><w></w><w><w>3</w></w></w></wfrac></wrow><wb>}</wb></wrow><w>,</w><wrow><w></w><wb>{</wb><wrow><w></w><wfrac><w><w>9</w></w><w><w></w><w><w>73</w></w></w></wfrac><w>,</w><wfrac><w><w>1</w></w><w><w></w><w><w>3</w></w></w></wfrac></wrow><wb>}</wb></wrow><w>,</w><wrow><w></w><wb>{</wb><wrow><w></w><wfrac><w><w>1</w></w><w><w></w><w><w>8</w></w></w></wfrac><w>,</w><wfrac><w><w>1</w></w><w><w></w><w><w>3</w></w></w></wfrac></wrow><wb>}</wb></wrow><w>,</w><wrow><w></w><wb>{</wb><wrow><w></w><wfrac><w><w>64</w></w><w><w></w><w><w>505</w></w></w></wfrac><w>,</w><wfrac><w><w>1</w></w><w><w></w><w><w>3</w></w></w></wfrac></wrow><wb>}</wb></wrow><w>,</w><wrow><w></w><wb>{</wb><wrow><w></w><wfrac><w><w>8</w></w><w><w></w><w><w>63</w></w></w></wfrac><w>,</w><wfrac><w><w>1</w></w><w><w></w><w><w>3</w></w></w></wfrac></wrow><wb>}</wb></wrow></wrow><wb>}</wb></wrow></div>",
+       "data": "<div class=\"wexpr\"><wrow><w></w><wb>{</wb><wrow><w></w><wrow><w></w><wb>{</wb><wrow><w></w><w>0.</w><w>,</w><w>0.333333</w></wrow><wb>}</wb></wrow><w>,</w><wrow><w></w><wb>{</wb><wrow><w></w><w>0.1</w><w>,</w><w>0.333333</w></wrow><wb>}</wb></wrow><w>,</w><wrow><w></w><wb>{</wb><wrow><w></w><w>0.111111</w><w>,</w><w>0.333333</w></wrow><wb>}</wb></wrow><w>,</w><wrow><w></w><wb>{</wb><wrow><w></w><w>0.123288</w><w>,</w><w>0.333333</w></wrow><wb>}</wb></wrow><w>,</w><wrow><w></w><wb>{</wb><wrow><w></w><w>0.125</w><w>,</w><w>0.333333</w></wrow><wb>}</wb></wrow><w>,</w><wrow><w></w><wb>{</wb><wrow><w></w><w>0.126733</w><w>,</w><w>0.333333</w></wrow><wb>}</wb></wrow><w>,</w><wrow><w></w><wb>{</wb><wrow><w></w><w>0.126984</w><w>,</w><w>0.333333</w></wrow><wb>}</wb></wrow></wrow><wb>}</wb></wrow></div>",
        "mime": "x-application/wolfram-language-html"
       },
       {
-       "data": "{{0, 1/3}, {1/10, 1/3}, {1/9, 1/3}, {9/73, 1/3}, {1/8, 1/3}, {64/505, 1/3}, {8/63, 1/3}}",
+       "data": "{{0., 0.3333333333333333}, {0.1, 0.3333333333333333}, {0.1111111111111111, 0.3333333333333333}, {0.1232876712328767, 0.3333333333333333}, {0.125, 0.3333333333333333}, {0.12673267326732673, 0.3333333333333333}, {0.12698412698412698, 0.3333333333333333}}",
        "mime": "text/plain"
       }
      ],
-     "id": "c846bf20-be0f-4aca-bbed-4cdd013bbc2f",
+     "id": "11962bf0-6a5f-41b9-8c88-e75ea6cec0df",
      "metadata": {
-      "cellLabel": "Out[67]= ",
+      "cellLabel": "Out[188]= ",
       "isBoxData": false
      }
     }
    ],
    "metadata": {},
-   "executionSummary": {
-    "timing": {
-     "startTime": 1704190912900,
-     "endTime": 1704190916498
-    },
-    "executionOrder": 67,
-    "success": true
-   }
+   "executionSummary": {}
   },
   {
    "kind": 2,
@@ -1153,30 +1182,23 @@
     {
      "items": [
       {
-       "data": "<div class=\"wexpr\"><wrow><w></w><wb>{</wb><wrow><w></w><wrow><w></w><wb>{</wb><wrow><w></w><w>0</w><w>,</w><wfrac><w><w>3</w></w><w><w></w><w><w>4</w></w></w></wfrac></wrow><wb>}</wb></wrow><w>,</w><wrow><w></w><wb>{</wb><wrow><w></w><wfrac><w><w>9</w></w><w><w></w><w><w>25</w></w></w></wfrac><w>,</w><wfrac><w><w>3</w></w><w><w></w><w><w>4</w></w></w></wfrac></wrow><wb>}</wb></wrow><w>,</w><wrow><w></w><wb>{</wb><wrow><w></w><wfrac><w><w>9</w></w><w><w></w><w><w>16</w></w></w></wfrac><w>,</w><wfrac><w><w>3</w></w><w><w></w><w><w>4</w></w></w></wfrac></wrow><wb>}</wb></wrow><w>,</w><wrow><w></w><wb>{</wb><wrow><w></w><wfrac><w><w>144</w></w><w><w></w><w><w>193</w></w></w></wfrac><w>,</w><wfrac><w><w>3</w></w><w><w></w><w><w>4</w></w></w></wfrac></wrow><wb>}</wb></wrow><w>,</w><wrow><w></w><wb>{</wb><wrow><w></w><wfrac><w><w>9</w></w><w><w></w><w><w>7</w></w></w></wfrac><w>,</w><wfrac><w><w>3</w></w><w><w></w><w><w>4</w></w></w></wfrac></wrow><wb>}</wb></wrow></wrow><wb>}</wb></wrow></div>",
+       "data": "<div class=\"wexpr\"><wrow><w></w><wb>{</wb><wrow><w></w><wrow><w></w><wb>{</wb><wrow><w></w><w>0.</w><w>,</w><w>0.75</w></wrow><wb>}</wb></wrow><w>,</w><wrow><w></w><wb>{</wb><wrow><w></w><w>0.36</w><w>,</w><w>0.75</w></wrow><wb>}</wb></wrow><w>,</w><wrow><w></w><wb>{</wb><wrow><w></w><w>0.5625</w><w>,</w><w>0.75</w></wrow><wb>}</wb></wrow><w>,</w><wrow><w></w><wb>{</wb><wrow><w></w><w>0.746114</w><w>,</w><w>0.75</w></wrow><wb>}</wb></wrow><w>,</w><wrow><w></w><wb>{</wb><wrow><w></w><w>1.28571</w><w>,</w><w>0.75</w></wrow><wb>}</wb></wrow></wrow><wb>}</wb></wrow></div>",
        "mime": "x-application/wolfram-language-html"
       },
       {
-       "data": "{{0, 3/4}, {9/25, 3/4}, {9/16, 3/4}, {144/193, 3/4}, {9/7, 3/4}}",
+       "data": "{{0., 0.75}, {0.36, 0.75}, {0.5625, 0.75}, {0.7461139896373057, 0.75}, {1.2857142857142858, 0.75}}",
        "mime": "text/plain"
       }
      ],
-     "id": "becae2bb-6110-4e4b-9cf6-b23d26391eec",
+     "id": "61119e9b-41b3-4ba7-bbcf-32971171a14f",
      "metadata": {
-      "cellLabel": "Out[71]= ",
+      "cellLabel": "Out[189]= ",
       "isBoxData": false
      }
     }
    ],
    "metadata": {},
-   "executionSummary": {
-    "timing": {
-     "startTime": 1704190970210,
-     "endTime": 1704190971233
-    },
-    "executionOrder": 71,
-    "success": true
-   }
+   "executionSummary": {}
   },
   {
    "kind": 2,
@@ -1186,30 +1208,23 @@
     {
      "items": [
       {
-       "data": "<div class=\"wexpr\"><wrow><w></w><wb>{</wb><wrow><w></w><wrow><w></w><wb>{</wb><wrow><w></w><wfrac><w><w>2</w></w><w><w></w><w><w>5</w></w></w></wfrac><w>,</w><wfrac><w><w>1</w></w><w><w></w><w><w>5</w></w></w></wfrac></wrow><wb>}</wb></wrow><w>,</w><wrow><w></w><wb>{</wb><wrow><w></w><wfrac><w><w>1</w></w><w><w></w><w><w>2</w></w></w></wfrac><w>,</w><wfrac><w><w>1</w></w><w><w></w><w><w>2</w></w></w></wfrac></wrow><wb>}</wb></wrow><w>,</w><wrow><w></w><wb>{</wb><wrow><w></w><wfrac><w><w>13</w></w><w><w></w><w><w>25</w></w></w></wfrac><w>,</w><wfrac><w><w>3</w></w><w><w></w><w><w>5</w></w></w></wfrac></wrow><wb>}</wb></wrow><w>,</w><wrow><w></w><wb>{</wb><wrow><w></w><wfrac><w><w>7</w></w><w><w></w><w><w>13</w></w></w></wfrac><w>,</w><wfrac><w><w>2</w></w><w><w></w><w><w>3</w></w></w></wfrac></wrow><wb>}</wb></wrow><w>,</w><wrow><w></w><wb>{</wb><wrow><w></w><wfrac><w><w>3</w></w><w><w></w><w><w>5</w></w></w></wfrac><w>,</w><wfrac><w><w>7</w></w><w><w></w><w><w>10</w></w></w></wfrac></wrow><wb>}</wb></wrow><w>,</w><wrow><w></w><wb>{</wb><wrow><w></w><wfrac><w><w>37</w></w><w><w></w><w><w>61</w></w></w></wfrac><w>,</w><wfrac><w><w>4</w></w><w><w></w><w><w>5</w></w></w></wfrac></wrow><wb>}</wb></wrow></wrow><wb>}</wb></wrow></div>",
+       "data": "<div class=\"wexpr\"><wrow><w></w><wb>{</wb><wrow><w></w><wrow><w></w><wb>{</wb><wrow><w></w><w>0.4</w><w>,</w><w>0.2</w></wrow><wb>}</wb></wrow><w>,</w><wrow><w></w><wb>{</wb><wrow><w></w><w>0.5</w><w>,</w><w>0.5</w></wrow><wb>}</wb></wrow><w>,</w><wrow><w></w><wb>{</wb><wrow><w></w><w>0.52</w><w>,</w><w>0.6</w></wrow><wb>}</wb></wrow><w>,</w><wrow><w></w><wb>{</wb><wrow><w></w><w>0.538462</w><w>,</w><w>0.666667</w></wrow><wb>}</wb></wrow><w>,</w><wrow><w></w><wb>{</wb><wrow><w></w><w>0.6</w><w>,</w><w>0.7</w></wrow><wb>}</wb></wrow><w>,</w><wrow><w></w><wb>{</wb><wrow><w></w><w>0.606557</w><w>,</w><w>0.8</w></wrow><wb>}</wb></wrow></wrow><wb>}</wb></wrow></div>",
        "mime": "x-application/wolfram-language-html"
       },
       {
-       "data": "{{2/5, 1/5}, {1/2, 1/2}, {13/25, 3/5}, {7/13, 2/3}, {3/5, 7/10}, {37/61, 4/5}}",
+       "data": "{{0.4, 0.2}, {0.5, 0.5}, {0.52, 0.6}, {0.5384615384615384, 0.6666666666666666}, {0.6, 0.7}, {0.6065573770491803, 0.8}}",
        "mime": "text/plain"
       }
      ],
-     "id": "d1d1cf47-0c9b-40a8-883b-3dbf92c09b0c",
+     "id": "c5859162-370d-4291-b3a2-26b7d2ee7ec6",
      "metadata": {
-      "cellLabel": "Out[70]= ",
+      "cellLabel": "Out[190]= ",
       "isBoxData": false
      }
     }
    ],
    "metadata": {},
-   "executionSummary": {
-    "timing": {
-     "startTime": 1704190958819,
-     "endTime": 1704190963416
-    },
-    "executionOrder": 70,
-    "success": true
-   }
+   "executionSummary": {}
   },
   {
    "kind": 2,
@@ -1227,7 +1242,7 @@
        "mime": "text/plain"
       }
      ],
-     "id": "a3c59ec4-582c-42fa-a15c-08f647c6116b",
+     "id": "f4a0fab7-34c2-42ac-9b95-e5df7e1d2a08",
      "metadata": {
       "cellLabel": "",
       "isBoxData": false
@@ -1244,7 +1259,7 @@
        "mime": "text/plain"
       }
      ],
-     "id": "8a5d26c7-80ae-4315-96b0-a4f1254ac2e4",
+     "id": "9a0cb86a-e07e-4e2e-a227-d207a4a43941",
      "metadata": {
       "cellLabel": "",
       "isBoxData": false
@@ -1261,7 +1276,7 @@
        "mime": "text/plain"
       }
      ],
-     "id": "70eb88bc-5415-4d5d-a773-2b5e392f3821",
+     "id": "d470669a-0186-496f-bc13-b9f7fdbda3c6",
      "metadata": {
       "cellLabel": "",
       "isBoxData": false
@@ -1278,7 +1293,7 @@
        "mime": "text/plain"
       }
      ],
-     "id": "c0e6f945-8b24-4995-9abf-7672723eb22e",
+     "id": "f812e8c8-6242-4664-988a-46ec7323c8cd",
      "metadata": {
       "cellLabel": "",
       "isBoxData": false
@@ -1287,30 +1302,23 @@
     {
      "items": [
       {
-       "data": "<div class=\"wexpr\"><wrow><w></w><wb>{</wb><wrow><w></w><wrow><w></w><wb>{</wb><wrow><w></w><w>1</w><w>,</w><w>1</w></wrow><wb>}</wb></wrow><w>,</w><wrow><w></w><wb>{</wb><wrow><w></w><w>1</w><w>,</w><w>2</w></wrow><wb>}</wb></wrow><w>,</w><wrow><w></w><wb>{</wb><wrow><w></w><wfrac><w><w>7</w></w><w><w></w><w><w>5</w></w></w></wfrac><w>,</w><w>3</w></wrow><wb>}</wb></wrow><w>,</w><wrow><w></w><wb>{</wb><wrow><w></w><w>Indeterminate</w><w>,</w><w>Indeterminate</w></wrow><wb>}</wb></wrow></wrow><wb>}</wb></wrow></div>",
+       "data": "<div class=\"wexpr\"><wrow><w></w><wb>{</wb><wrow><w></w><wrow><w></w><wb>{</wb><wrow><w></w><w>1.</w><w>,</w><w>1.</w></wrow><wb>}</wb></wrow><w>,</w><wrow><w></w><wb>{</wb><wrow><w></w><w>1.</w><w>,</w><w>2.</w></wrow><wb>}</wb></wrow><w>,</w><wrow><w></w><wb>{</wb><wrow><w></w><w>1.4</w><w>,</w><w>3.</w></wrow><wb>}</wb></wrow><w>,</w><wrow><w></w><wb>{</wb><wrow><w></w><w>Indeterminate</w><w>,</w><w>Indeterminate</w></wrow><wb>}</wb></wrow></wrow><wb>}</wb></wrow></div>",
        "mime": "x-application/wolfram-language-html"
       },
       {
-       "data": "{{1, 1}, {1, 2}, {7/5, 3}, {Indeterminate, Indeterminate}}",
+       "data": "{{1., 1.}, {1., 2.}, {1.4, 3.}, {Indeterminate, Indeterminate}}",
        "mime": "text/plain"
       }
      ],
-     "id": "8d6df891-0939-40a7-b85d-51139218277b",
+     "id": "5a389623-cdc8-4365-afe7-a247bcefe87d",
      "metadata": {
-      "cellLabel": "Out[34]= ",
+      "cellLabel": "Out[191]= ",
       "isBoxData": false
      }
     }
    ],
    "metadata": {},
-   "executionSummary": {
-    "timing": {
-     "startTime": 1704189860115,
-     "endTime": 1704189860579
-    },
-    "executionOrder": 34,
-    "success": true
-   }
+   "executionSummary": {}
   },
   {
    "kind": 2,
@@ -1328,7 +1336,7 @@
        "mime": "text/plain"
       }
      ],
-     "id": "b513e568-35ab-44c1-a905-20c7824037d8",
+     "id": "4e081cba-4505-48c2-86b1-8a0cc1db9e89",
      "metadata": {
       "cellLabel": "",
       "isBoxData": false
@@ -1345,7 +1353,7 @@
        "mime": "text/plain"
       }
      ],
-     "id": "918199e7-b282-4f83-9806-5b92487b468e",
+     "id": "926c3a87-c2a6-436f-a1c1-eaaf065187d3",
      "metadata": {
       "cellLabel": "",
       "isBoxData": false
@@ -1362,7 +1370,7 @@
        "mime": "text/plain"
       }
      ],
-     "id": "a8675eb2-1c24-4281-bff3-a4e00fe91047",
+     "id": "2292a487-22d9-4709-b050-1a1d57220752",
      "metadata": {
       "cellLabel": "",
       "isBoxData": false
@@ -1379,7 +1387,7 @@
        "mime": "text/plain"
       }
      ],
-     "id": "49cfdde5-f289-4d5e-ac9e-308f7dbcfdd1",
+     "id": "3038426b-e903-4b14-a0c0-b190f8a47067",
      "metadata": {
       "cellLabel": "",
       "isBoxData": false
@@ -1388,17 +1396,17 @@
     {
      "items": [
       {
-       "data": "<div class=\"wexpr\"><wrow><w></w><wb>{</wb><wrow><w></w><wrow><w></w><wb>{</wb><wrow><w></w><wfrac><w><w>6</w></w><w><w></w><w><w>5</w></w></w></wfrac><w>,</w><wfrac><w><w>3</w></w><w><w></w><w><w>5</w></w></w></wfrac></wrow><wb>}</wb></wrow><w>,</w><wrow><w></w><wb>{</wb><wrow><w></w><wfrac><w><w>3</w></w><w><w></w><w><w>2</w></w></w></wfrac><w>,</w><wfrac><w><w>12</w></w><w><w></w><w><w>5</w></w></w></wfrac></wrow><wb>}</wb></wrow><w>,</w><wrow><w></w><wb>{</wb><wrow><w></w><wfrac><w><w>57</w></w><w><w></w><w><w>25</w></w></w></wfrac><w>,</w><wfrac><w><w>21</w></w><w><w></w><w><w>5</w></w></w></wfrac></wrow><wb>}</wb></wrow><w>,</w><wrow><w></w><wb>{</wb><wrow><w></w><wfrac><w><w>48</w></w><w><w></w><w><w>13</w></w></w></wfrac><w>,</w><w>6</w></wrow><wb>}</wb></wrow><w>,</w><wrow><w></w><wb>{</wb><wrow><w></w><w>Indeterminate</w><w>,</w><w>Indeterminate</w></wrow><wb>}</wb></wrow></wrow><wb>}</wb></wrow></div>",
+       "data": "<div class=\"wexpr\"><wrow><w></w><wb>{</wb><wrow><w></w><wrow><w></w><wb>{</wb><wrow><w></w><w>1.2</w><w>,</w><w>0.6</w></wrow><wb>}</wb></wrow><w>,</w><wrow><w></w><wb>{</wb><wrow><w></w><w>1.5</w><w>,</w><w>2.4</w></wrow><wb>}</wb></wrow><w>,</w><wrow><w></w><wb>{</wb><wrow><w></w><w>2.28</w><w>,</w><w>4.2</w></wrow><wb>}</wb></wrow><w>,</w><wrow><w></w><wb>{</wb><wrow><w></w><w>3.69231</w><w>,</w><w>6.</w></wrow><wb>}</wb></wrow><w>,</w><wrow><w></w><wb>{</wb><wrow><w></w><w>Indeterminate</w><w>,</w><w>Indeterminate</w></wrow><wb>}</wb></wrow></wrow><wb>}</wb></wrow></div>",
        "mime": "x-application/wolfram-language-html"
       },
       {
-       "data": "{{6/5, 3/5}, {3/2, 12/5}, {57/25, 21/5}, {48/13, 6}, {Indeterminate, Indeterminate}}",
+       "data": "{{1.2, 0.6}, {1.5, 2.4}, {2.28, 4.2}, {3.6923076923076925, 6.}, {Indeterminate, Indeterminate}}",
        "mime": "text/plain"
       }
      ],
-     "id": "d263206a-ca9c-4e00-a19d-26f0e8bdde19",
+     "id": "fcbd90ea-373d-4773-b3f7-d6eb3af8f70b",
      "metadata": {
-      "cellLabel": "Out[81]= ",
+      "cellLabel": "Out[239]= ",
       "isBoxData": false
      }
     }
@@ -1406,10 +1414,546 @@
    "metadata": {},
    "executionSummary": {
     "timing": {
-     "startTime": 1704191163942,
-     "endTime": 1704191181301
+     "startTime": 1704985295098,
+     "endTime": 1704985317216
     },
-    "executionOrder": 81,
+    "executionOrder": 239,
+    "success": true
+   }
+  },
+  {
+   "kind": 2,
+   "value": "Table[complexMax[Sqrt[2] * I, k], {k, 1, 4}]",
+   "languageId": "wolfram",
+   "outputs": [
+    {
+     "items": [
+      {
+       "data": "<div class=\"wexpr\"><wrow><w></w><wb>{</wb><wrow><w></w><wrow><w></w><wb>{</wb><wrow><w></w><w>0.</w><w>,</w><w>0.707107</w></wrow><wb>}</wb></wrow><w>,</w><wrow><w></w><wb>{</wb><wrow><w></w><w>0.333333</w><w>,</w><w>0.707107</w></wrow><wb>}</wb></wrow><w>,</w><wrow><w></w><wb>{</wb><wrow><w></w><w>0.5</w><w>,</w><w>0.707107</w></wrow><wb>}</wb></wrow><w>,</w><wrow><w></w><wb>{</wb><wrow><w></w><w>0.666667</w><w>,</w><w>0.707107</w></wrow><wb>}</wb></wrow></wrow><wb>}</wb></wrow></div>",
+       "mime": "x-application/wolfram-language-html"
+      },
+      {
+       "data": "{{0., 0.7071067811865475}, {0.3333333333333333, 0.7071067811865475}, {0.5, 0.7071067811865475}, {0.6666666666666666, 0.7071067811865475}}",
+       "mime": "text/plain"
+      }
+     ],
+     "id": "59638de6-0c9f-4acf-83ba-0ada935e1349",
+     "metadata": {
+      "cellLabel": "Out[116]= ",
+      "isBoxData": false
+     }
+    }
+   ],
+   "metadata": {},
+   "executionSummary": {
+    "timing": {
+     "startTime": 1704982634069,
+     "endTime": 1704982634552
+    },
+    "executionOrder": 116,
+    "success": true
+   }
+  },
+  {
+   "kind": 2,
+   "value": "Table[complexMax[1/2 + Sqrt[3]/2 I, k], {k, 1, 4}]",
+   "languageId": "wolfram",
+   "outputs": [
+    {
+     "items": [
+      {
+       "data": "<pre>{-1, 1, 1, -1}\n</pre>",
+       "mime": "x-application/wolfram-language-html"
+      },
+      {
+       "data": "\"{-1, 1, 1, -1}\\n\"",
+       "mime": "text/plain"
+      }
+     ],
+     "id": "ecf4cd32-208a-4a76-a819-bf2d1fe1b677",
+     "metadata": {
+      "cellLabel": "",
+      "isBoxData": false
+     }
+    },
+    {
+     "items": [
+      {
+       "data": "<pre>{1, -1, -1, 1}\n</pre>",
+       "mime": "x-application/wolfram-language-html"
+      },
+      {
+       "data": "\"{1, -1, -1, 1}\\n\"",
+       "mime": "text/plain"
+      }
+     ],
+     "id": "ea29051d-1a09-4322-9551-3b72a9ed3597",
+     "metadata": {
+      "cellLabel": "",
+      "isBoxData": false
+     }
+    },
+    {
+     "items": [
+      {
+       "data": "<div class=\"wexpr\"><wrow><w></w><wb>{</wb><wrow><w></w><wrow><w></w><wb>{</wb><wrow><w></w><w>0.5</w><w>,</w><w>0.866025</w></wrow><wb>}</wb></wrow><w>,</w><wrow><w></w><wb>{</wb><wrow><w></w><w>0.571429</w><w>,</w><w>1.1547</w></wrow><wb>}</wb></wrow><w>,</w><wrow><w></w><wb>{</wb><wrow><w></w><w>1.</w><w>,</w><w>1.73205</w></wrow><wb>}</wb></wrow><w>,</w><wrow><w></w><wb>{</wb><wrow><w></w><w>Indeterminate</w><w>,</w><w>Indeterminate</w></wrow><wb>}</wb></wrow></wrow><wb>}</wb></wrow></div>",
+       "mime": "x-application/wolfram-language-html"
+      },
+      {
+       "data": "{{0.5, 0.8660254037844386}, {0.5714285714285714, 1.1547005383792517}, {1., 1.7320508075688772}, {Indeterminate, Indeterminate}}",
+       "mime": "text/plain"
+      }
+     ],
+     "id": "c61d60d0-3b96-430d-815f-36e074ff68e2",
+     "metadata": {
+      "cellLabel": "Out[155]= ",
+      "isBoxData": false
+     }
+    }
+   ],
+   "metadata": {},
+   "executionSummary": {
+    "timing": {
+     "startTime": 1704983188263,
+     "endTime": 1704983189817
+    },
+    "executionOrder": 155,
+    "success": true
+   }
+  },
+  {
+   "kind": 2,
+   "value": "Table[complexMax[- 1/2 + Sqrt[3]/ 2 I, k], {k, 1, 4}]",
+   "languageId": "wolfram",
+   "outputs": [
+    {
+     "items": [
+      {
+       "data": "<pre>{-1, -1, 1, 1}\n</pre>",
+       "mime": "x-application/wolfram-language-html"
+      },
+      {
+       "data": "\"{-1, -1, 1, 1}\\n\"",
+       "mime": "text/plain"
+      }
+     ],
+     "id": "acdcf6a7-c9f6-41f3-8f6c-0ea277fe904b",
+     "metadata": {
+      "cellLabel": "",
+      "isBoxData": false
+     }
+    },
+    {
+     "items": [
+      {
+       "data": "<pre>{1, 1, -1, -1}\n</pre>",
+       "mime": "x-application/wolfram-language-html"
+      },
+      {
+       "data": "\"{1, 1, -1, -1}\\n\"",
+       "mime": "text/plain"
+      }
+     ],
+     "id": "7bc163a5-4859-488b-968a-efa5917ffd10",
+     "metadata": {
+      "cellLabel": "",
+      "isBoxData": false
+     }
+    },
+    {
+     "items": [
+      {
+       "data": "<div class=\"wexpr\"><wrow><w></w><wb>{</wb><wrow><w></w><wrow><w></w><wb>{</wb><wrow><w></w><w>0.5</w><w>,</w><w>0.866025</w></wrow><wb>}</wb></wrow><w>,</w><wrow><w></w><wb>{</wb><wrow><w></w><w>0.571429</w><w>,</w><w>1.1547</w></wrow><wb>}</wb></wrow><w>,</w><wrow><w></w><wb>{</wb><wrow><w></w><w>1.</w><w>,</w><w>1.73205</w></wrow><wb>}</wb></wrow><w>,</w><wrow><w></w><wb>{</wb><wrow><w></w><w>Indeterminate</w><w>,</w><w>Indeterminate</w></wrow><wb>}</wb></wrow></wrow><wb>}</wb></wrow></div>",
+       "mime": "x-application/wolfram-language-html"
+      },
+      {
+       "data": "{{0.5, 0.8660254037844386}, {0.5714285714285714, 1.1547005383792517}, {1., 1.7320508075688772}, {Indeterminate, Indeterminate}}",
+       "mime": "text/plain"
+      }
+     ],
+     "id": "1d5a48f9-7c72-4119-ba59-a4105338d834",
+     "metadata": {
+      "cellLabel": "Out[178]= ",
+      "isBoxData": false
+     }
+    }
+   ],
+   "metadata": {},
+   "executionSummary": {
+    "timing": {
+     "startTime": 1704983636356,
+     "endTime": 1704983639696
+    },
+    "executionOrder": 178,
+    "success": true
+   }
+  },
+  {
+   "kind": 2,
+   "value": "Table[complexMax[3/5 + 4/5 I, k], {k, 1, 5}]",
+   "languageId": "wolfram",
+   "outputs": [
+    {
+     "items": [
+      {
+       "data": "<pre>{-5, 1, -1, -1, 1}\n</pre>",
+       "mime": "x-application/wolfram-language-html"
+      },
+      {
+       "data": "\"{-5, 1, -1, -1, 1}\\n\"",
+       "mime": "text/plain"
+      }
+     ],
+     "id": "dc208f4f-fe27-4c9c-a0d8-ca64360c3448",
+     "metadata": {
+      "cellLabel": "",
+      "isBoxData": false
+     }
+    },
+    {
+     "items": [
+      {
+       "data": "<pre>{-1, 1, 1, -1, 5}\n</pre>",
+       "mime": "x-application/wolfram-language-html"
+      },
+      {
+       "data": "\"{-1, 1, 1, -1, 5}\\n\"",
+       "mime": "text/plain"
+      }
+     ],
+     "id": "96637f14-6614-4843-85f1-f11ae953388c",
+     "metadata": {
+      "cellLabel": "",
+      "isBoxData": false
+     }
+    },
+    {
+     "items": [
+      {
+       "data": "<pre>{1, -1, -1, 1, -5}\n</pre>",
+       "mime": "x-application/wolfram-language-html"
+      },
+      {
+       "data": "\"{1, -1, -1, 1, -5}\\n\"",
+       "mime": "text/plain"
+      }
+     ],
+     "id": "407c5c7c-8048-4b0b-97be-5000e1cc16c9",
+     "metadata": {
+      "cellLabel": "",
+      "isBoxData": false
+     }
+    },
+    {
+     "items": [
+      {
+       "data": "<pre>{5, -1, 1, 1, -1}\n</pre>",
+       "mime": "x-application/wolfram-language-html"
+      },
+      {
+       "data": "\"{5, -1, 1, 1, -1}\\n\"",
+       "mime": "text/plain"
+      }
+     ],
+     "id": "3d91357e-39be-41f7-b413-4f27f6001750",
+     "metadata": {
+      "cellLabel": "",
+      "isBoxData": false
+     }
+    },
+    {
+     "items": [
+      {
+       "data": "<div class=\"wexpr\"><wrow><w></w><wb>{</wb><wrow><w></w><wrow><w></w><wb>{</wb><wrow><w></w><w>0.6</w><w>,</w><w>0.8</w></wrow><wb>}</wb></wrow><w>,</w><wrow><w></w><wb>{</wb><wrow><w></w><w>0.617647</w><w>,</w><w>1.23077</w></wrow><wb>}</wb></wrow><w>,</w><wrow><w></w><wb>{</wb><wrow><w></w><w>0.88</w><w>,</w><w>1.76</w></wrow><wb>}</wb></wrow><w>,</w><wrow><w></w><wb>{</wb><wrow><w></w><w>5.</w><w>,</w><w>2.35294</w></wrow><wb>}</wb></wrow><w>,</w><wrow><w></w><wb>{</wb><wrow><w></w><w>Indeterminate</w><w>,</w><w>Indeterminate</w></wrow><wb>}</wb></wrow></wrow><wb>}</wb></wrow></div>",
+       "mime": "x-application/wolfram-language-html"
+      },
+      {
+       "data": "{{0.6, 0.8}, {0.6176470588235294, 1.2307692307692308}, {0.88, 1.76}, {5., 2.3529411764705883}, {Indeterminate, Indeterminate}}",
+       "mime": "text/plain"
+      }
+     ],
+     "id": "a744b018-b7eb-4887-8e43-8603e6cb8581",
+     "metadata": {
+      "cellLabel": "Out[194]= ",
+      "isBoxData": false
+     }
+    }
+   ],
+   "metadata": {},
+   "executionSummary": {
+    "timing": {
+     "startTime": 1704983834356,
+     "endTime": 1704983843785
+    },
+    "executionOrder": 194,
+    "success": true
+   }
+  },
+  {
+   "kind": 2,
+   "value": "Table[complexMax[1/3 (2 + I Sqrt[5]), k], {k, 1, 5}]",
+   "languageId": "wolfram",
+   "outputs": [
+    {
+     "items": [
+      {
+       "data": "<pre>{-3, 1, -1, -1, 1}\n</pre>",
+       "mime": "x-application/wolfram-language-html"
+      },
+      {
+       "data": "\"{-3, 1, -1, -1, 1}\\n\"",
+       "mime": "text/plain"
+      }
+     ],
+     "id": "b4e7ed4a-de6e-4570-a9fa-289ace00e211",
+     "metadata": {
+      "cellLabel": "",
+      "isBoxData": false
+     }
+    },
+    {
+     "items": [
+      {
+       "data": "<pre>{-1, 1, 1, -1, 3}\n</pre>",
+       "mime": "x-application/wolfram-language-html"
+      },
+      {
+       "data": "\"{-1, 1, 1, -1, 3}\\n\"",
+       "mime": "text/plain"
+      }
+     ],
+     "id": "ffab5ebf-ddbf-4ce8-bf96-1d1123859684",
+     "metadata": {
+      "cellLabel": "",
+      "isBoxData": false
+     }
+    },
+    {
+     "items": [
+      {
+       "data": "<pre>{1, -1, -1, 1, -3}\n</pre>",
+       "mime": "x-application/wolfram-language-html"
+      },
+      {
+       "data": "\"{1, -1, -1, 1, -3}\\n\"",
+       "mime": "text/plain"
+      }
+     ],
+     "id": "05ff579b-4ea5-4cf8-9f75-e7f4f60a0fbb",
+     "metadata": {
+      "cellLabel": "",
+      "isBoxData": false
+     }
+    },
+    {
+     "items": [
+      {
+       "data": "<pre>{3, -1, 1, 1, -1}\n</pre>",
+       "mime": "x-application/wolfram-language-html"
+      },
+      {
+       "data": "\"{3, -1, 1, 1, -1}\\n\"",
+       "mime": "text/plain"
+      }
+     ],
+     "id": "7cdde027-b3f4-48b8-8eb3-2a507a42b57c",
+     "metadata": {
+      "cellLabel": "",
+      "isBoxData": false
+     }
+    },
+    {
+     "items": [
+      {
+       "data": "<div class=\"wexpr\"><wrow><w></w><wb>{</wb><wrow><w></w><wrow><w></w><wb>{</wb><wrow><w></w><w>0.666667</w><w>,</w><w>0.745356</w></wrow><wb>}</wb></wrow><w>,</w><wrow><w></w><wb>{</wb><wrow><w></w><w>0.668539</w><w>,</w><w>1.27775</w></wrow><wb>}</wb></wrow><w>,</w><wrow><w></w><wb>{</wb><wrow><w></w><w>0.777778</w><w>,</w><w>1.81015</w></wrow><wb>}</wb></wrow><w>,</w><wrow><w></w><wb>{</wb><wrow><w></w><w>3.</w><w>,</w><w>2.68328</w></wrow><wb>}</wb></wrow><w>,</w><wrow><w></w><wb>{</wb><wrow><w></w><w>Indeterminate</w><w>,</w><w>Indeterminate</w></wrow><wb>}</wb></wrow></wrow><wb>}</wb></wrow></div>",
+       "mime": "x-application/wolfram-language-html"
+      },
+      {
+       "data": "{{0.6666666666666666, 0.7453559924999299}, {0.6685393258426966, 1.2777531299998799}, {0.7777777777777778, 1.8101502674998298}, {3., 2.6832815729997472}, {Indeterminate, Indeterminate}}",
+       "mime": "text/plain"
+      }
+     ],
+     "id": "016cf1fc-712d-4ead-aa92-46880a36abb9",
+     "metadata": {
+      "cellLabel": "Out[229]= ",
+      "isBoxData": false
+     }
+    }
+   ],
+   "metadata": {},
+   "executionSummary": {
+    "timing": {
+     "startTime": 1704984300987,
+     "endTime": 1704984419141
+    },
+    "executionOrder": 229,
+    "success": true
+   }
+  },
+  {
+   "kind": 2,
+   "value": "Table[complexMax[1/3 (1 + 2 Sqrt[2] I), k], {k, 1, 5}]",
+   "languageId": "wolfram",
+   "outputs": [
+    {
+     "items": [
+      {
+       "data": "<pre>{-3, -1, 1, 1, -1}\n</pre>",
+       "mime": "x-application/wolfram-language-html"
+      },
+      {
+       "data": "\"{-3, -1, 1, 1, -1}\\n\"",
+       "mime": "text/plain"
+      }
+     ],
+     "id": "7c2f5566-f7c0-41e9-9abb-5edc5e13b5e1",
+     "metadata": {
+      "cellLabel": "",
+      "isBoxData": false
+     }
+    },
+    {
+     "items": [
+      {
+       "data": "<pre>{-1, 1, 1, -1, -3}\n</pre>",
+       "mime": "x-application/wolfram-language-html"
+      },
+      {
+       "data": "\"{-1, 1, 1, -1, -3}\\n\"",
+       "mime": "text/plain"
+      }
+     ],
+     "id": "5a1eba8b-0344-4eb4-a57d-a1e60b476bb5",
+     "metadata": {
+      "cellLabel": "",
+      "isBoxData": false
+     }
+    },
+    {
+     "items": [
+      {
+       "data": "<pre>{1, -1, -1, 1, 3}\n</pre>",
+       "mime": "x-application/wolfram-language-html"
+      },
+      {
+       "data": "\"{1, -1, -1, 1, 3}\\n\"",
+       "mime": "text/plain"
+      }
+     ],
+     "id": "7fac04f4-56a3-44fe-94b4-ab65631f8030",
+     "metadata": {
+      "cellLabel": "",
+      "isBoxData": false
+     }
+    },
+    {
+     "items": [
+      {
+       "data": "<pre>{3, 1, -1, -1, 1}\n</pre>",
+       "mime": "x-application/wolfram-language-html"
+      },
+      {
+       "data": "\"{3, 1, -1, -1, 1}\\n\"",
+       "mime": "text/plain"
+      }
+     ],
+     "id": "8f34193b-f838-4fb2-840b-67ac963ab809",
+     "metadata": {
+      "cellLabel": "",
+      "isBoxData": false
+     }
+    },
+    {
+     "items": [
+      {
+       "data": "<div class=\"wexpr\"><wrow><w></w><wb>{</wb><wrow><w></w><wrow><w></w><wb>{</wb><wrow><w></w><w>0.333333</w><w>,</w><w>0.942809</w></wrow><wb>}</wb></wrow><w>,</w><wrow><w></w><wb>{</wb><wrow><w></w><w>0.526316</w><w>,</w><w>1.02852</w></wrow><wb>}</wb></wrow><w>,</w><wrow><w></w><wb>{</wb><wrow><w></w><w>1.11111</w><w>,</w><w>1.57135</w></wrow><wb>}</wb></wrow><w>,</w><wrow><w></w><wb>{</wb><wrow><w></w><w>3.</w><w>,</w><w>2.47487</w></wrow><wb>}</wb></wrow><w>,</w><wrow><w></w><wb>{</wb><wrow><w></w><w>Indeterminate</w><w>,</w><w>Indeterminate</w></wrow><wb>}</wb></wrow></wrow><wb>}</wb></wrow></div>",
+       "mime": "x-application/wolfram-language-html"
+      },
+      {
+       "data": "{{0.3333333333333333, 0.9428090415820634}, {0.5263157894736842, 1.02851895445316}, {1.1111111111111112, 1.5713484026367726}, {3., 2.4748737341529163}, {Indeterminate, Indeterminate}}",
+       "mime": "text/plain"
+      }
+     ],
+     "id": "c281e422-b1f6-452c-a61e-76453f48887a",
+     "metadata": {
+      "cellLabel": "Out[238]= ",
+      "isBoxData": false
+     }
+    }
+   ],
+   "metadata": {},
+   "executionSummary": {
+    "timing": {
+     "startTime": 1704984600311,
+     "endTime": 1704984839801
+    },
+    "executionOrder": 238,
+    "success": true
+   }
+  },
+  {
+   "kind": 2,
+   "value": "cFrac[{-3,-1,1,1,-1}]//Simplify",
+   "languageId": "wolfram",
+   "outputs": [
+    {
+     "items": [
+      {
+       "data": "<div class=\"wexpr\"><wfrac><w><wrow><w></w><wrow><w></w><w>-</w><w>1</w></wrow><w>+</w><w>lam</w><w>-</w><wsup><w></w><w>lam</w><w><w>2</w></w></wsup></wrow></w><w><w></w><w><wrow><w></w><w>lam</w><w></w><wrow><w></w><wb>(</wb><wrow><w></w><w>3</w><w>-</w><wrow><w></w><w>2</w><w></w><w>lam</w></wrow><w>+</w><wrow><w></w><w>3</w><w></w><wsup><w></w><w>lam</w><w><w>2</w></w></wsup></wrow></wrow><wb>)</wb></wrow></wrow></w></w></wfrac></div>",
+       "mime": "x-application/wolfram-language-html"
+      },
+      {
+       "data": "(-1 + lam - lam^2)/(lam*(3 - 2*lam + 3*lam^2))",
+       "mime": "text/plain"
+      }
+     ],
+     "id": "2fd49d9c-8d71-4967-a706-34722df05e9b",
+     "metadata": {
+      "cellLabel": "Out[296]= ",
+      "isBoxData": false
+     }
+    }
+   ],
+   "metadata": {},
+   "executionSummary": {
+    "timing": {
+     "startTime": 1704986421921,
+     "endTime": 1704986422052
+    },
+    "executionOrder": 296,
+    "success": true
+   }
+  },
+  {
+   "kind": 2,
+   "value": "Solve[3-2x+3x^2 == 0,x]",
+   "languageId": "wolfram",
+   "outputs": [
+    {
+     "items": [
+      {
+       "data": "<div class=\"wexpr\"><wrow><w></w><wb>{</wb><wrow><w></w><wrow><w></w><wb>{</wb><wrow><w></w><w>x</w><w class=\"symbol\"></w><wrow><w></w><wfrac><w><w>1</w></w><w><w></w><w><w>3</w></w></w></wfrac><w></w><wrow><w></w><wb>(</wb><wrow><w></w><w>1</w><w>-</w><wrow><w></w><w>2</w><w></w><w>𝕚</w><w></w><wsqrt><w><w>\\</w></w><w></w><w><w>2</w></w></wsqrt></wrow></wrow><wb>)</wb></wrow></wrow></wrow><wb>}</wb></wrow><w>,</w><wrow><w></w><wb>{</wb><wrow><w></w><w>x</w><w class=\"symbol\"></w><wrow><w></w><wfrac><w><w>1</w></w><w><w></w><w><w>3</w></w></w></wfrac><w></w><wrow><w></w><wb>(</wb><wrow><w></w><w>1</w><w>+</w><wrow><w></w><w>2</w><w></w><w>𝕚</w><w></w><wsqrt><w><w>\\</w></w><w></w><w><w>2</w></w></wsqrt></wrow></wrow><wb>)</wb></wrow></wrow></wrow><wb>}</wb></wrow></wrow><wb>}</wb></wrow></div>",
+       "mime": "x-application/wolfram-language-html"
+      },
+      {
+       "data": "{{x -> (1 - (2*I)*Sqrt[2])/3}, {x -> (1 + (2*I)*Sqrt[2])/3}}",
+       "mime": "text/plain"
+      }
+     ],
+     "id": "ba3fb209-caa0-45e8-8346-286cddc8392e",
+     "metadata": {
+      "cellLabel": "Out[297]= ",
+      "isBoxData": false
+     }
+    }
+   ],
+   "metadata": {},
+   "executionSummary": {
+    "timing": {
+     "startTime": 1704986435531,
+     "endTime": 1704986435657
+    },
+    "executionOrder": 297,
     "success": true
    }
   },
