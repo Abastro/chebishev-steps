@@ -1,0 +1,136 @@
+{
+ "cells": [
+  {
+   "kind": 2,
+   "value": "cFrac[{}] := 0\ncFrac[{n1_}] := 1 / (lam * n1)\ncFrac[{n1_, nR___}] := cFrac[{n1 + cFrac[{nR}]}]\n\ncFrac[{n1, n2, n3}] // Simplify",
+   "languageId": "wolfram",
+   "outputs": [
+    {
+     "items": [
+      {
+       "data": "<div class=\"wexpr\"><wfrac><w><wrow><w></w><w>1</w><w>+</w><wrow><w></w><w>lam</w><w></w><w>n2</w><w></w><w>n3</w></wrow></wrow></w><w><w></w><w><wrow><w></w><w>lam</w><w></w><wrow><w></w><wb>(</wb><wrow><w></w><w>n1</w><w>+</w><w>n3</w><w>+</w><wrow><w></w><w>lam</w><w></w><w>n1</w><w></w><w>n2</w><w></w><w>n3</w></wrow></wrow><wb>)</wb></wrow></wrow></w></w></wfrac></div>",
+       "mime": "x-application/wolfram-language-html"
+      },
+      {
+       "data": "(1 + lam*n2*n3)/(lam*(n1 + n3 + lam*n1*n2*n3))",
+       "mime": "text/plain"
+      }
+     ],
+     "id": "244c932a-b84c-4aa7-aeaa-8a7274420c8d",
+     "metadata": {
+      "cellLabel": "Out[6]= ",
+      "isBoxData": false
+     }
+    }
+   ],
+   "metadata": {},
+   "executionSummary": {
+    "timing": {
+     "startTime": 1707980994333,
+     "endTime": 1707980994645
+    },
+    "executionOrder": 3,
+    "success": true
+   }
+  },
+  {
+   "kind": 2,
+   "value": "{1,2,3}[[3;;1;;-1]]\nSymbolList[\"n\", 1, 3]",
+   "languageId": "wolfram",
+   "outputs": [
+    {
+     "items": [
+      {
+       "data": "<div class=\"wexpr\"><wrow><w></w><wb>{</wb><wrow><w></w><w>3</w><w>,</w><w>2</w><w>,</w><w>1</w></wrow><wb>}</wb></wrow></div>",
+       "mime": "x-application/wolfram-language-html"
+      },
+      {
+       "data": "{3, 2, 1}",
+       "mime": "text/plain"
+      }
+     ],
+     "id": "a271ad00-02dc-4d29-bb1c-1e306262a159",
+     "metadata": {
+      "cellLabel": "Out[33]= ",
+      "isBoxData": false
+     }
+    },
+    {
+     "items": [
+      {
+       "data": "<div class=\"wexpr\"><wrow><w></w><wb>{</wb><wrow><w></w><w>n1</w><w>,</w><w>n2</w><w>,</w><w>n3</w></wrow><wb>}</wb></wrow></div>",
+       "mime": "x-application/wolfram-language-html"
+      },
+      {
+       "data": "{n1, n2, n3}",
+       "mime": "text/plain"
+      }
+     ],
+     "id": "350088a3-45f9-4a71-859b-c86a0cf9ccd6",
+     "metadata": {
+      "cellLabel": "Out[34]= ",
+      "isBoxData": false
+     }
+    }
+   ],
+   "metadata": {},
+   "executionSummary": {}
+  },
+  {
+   "kind": 2,
+   "value": "SummarizeTests[tests_] := Grid[\n  Prepend[\n    Table[{test[\"TestID\"], test[\"Outcome\"], test[\"ExpectedOutput\"], test[\"ActualOutput\"]}, {test, tests}],\n    {\"ID\", \"Outcome\", \"Expected\", \"Actual\"}\n  ],\n  Frame -> True\n]",
+   "languageId": "wolfram",
+   "outputs": [],
+   "metadata": {},
+   "executionSummary": {
+    "timing": {
+     "startTime": 1707980997599,
+     "endTime": 1707980997664
+    },
+    "executionOrder": 7,
+    "success": true
+   }
+  },
+  {
+   "kind": 2,
+   "value": "lamFactor[poly_] := If[PolynomialRemainder[poly, lam, lam] == 0, PolynomialQuotient[poly, lam, lam], poly]\nremarkProp[ns_, ns2_, k_, k2_] := With[{\n    smallEqual := cFrac[ns[[k ;; 1 ;; -1]]] - cFrac[ns2[[k2 ;; 1 ;; -1]]] // Together // Numerator // SimplifyExpand,\n    largeInfinite := cFrac[Catenate[{ ns2[[1 ;; k2-1]], {ns2[[k2]] - ns[[k]]} , - ns[[k-1 ;; 1 ;; -1]] }]] // Together // Denominator // SimplifyExpand\n  }, TestCreate[(smallEqual - lamFactor[largeInfinite]) // SimplifyExpand, 0, TestID -> ToString[{k, k2}]]]\nCatenate[Table[remarkProp[SymbolList[\"n\", 1, k], SymbolList[\"m\", 1, k2], k, k2], {k, 2, 9}, {k2, 2, k-1}]] // TestEvaluate // SummarizeTests",
+   "languageId": "wolfram",
+   "outputs": [
+    {
+     "items": [
+      {
+       "data": "<div class=\"wexpr\"><wgrid class=\"outer-frame\" style=\"grid-template-columns:repeat(4,max-content);\"><w><w>ID</w></w><w><w>Outcome</w></w><w><w>Expected</w></w><w><w>Actual</w></w><w><w>{3, 2}</w></w><w><w>Success</w></w><w><w>0</w></w><w><w>0</w></w><w><w>{4, 2}</w></w><w><w>Success</w></w><w><w>0</w></w><w><w>0</w></w><w><w>{4, 3}</w></w><w><w>Success</w></w><w><w>0</w></w><w><w>0</w></w><w><w>{5, 2}</w></w><w><w>Success</w></w><w><w>0</w></w><w><w>0</w></w><w><w>{5, 3}</w></w><w><w>Success</w></w><w><w>0</w></w><w><w>0</w></w><w><w>{5, 4}</w></w><w><w>Success</w></w><w><w>0</w></w><w><w>0</w></w><w><w>{6, 2}</w></w><w><w>Success</w></w><w><w>0</w></w><w><w>0</w></w><w><w>{6, 3}</w></w><w><w>Success</w></w><w><w>0</w></w><w><w>0</w></w><w><w>{6, 4}</w></w><w><w>Success</w></w><w><w>0</w></w><w><w>0</w></w><w><w>{6, 5}</w></w><w><w>Success</w></w><w><w>0</w></w><w><w>0</w></w><w><w>{7, 2}</w></w><w><w>Success</w></w><w><w>0</w></w><w><w>0</w></w><w><w>{7, 3}</w></w><w><w>Success</w></w><w><w>0</w></w><w><w>0</w></w><w><w>{7, 4}</w></w><w><w>Success</w></w><w><w>0</w></w><w><w>0</w></w><w><w>{7, 5}</w></w><w><w>Success</w></w><w><w>0</w></w><w><w>0</w></w><w><w>{7, 6}</w></w><w><w>Success</w></w><w><w>0</w></w><w><w>0</w></w><w><w>{8, 2}</w></w><w><w>Success</w></w><w><w>0</w></w><w><w>0</w></w><w><w>{8, 3}</w></w><w><w>Success</w></w><w><w>0</w></w><w><w>0</w></w><w><w>{8, 4}</w></w><w><w>Success</w></w><w><w>0</w></w><w><w>0</w></w><w><w>{8, 5}</w></w><w><w>Success</w></w><w><w>0</w></w><w><w>0</w></w><w><w>{8, 6}</w></w><w><w>Success</w></w><w><w>0</w></w><w><w>0</w></w><w><w>{8, 7}</w></w><w><w>Success</w></w><w><w>0</w></w><w><w>0</w></w><w><w>{9, 2}</w></w><w><w>Success</w></w><w><w>0</w></w><w><w>0</w></w><w><w>{9, 3}</w></w><w><w>Success</w></w><w><w>0</w></w><w><w>0</w></w><w><w>{9, 4}</w></w><w><w>Success</w></w><w><w>0</w></w><w><w>0</w></w><w><w>{9, 5}</w></w><w><w>Success</w></w><w><w>0</w></w><w><w>0</w></w><w><w>{9, 6}</w></w><w><w>Success</w></w><w><w>0</w></w><w><w>0</w></w><w><w>{9, 7}</w></w><w><w>Success</w></w><w><w>0</w></w><w><w>0</w></w><w><w>{9, 8}</w></w><w><w>Success</w></w><w><w>0</w></w><w><w>0</w></w></wgrid></div>",
+       "mime": "x-application/wolfram-language-html"
+      },
+      {
+       "data": "Grid[{{\"ID\", \"Outcome\", \"Expected\", \"Actual\"}, {\"{3, 2}\", \"Success\", HoldForm[0], HoldForm[0]}, {\"{4, 2}\", \"Success\", HoldForm[0], HoldForm[0]}, {\"{4, 3}\", \"Success\", HoldForm[0], HoldForm[0]}, {\"{5, 2}\", \"Success\", HoldForm[0], HoldForm[0]}, {\"{5, 3}\", \"Success\", HoldForm[0], HoldForm[0]}, {\"{5, 4}\", \"Success\", HoldForm[0], HoldForm[0]}, {\"{6, 2}\", \"Success\", HoldForm[0], HoldForm[0]}, {\"{6, 3}\", \"Success\", HoldForm[0], HoldForm[0]}, {\"{6, 4}\", \"Success\", HoldForm[0], HoldForm[0]}, {\"{6, 5}\", \"Success\", HoldForm[0], HoldForm[0]}, {\"{7, 2}\", \"Success\", HoldForm[0], HoldForm[0]}, {\"{7, 3}\", \"Success\", HoldForm[0], HoldForm[0]}, {\"{7, 4}\", \"Success\", HoldForm[0], HoldForm[0]}, {\"{7, 5}\", \"Success\", HoldForm[0], HoldForm[0]}, {\"{7, 6}\", \"Success\", HoldForm[0], HoldForm[0]}, {\"{8, 2}\", \"Success\", HoldForm[0], HoldForm[0]}, {\"{8, 3}\", \"Success\", HoldForm[0], HoldForm[0]}, {\"{8, 4}\", \"Success\", HoldForm[0], HoldForm[0]}, {\"{8, 5}\", \"Success\", HoldForm[0], HoldForm[0]}, {\"{8, 6}\", \"Success\", HoldForm[0], HoldForm[0]}, {\"{8, 7}\", \"Success\", HoldForm[0], HoldForm[0]}, {\"{9, 2}\", \"Success\", HoldForm[0], HoldForm[0]}, {\"{9, 3}\", \"Success\", HoldForm[0], HoldForm[0]}, {\"{9, 4}\", \"Success\", HoldForm[0], HoldForm[0]}, {\"{9, 5}\", \"Success\", HoldForm[0], HoldForm[0]}, {\"{9, 6}\", \"Success\", HoldForm[0], HoldForm[0]}, {\"{9, 7}\", \"Success\", HoldForm[0], HoldForm[0]}, {\"{9, 8}\", \"Success\", HoldForm[0], HoldForm[0]}}, Frame -> True]",
+       "mime": "text/plain"
+      }
+     ],
+     "id": "2afc9cd0-1720-4ee3-a0a0-58cc608b1f7a",
+     "metadata": {
+      "cellLabel": "Out[80]= ",
+      "isBoxData": false
+     }
+    }
+   ],
+   "metadata": {},
+   "executionSummary": {
+    "timing": {
+     "startTime": 1707981929458,
+     "endTime": 1707982054799
+    },
+    "executionOrder": 78,
+    "success": true
+   }
+  },
+  {
+   "kind": 2,
+   "value": "",
+   "languageId": "wolfram",
+   "outputs": [],
+   "metadata": {},
+   "executionSummary": {}
+  }
+ ]
+}
